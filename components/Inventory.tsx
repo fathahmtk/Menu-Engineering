@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -168,7 +169,7 @@ const Inventory: React.FC = () => {
     return (
         <>
             <Card>
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-2 justify-between items-start sm:items-center mb-4">
                     <h2 className="text-xl font-bold text-foreground">Inventory List</h2>
                     <button 
                         onClick={handleOpenModal}
@@ -181,7 +182,7 @@ const Inventory: React.FC = () => {
                 {selectedItems.size > 0 && (
                     <div className="bg-muted border border-border p-3 rounded-lg mb-4 flex items-center justify-between flex-wrap gap-2">
                         <p className="text-foreground font-semibold text-sm">{selectedItems.size} items selected</p>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 flex-wrap gap-2">
                             <button onClick={() => openBulkModal('cost')} className="text-sm flex items-center bg-background border border-border px-3 py-1.5 rounded-md hover:bg-accent"><DollarSign size={14} className="mr-1.5" /> Update Cost</button>
                             <button onClick={() => openBulkModal('price')} className="text-sm flex items-center bg-background border border-border px-3 py-1.5 rounded-md hover:bg-accent"><DollarSign size={14} className="mr-1.5" /> Update Price</button>
                             <button onClick={() => openBulkModal('supplier')} className="text-sm flex items-center bg-background border border-border px-3 py-1.5 rounded-md hover:bg-accent"><Truck size={14} className="mr-1.5" /> Update Supplier</button>
@@ -197,14 +198,14 @@ const Inventory: React.FC = () => {
                                 <th className="p-4 w-4">
                                     <input type="checkbox" onChange={handleSelectAll} checked={isAllSelected} aria-label="Select all items" className="rounded border-gray-300 text-primary focus:ring-primary" />
                                 </th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Name</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Category</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Stock</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Unit Cost</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Unit Price</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Supplier</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Status</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Actions</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Name</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Category</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Stock</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Unit Cost</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Unit Price</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Supplier</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Status</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -218,20 +219,20 @@ const Inventory: React.FC = () => {
                                         <td className="p-4">
                                             <input type="checkbox" onChange={() => handleSelect(item.id)} checked={selectedItems.has(item.id)} aria-label={`Select ${item.name}`} className="rounded border-gray-300 text-primary focus:ring-primary" />
                                         </td>
-                                        <td className="p-4 font-medium text-foreground">{item.name}</td>
-                                        <td className="p-4 text-muted-foreground">{item.category}</td>
-                                        <td className="p-4 text-muted-foreground">{item.quantity} {item.unit}</td>
-                                        <td className="p-4 text-muted-foreground">
+                                        <td className="p-4 font-medium text-foreground whitespace-nowrap">{item.name}</td>
+                                        <td className="p-4 text-muted-foreground whitespace-nowrap">{item.category}</td>
+                                        <td className="p-4 text-muted-foreground whitespace-nowrap">{item.quantity} {item.unit}</td>
+                                        <td className="p-4 text-muted-foreground whitespace-nowrap">
                                             {isEditing ? (
                                                 <input type="number" value={editedCost} onChange={(e) => setEditedCost(parseFloat(e.target.value) || 0)} className="w-24 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm" autoFocus step="0.01" min="0.01" />
                                             ) : ( formatCurrency(item.unitCost) )}
                                         </td>
-                                        <td className="p-4 text-muted-foreground">
+                                        <td className="p-4 text-muted-foreground whitespace-nowrap">
                                             {isEditing ? (
                                                 <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(parseFloat(e.target.value) || 0)} className="w-24 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm" step="0.01" min="0.01" />
                                             ) : ( formatCurrency(item.unitPrice) )}
                                         </td>
-                                        <td className="p-4 text-muted-foreground">{supplier?.name || 'N/A'}</td>
+                                        <td className="p-4 text-muted-foreground whitespace-nowrap">{supplier?.name || 'N/A'}</td>
                                         <td className="p-4">
                                             {isLowStock ? (
                                                 <span className="flex items-center text-destructive bg-destructive/10 px-2 py-1 rounded-full text-xs font-semibold">

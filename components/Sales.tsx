@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -179,7 +180,7 @@ const Sales: React.FC = () => {
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Record New Sale">
                 <div className="space-y-4">
                     {saleItems.map((item, index) => (
-                        <div key={item.id} className="grid grid-cols-[1fr,80px,auto] gap-2 items-center">
+                         <div key={item.id} className="flex flex-col sm:grid sm:grid-cols-[1fr,80px,auto] gap-2 sm:items-center border sm:border-0 rounded-md p-2 sm:p-0">
                             <select
                                 value={item.menuItemId}
                                 onChange={e => handleItemChange(item.id, 'menuItemId', e.target.value)}
@@ -198,7 +199,7 @@ const Sales: React.FC = () => {
                             <button
                                 onClick={() => removeSaleItem(item.id)}
                                 disabled={saleItems.length <= 1}
-                                className="text-destructive/80 hover:text-destructive disabled:text-muted disabled:cursor-not-allowed"
+                                className="text-destructive/80 hover:text-destructive disabled:text-muted disabled:cursor-not-allowed sm:justify-self-center"
                             >
                                 <Trash2 size={18} />
                             </button>

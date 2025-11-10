@@ -1,4 +1,5 @@
 
+
 import React, { useState, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import { DataProvider } from './hooks/useDataContext';
@@ -70,7 +71,7 @@ const AppContent: React.FC = () => {
 
         return (
             <div className="flex items-center justify-center min-h-screen bg-background">
-                <div className="text-center p-8 bg-card rounded-xl shadow-sm border border-border max-w-md mx-auto">
+                <div className="text-center p-8 bg-card rounded-xl shadow-sm border border-border w-full max-w-md mx-auto">
                     <ChefHat className="text-primary mx-auto" size={48} />
                     <h1 className="text-3xl font-bold mt-4 text-foreground">Welcome to F&B Costing Pro</h1>
                     <p className="text-muted-foreground mt-2 mb-6">To get started, please create your first business.</p>
@@ -105,10 +106,10 @@ const AppContent: React.FC = () => {
                 setIsOpen={setIsSidebarOpen}
             />
             <main className="flex-1 flex flex-col">
-                <header className="bg-card border-b border-border shadow-sm p-4 flex items-center justify-between sticky top-0 z-20">
+                <header className="bg-card border-b border-border shadow-sm p-2 sm:p-4 flex items-center justify-between sticky top-0 z-20">
                     <div className="flex items-center">
                         <button 
-                            className="lg:hidden mr-4 text-muted-foreground"
+                            className="lg:hidden mr-2 sm:mr-4 text-muted-foreground"
                             onClick={() => setIsSidebarOpen(true)}
                             aria-label="Open sidebar"
                         >
@@ -116,12 +117,12 @@ const AppContent: React.FC = () => {
                         </button>
                         <h2 className="text-xl font-semibold text-foreground hidden sm:block">{viewTitles[currentView]}</h2>
                     </div>
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2 sm:space-x-4">
                         <BusinessSelector />
                         <CurrencySelector />
                     </div>
                 </header>
-                <div className="flex-1 p-4 md:p-6 lg:p-8">
+                <div className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8">
                     <Suspense fallback={<LoadingFallback />}>
                         <CurrentViewComponent />
                     </Suspense>

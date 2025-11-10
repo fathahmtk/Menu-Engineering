@@ -4,7 +4,7 @@ import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Lightbulb, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Lightbulb, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft } from 'lucide-react';
 import { Recipe, Ingredient, RecipeCategory, RecipeTemplate, IngredientUnit } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
@@ -128,7 +128,7 @@ const RecipeFormModal: React.FC<{
                         {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium">Recipe Name</label>
                         <input type="text" value={name} onChange={e => setName(e.target.value)} className={`w-full mt-1 border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring ${errors.name ? 'border-destructive' : 'border-input'}`} />
@@ -150,7 +150,7 @@ const RecipeFormModal: React.FC<{
                         {errors.category && <p className="text-destructive text-xs mt-1">{errors.category}</p>}
                     </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium">Servings</label>
                         <input type="number" min="1" value={servings} onChange={e => setServings(parseInt(e.target.value) || 1)} className={`w-full mt-1 border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring ${errors.servings ? 'border-destructive' : 'border-input'}`} />
@@ -597,271 +597,282 @@ const Recipes: React.FC = () => {
         </>}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">Recipes</h2>
-                    <button onClick={() => setIsNewRecipeModalOpen(true)} className="flex items-center text-primary hover:text-primary/80" title="New Recipe">
-                        <PlusCircle size={22} />
-                    </button>
-                </div>
-                 <div className="mb-4 space-y-3">
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Search recipes..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm"
-                            aria-label="Search recipes by name"
-                        />
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                         <select
-                            id="category-filter"
-                            value={filterCategory}
-                            onChange={e => setFilterCategory(e.target.value)}
-                            className="block w-full pl-3 pr-10 py-2 text-base border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm rounded-md"
-                            aria-label="Filter by category"
-                        >
-                            <option value="all">All Categories</option>
-                            {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
-                        </select>
-                        <button onClick={() => setModalState({ type: 'manageCategories' })} className="p-2 border border-input rounded-md bg-background hover:bg-accent" title="Manage Categories">
-                           <ListChecks size={20} className="text-muted-foreground"/>
-                        </button>
-                         <button onClick={() => setModalState({ type: 'manageUnits' })} className="p-2 border border-input rounded-md bg-background hover:bg-accent" title="Manage Units">
-                           <Weight size={20} className="text-muted-foreground"/>
+            <div className={`${selectedRecipe ? 'hidden lg:block' : 'block'} lg:col-span-1`}>
+                <Card>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold">Recipes</h2>
+                        <button onClick={() => setIsNewRecipeModalOpen(true)} className="flex items-center text-primary hover:text-primary/80" title="New Recipe">
+                            <PlusCircle size={22} />
                         </button>
                     </div>
-                </div>
-                <ul className="space-y-2 max-h-[calc(65vh-120px)] overflow-y-auto">
-                    {filteredRecipes.map(recipe => (
-                        <li
-                            key={recipe.id}
-                            className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedRecipe?.id === recipe.id ? 'bg-primary/10' : 'hover:bg-accent'}`}
-                            onClick={() => { setSelectedRecipe(recipe); setIsHistoryVisible(false); }}
-                        >
-                            <div className="font-semibold text-foreground">{recipe.name}</div>
-                            <div className="text-xs text-muted-foreground mt-1">Cost/Serving: {formatCurrency(calculateRecipeCost(recipe) / (recipe.servings || 1))}</div>
-                        </li>
-                    ))}
-                </ul>
-            </Card>
-
-            <Card className="lg:col-span-2">
-                {selectedRecipe ? (
-                    <div>
-                        <div className="flex justify-between items-start mb-4">
-                             <h2 className="text-2xl font-bold">{selectedRecipe.name}</h2>
-                             <div className="flex items-center space-x-2">
-                                <button onClick={() => setModalState({ type: 'saveTemplate'})} className="p-2 rounded-full hover:bg-accent" title="Save as Template">
-                                    <FileText size={20} className="text-primary" />
-                                </button>
-                                <button onClick={() => setModalState({ type: 'duplicate'})} className="p-2 rounded-full hover:bg-accent" title="Duplicate Recipe">
-                                    <Copy size={20} className="text-primary" />
-                                </button>
-                                <button onClick={() => setModalState({ type: 'delete'})} className="p-2 rounded-full hover:bg-accent" title="Delete Recipe">
-                                    <Trash2 size={20} className="text-destructive" />
-                                </button>
-                             </div>
+                     <div className="mb-4 space-y-3">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search recipes..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm"
+                                aria-label="Search recipes by name"
+                            />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
                         </div>
-
-                        <div className="relative group w-full h-48 bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden border border-dashed border-border">
-                            {isUploading ? (
-                                <div className="flex flex-col items-center text-primary">
-                                    <Loader2 size={32} className="animate-spin"/>
-                                    <p className="mt-2 text-sm">Processing...</p>
-                                </div>
-                            ) : selectedRecipe.imageUrl ? (
-                                <>
-                                    <img src={selectedRecipe.imageUrl} alt={selectedRecipe.name} className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-4">
-                                        <label htmlFor="image-upload" className="cursor-pointer text-white bg-black/30 p-3 rounded-full hover:bg-black/50" title="Change image">
-                                            <Edit size={20} />
-                                            <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                                        </label>
-                                        <button onClick={handleImageRemove} className="text-white bg-black/30 p-3 rounded-full hover:bg-black/50" title="Remove image">
-                                            <Trash2 size={20} />
-                                        </button>
-                                    </div>
-                                </>
-                            ) : (
-                                <label htmlFor="image-upload" className="cursor-pointer text-center text-muted-foreground p-4 rounded-lg hover:bg-accent transition-colors w-full h-full flex flex-col justify-center items-center">
-                                    <UploadCloud size={32} className="mx-auto" />
-                                    <span className="mt-2 block text-sm font-semibold text-primary">Upload an image</span>
-                                    <p className="text-xs">PNG, JPG up to 5MB</p>
-                                    <input id="image-upload" type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleImageUpload} />
-                                </label>
-                            )}
-                        </div>
-
-
-                        {suggestedSalePrice > 0 && (
-                            <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg mb-6 flex items-center">
-                                <Lightbulb className="text-primary mr-4 flex-shrink-0" size={24} />
-                                <div>
-                                    <p className="font-semibold text-primary">Suggested Sale Price: {formatCurrency(suggestedSalePrice)}</p>
-                                    <p className="text-sm text-muted-foreground">This suggestion is based on a 30% food cost target, a common industry benchmark for profitability.</p>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="mt-6">
-                            <button
-                                onClick={() => setIsHistoryVisible(!isHistoryVisible)}
-                                className="flex items-center justify-between w-full p-3 bg-secondary hover:bg-accent rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-ring"
-                                aria-expanded={isHistoryVisible}
+                        <div className="flex items-center space-x-2">
+                             <select
+                                id="category-filter"
+                                value={filterCategory}
+                                onChange={e => setFilterCategory(e.target.value)}
+                                className="block w-full pl-3 pr-10 py-2 text-base border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm rounded-md"
+                                aria-label="Filter by category"
                             >
-                                <div className="flex items-center">
-                                    <TrendingUp className="mr-2 text-primary" size={20} />
-                                    <h3 className="text-lg font-semibold">Cost History</h3>
-                                </div>
-                                {isHistoryVisible ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                <option value="all">All Categories</option>
+                                {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+                            </select>
+                            <button onClick={() => setModalState({ type: 'manageCategories' })} className="p-2 border border-input rounded-md bg-background hover:bg-accent" title="Manage Categories">
+                               <ListChecks size={20} className="text-muted-foreground"/>
                             </button>
-                            {isHistoryVisible && (
-                                <div className="mt-4 p-4 border border-border rounded-lg bg-background">
-                                    {selectedRecipe.costHistory && selectedRecipe.costHistory.length > 1 ? (
-                                        <ResponsiveContainer width="100%" height={250}>
-                                            <LineChart data={selectedRecipe.costHistory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis 
-                                                    dataKey="date" 
-                                                    tickFormatter={(dateStr) => new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                                    tick={{ fontSize: 12 }}
-                                                />
-                                                <YAxis 
-                                                    tickFormatter={(value) => formatCurrency(value)}
-                                                    domain={['dataMin - 5', 'dataMax + 5']}
-                                                    tick={{ fontSize: 12 }}
-                                                />
-                                                <Tooltip 
-                                                    formatter={(value: number) => [formatCurrency(value), 'Total Cost']}
-                                                    labelFormatter={(dateStr) => new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                                />
-                                                <Line type="monotone" dataKey="cost" stroke="hsl(244, 76%, 58%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                                            </LineChart>
-                                        </ResponsiveContainer>
-                                    ) : (
-                                        <p className="text-center text-muted-foreground py-4">Not enough data to display cost history chart.</p>
-                                    )}
+                             <button onClick={() => setModalState({ type: 'manageUnits' })} className="p-2 border border-input rounded-md bg-background hover:bg-accent" title="Manage Units">
+                               <Weight size={20} className="text-muted-foreground"/>
+                            </button>
+                        </div>
+                    </div>
+                    <ul className="space-y-2 max-h-[calc(65vh-120px)] overflow-y-auto">
+                        {filteredRecipes.map(recipe => (
+                            <li
+                                key={recipe.id}
+                                className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedRecipe?.id === recipe.id ? 'bg-primary/10' : 'hover:bg-accent'}`}
+                                onClick={() => { setSelectedRecipe(recipe); setIsHistoryVisible(false); }}
+                            >
+                                <div className="font-semibold text-foreground">{recipe.name}</div>
+                                <div className="text-xs text-muted-foreground mt-1">Cost/Serving: {formatCurrency(calculateRecipeCost(recipe) / (recipe.servings || 1))}</div>
+                            </li>
+                        ))}
+                    </ul>
+                </Card>
+            </div>
+            
+            <div className={`${!selectedRecipe ? 'hidden lg:block' : 'block'} lg:col-span-2`}>
+                <Card>
+                    {selectedRecipe ? (
+                        <div>
+                            <button 
+                                onClick={() => setSelectedRecipe(null)}
+                                className="lg:hidden flex items-center text-sm text-primary hover:text-primary/80 font-semibold mb-3 -ml-1"
+                            >
+                                <ChevronLeft size={20} />
+                                Back to list
+                            </button>
+                            <div className="flex justify-between items-start mb-4">
+                                 <h2 className="text-2xl font-bold">{selectedRecipe.name}</h2>
+                                 <div className="flex items-center space-x-2">
+                                    <button onClick={() => setModalState({ type: 'saveTemplate'})} className="p-2 rounded-full hover:bg-accent" title="Save as Template">
+                                        <FileText size={20} className="text-primary" />
+                                    </button>
+                                    <button onClick={() => setModalState({ type: 'duplicate'})} className="p-2 rounded-full hover:bg-accent" title="Duplicate Recipe">
+                                        <Copy size={20} className="text-primary" />
+                                    </button>
+                                    <button onClick={() => setModalState({ type: 'delete'})} className="p-2 rounded-full hover:bg-accent" title="Delete Recipe">
+                                        <Trash2 size={20} className="text-destructive" />
+                                    </button>
+                                 </div>
+                            </div>
+
+                            <div className="relative group w-full h-48 bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden border border-dashed border-border">
+                                {isUploading ? (
+                                    <div className="flex flex-col items-center text-primary">
+                                        <Loader2 size={32} className="animate-spin"/>
+                                        <p className="mt-2 text-sm">Processing...</p>
+                                    </div>
+                                ) : selectedRecipe.imageUrl ? (
+                                    <>
+                                        <img src={selectedRecipe.imageUrl} alt={selectedRecipe.name} className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-4">
+                                            <label htmlFor="image-upload" className="cursor-pointer text-white bg-black/30 p-3 rounded-full hover:bg-black/50" title="Change image">
+                                                <Edit size={20} />
+                                                <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                                            </label>
+                                            <button onClick={handleImageRemove} className="text-white bg-black/30 p-3 rounded-full hover:bg-black/50" title="Remove image">
+                                                <Trash2 size={20} />
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <label htmlFor="image-upload" className="cursor-pointer text-center text-muted-foreground p-4 rounded-lg hover:bg-accent transition-colors w-full h-full flex flex-col justify-center items-center">
+                                        <UploadCloud size={32} className="mx-auto" />
+                                        <span className="mt-2 block text-sm font-semibold text-primary">Upload an image</span>
+                                        <p className="text-xs">PNG, JPG up to 5MB</p>
+                                        <input id="image-upload" type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleImageUpload} />
+                                    </label>
+                                )}
+                            </div>
+
+
+                            {suggestedSalePrice > 0 && (
+                                <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg mb-6 flex items-center">
+                                    <Lightbulb className="text-primary mr-4 flex-shrink-0" size={24} />
+                                    <div>
+                                        <p className="font-semibold text-primary">Suggested Sale Price: {formatCurrency(suggestedSalePrice)}</p>
+                                        <p className="text-sm text-muted-foreground">This suggestion is based on a 30% food cost target, a common industry benchmark for profitability.</p>
+                                    </div>
                                 </div>
                             )}
-                        </div>
 
-                         <div className="flex justify-between items-center mt-6 mb-2">
-                             <h3 className="text-lg font-semibold">Ingredients</h3>
-                             <button onClick={handleAddIngredientToRecipe} className="flex items-center text-sm text-primary hover:text-primary/80">
-                                <Plus size={16} className="mr-1" /> Add Ingredient
-                            </button>
-                        </div>
-                         <div className="overflow-x-auto border border-border rounded-lg">
-                            <table className="w-full text-left">
-                                <thead className="text-sm bg-muted">
-                                    <tr>
-                                        <th className="p-3 font-semibold text-muted-foreground">Ingredient</th>
-                                        <th className="p-3 font-semibold text-muted-foreground">Quantity</th>
-                                        <th className="p-3 font-semibold text-muted-foreground">Unit</th>
-                                        <th className="p-3 font-semibold text-right text-muted-foreground">Cost</th>
-                                        <th className="p-3 font-semibold"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedRecipe.ingredients.map((ing, index) => {
-                                        const item = getInventoryItemById(ing.itemId);
-                                        const costConversionFactor = item ? getConversionFactor(ing.unit, item.unit) || 1 : 1;
-                                        const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
-                                       
-                                        return (
-                                            <tr key={`${ing.itemId}-${index}`} className="border-b border-border last:border-b-0 hover:bg-accent">
-                                                <td className="p-2">
-                                                    <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="w-full border rounded-md p-2 bg-background text-sm border-input focus:ring-ring focus:ring-1">
-                                                        {inventory.map(invItem => <option key={invItem.id} value={invItem.id}>{invItem.name}</option>)}
-                                                    </select>
-                                                </td>
-                                                <td className="p-2">
-                                                     <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="w-20 border rounded-md p-2 text-sm border-input focus:ring-ring focus:ring-1" />
-                                                </td>
-                                                <td className="p-2">
-                                                    <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="w-full border rounded-md p-2 bg-background text-sm border-input focus:ring-ring focus:ring-1">
-                                                        {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
-                                                    </select>
-                                                </td>
-                                                <td className="p-2 text-right">
-                                                    {item ? (
-                                                        <div className="flex flex-col items-end">
-                                                            <span className="font-medium text-foreground text-sm">{formatCurrency(ingredientCost)}</span>
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {formatCurrency(item.unitCost)} / {item.unit}
-                                                            </span>
-                                                        </div>
-                                                    ) : <span className="text-destructive text-xs">Item not found</span>}
-                                                </td>
-                                                <td className="p-2 text-center">
-                                                    <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-destructive/70 hover:text-destructive"><XCircle size={18} /></button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                                <tfoot className="font-semibold border-t-2 border-border text-foreground">
-                                    <tr>
-                                        <td colSpan={3} className="p-3 text-right text-lg">Total Recipe Cost:</td>
-                                        <td className="p-3 text-right text-lg">{formatCurrency(selectedRecipeCost)}</td>
-                                        <td></td>
-                                    </tr>
-                                    <tr className="bg-primary/5">
-                                        <td colSpan={3} className="p-3 text-right text-primary text-lg">Cost per Serving:</td>
-                                        <td className="p-3 text-right text-primary text-lg">{formatCurrency(selectedCostPerServing)}</td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                        <div className="flex justify-between items-center mt-6 mb-2">
-                             <h3 className="text-lg font-semibold">Instructions</h3>
-                             <button onClick={handleAddInstruction} className="flex items-center text-sm text-primary hover:text-primary/80">
-                                <Plus size={16} className="mr-1" /> Add Step
-                            </button>
-                        </div>
-                        <ol className="list-decimal list-inside space-y-2">
-                           {selectedRecipe.instructions.map((instruction, index) => (
-                               <li 
-                                   key={index} 
-                                   className={`flex items-start group p-2 rounded-md transition-shadow ${draggedIndex === index ? 'shadow-lg bg-primary/10' : ''}`}
-                                   draggable
-                                   onDragStart={() => { dragItem.current = index; setDraggedIndex(index); }}
-                                   onDragEnter={() => dragOverItem.current = index}
-                                   onDragEnd={handleDragSort}
-                                   onDragOver={(e) => e.preventDefault()}
+                            <div className="mt-6">
+                                <button
+                                    onClick={() => setIsHistoryVisible(!isHistoryVisible)}
+                                    className="flex items-center justify-between w-full p-3 bg-secondary hover:bg-accent rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+                                    aria-expanded={isHistoryVisible}
                                 >
-                                   <GripVertical className="mr-2 text-muted-foreground cursor-grab flex-shrink-0 mt-1" size={18} />
-                                   <span className="mr-2 text-muted-foreground font-semibold mt-1">{index + 1}.</span>
-                                   <textarea 
-                                        value={instruction}
-                                        onChange={(e) => handleInstructionChange(index, e.target.value)}
-                                        rows={Math.max(1, Math.ceil(instruction.length / 50))}
-                                        className="flex-grow p-1 border border-transparent hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-md transition-colors w-full text-muted-foreground bg-transparent resize-none"
-                                   />
-                                   <button onClick={() => handleRemoveInstruction(index)} className="ml-2 text-destructive/60 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity mt-1">
-                                       <XCircle size={18} />
-                                   </button>
-                               </li>
-                           ))}
-                        </ol>
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
-                        <FileText size={48} className="mb-4 text-border" />
-                        <h3 className="text-lg font-semibold text-foreground">No Recipe Selected</h3>
-                        <p className="max-w-xs mt-1">Select a recipe from the list to view its details, or create a new one to get started.</p>
-                         <button onClick={() => setIsNewRecipeModalOpen(true)} className="mt-4 flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-                            <PlusCircle size={20} className="mr-2" />
-                            Create Recipe
-                        </button>
-                    </div>
-                )}
-            </Card>
+                                    <div className="flex items-center">
+                                        <TrendingUp className="mr-2 text-primary" size={20} />
+                                        <h3 className="text-lg font-semibold">Cost History</h3>
+                                    </div>
+                                    {isHistoryVisible ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                </button>
+                                {isHistoryVisible && (
+                                    <div className="mt-4 p-4 border border-border rounded-lg bg-background">
+                                        {selectedRecipe.costHistory && selectedRecipe.costHistory.length > 1 ? (
+                                            <ResponsiveContainer width="100%" height={250}>
+                                                <LineChart data={selectedRecipe.costHistory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" />
+                                                    <XAxis 
+                                                        dataKey="date" 
+                                                        tickFormatter={(dateStr) => new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                        tick={{ fontSize: 12 }}
+                                                    />
+                                                    <YAxis 
+                                                        tickFormatter={(value) => formatCurrency(value)}
+                                                        domain={['dataMin - 5', 'dataMax + 5']}
+                                                        tick={{ fontSize: 12 }}
+                                                    />
+                                                    <Tooltip 
+                                                        formatter={(value: number) => [formatCurrency(value), 'Total Cost']}
+                                                        labelFormatter={(dateStr) => new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                    />
+                                                    <Line type="monotone" dataKey="cost" stroke="hsl(244, 76%, 58%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <p className="text-center text-muted-foreground py-4">Not enough data to display cost history chart.</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                             <div className="flex justify-between items-center mt-6 mb-2">
+                                 <h3 className="text-lg font-semibold">Ingredients</h3>
+                                 <button onClick={handleAddIngredientToRecipe} className="flex items-center text-sm text-primary hover:text-primary/80">
+                                    <Plus size={16} className="mr-1" /> Add Ingredient
+                                </button>
+                            </div>
+                             <div className="overflow-x-auto border border-border rounded-lg">
+                                <table className="w-full text-left">
+                                    <thead className="text-sm bg-muted">
+                                        <tr>
+                                            <th className="p-3 font-semibold text-muted-foreground">Ingredient</th>
+                                            <th className="p-3 font-semibold text-muted-foreground">Quantity</th>
+                                            <th className="p-3 font-semibold text-muted-foreground">Unit</th>
+                                            <th className="p-3 font-semibold text-right text-muted-foreground">Cost</th>
+                                            <th className="p-3 font-semibold"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {selectedRecipe.ingredients.map((ing, index) => {
+                                            const item = getInventoryItemById(ing.itemId);
+                                            const costConversionFactor = item ? getConversionFactor(ing.unit, item.unit) || 1 : 1;
+                                            const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
+                                           
+                                            return (
+                                                <tr key={`${ing.itemId}-${index}`} className="border-b border-border last:border-b-0 hover:bg-accent">
+                                                    <td className="p-2">
+                                                        <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="w-full border rounded-md p-2 bg-background text-sm border-input focus:ring-ring focus:ring-1">
+                                                            {inventory.map(invItem => <option key={invItem.id} value={invItem.id}>{invItem.name}</option>)}
+                                                        </select>
+                                                    </td>
+                                                    <td className="p-2">
+                                                         <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="w-20 border rounded-md p-2 text-sm border-input focus:ring-ring focus:ring-1" />
+                                                    </td>
+                                                    <td className="p-2">
+                                                        <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="w-full border rounded-md p-2 bg-background text-sm border-input focus:ring-ring focus:ring-1">
+                                                            {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                                                        </select>
+                                                    </td>
+                                                    <td className="p-2 text-right">
+                                                        {item ? (
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="font-medium text-foreground text-sm">{formatCurrency(ingredientCost)}</span>
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {formatCurrency(item.unitCost)} / {item.unit}
+                                                                </span>
+                                                            </div>
+                                                        ) : <span className="text-destructive text-xs">Item not found</span>}
+                                                    </td>
+                                                    <td className="p-2 text-center">
+                                                        <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-destructive/70 hover:text-destructive"><XCircle size={18} /></button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                    <tfoot className="font-semibold border-t-2 border-border text-foreground">
+                                        <tr>
+                                            <td colSpan={3} className="p-3 text-right text-lg">Total Recipe Cost:</td>
+                                            <td className="p-3 text-right text-lg">{formatCurrency(selectedRecipeCost)}</td>
+                                            <td></td>
+                                        </tr>
+                                        <tr className="bg-primary/5">
+                                            <td colSpan={3} className="p-3 text-right text-primary text-lg">Cost per Serving:</td>
+                                            <td className="p-3 text-right text-primary text-lg">{formatCurrency(selectedCostPerServing)}</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div className="flex justify-between items-center mt-6 mb-2">
+                                 <h3 className="text-lg font-semibold">Instructions</h3>
+                                 <button onClick={handleAddInstruction} className="flex items-center text-sm text-primary hover:text-primary/80">
+                                    <Plus size={16} className="mr-1" /> Add Step
+                                </button>
+                            </div>
+                            <ol className="list-decimal list-inside space-y-2">
+                               {selectedRecipe.instructions.map((instruction, index) => (
+                                   <li 
+                                       key={index} 
+                                       className={`flex items-start group p-2 rounded-md transition-shadow ${draggedIndex === index ? 'shadow-lg bg-primary/10' : ''}`}
+                                       draggable
+                                       onDragStart={() => { dragItem.current = index; setDraggedIndex(index); }}
+                                       onDragEnter={() => dragOverItem.current = index}
+                                       onDragEnd={handleDragSort}
+                                       onDragOver={(e) => e.preventDefault()}
+                                    >
+                                       <GripVertical className="mr-2 text-muted-foreground cursor-grab flex-shrink-0 mt-1" size={18} />
+                                       <span className="mr-2 text-muted-foreground font-semibold mt-1">{index + 1}.</span>
+                                       <textarea 
+                                            value={instruction}
+                                            onChange={(e) => handleInstructionChange(index, e.target.value)}
+                                            rows={Math.max(1, Math.ceil(instruction.length / 50))}
+                                            className="flex-grow p-1 border border-transparent hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-md transition-colors w-full text-muted-foreground bg-transparent resize-none"
+                                       />
+                                       <button onClick={() => handleRemoveInstruction(index)} className="ml-2 text-destructive/60 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+                                           <XCircle size={18} />
+                                       </button>
+                                   </li>
+                               ))}
+                            </ol>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
+                            <FileText size={48} className="mb-4 text-border" />
+                            <h3 className="text-lg font-semibold text-foreground">No Recipe Selected</h3>
+                            <p className="max-w-xs mt-1">Select a recipe from the list to view its details, or create a new one to get started.</p>
+                             <button onClick={() => setIsNewRecipeModalOpen(true)} className="mt-4 flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                                <PlusCircle size={20} className="mr-2" />
+                                Create Recipe
+                            </button>
+                        </div>
+                    )}
+                </Card>
+            </div>
         </div>
         </>
     );

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -130,21 +131,21 @@ const Purchasing: React.FC = () => {
                     <table className="w-full text-left">
                         <thead className="bg-muted">
                             <tr>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">PO #</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Supplier</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Order Date</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Total</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Status</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Actions</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">PO #</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Supplier</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Order Date</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Total</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Status</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {purchaseOrders.map(order => (
                                 <tr key={order.id} className="border-b border-border last:border-b-0 hover:bg-accent">
-                                    <td className="p-4 font-medium text-primary">#{order.id.slice(-6).toUpperCase()}</td>
-                                    <td className="p-4 text-foreground">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
-                                    <td className="p-4 text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()}</td>
-                                    <td className="p-4 text-muted-foreground">{formatCurrency(order.totalCost)}</td>
+                                    <td className="p-4 font-medium text-primary whitespace-nowrap">#{order.id.slice(-6).toUpperCase()}</td>
+                                    <td className="p-4 text-foreground whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
+                                    <td className="p-4 text-muted-foreground whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
+                                    <td className="p-4 text-muted-foreground whitespace-nowrap">{formatCurrency(order.totalCost)}</td>
                                     <td className="p-4"><StatusBadge status={order.status} /></td>
                                     <td className="p-4">
                                         <div className="flex items-center space-x-3">
@@ -186,7 +187,7 @@ const Purchasing: React.FC = () => {
                         <h4 className="text-sm font-medium mb-2">Items</h4>
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                             {newPoData.items.map((item, index) => (
-                                <div key={index} className="grid grid-cols-[1fr,80px,100px,auto] gap-2 items-center">
+                                <div key={index} className="flex flex-col sm:grid sm:grid-cols-[1fr,80px,100px,auto] gap-2 sm:items-center border sm:border-0 rounded-md p-2 sm:p-0">
                                     <select
                                         value={item.itemId || ''}
                                         onChange={(e) => handleItemChange(index, 'itemId', e.target.value)}
@@ -195,9 +196,9 @@ const Purchasing: React.FC = () => {
                                         <option value="" disabled>Select item</option>
                                         {inventory.map(inv => <option key={inv.id} value={inv.id}>{inv.name}</option>)}
                                     </select>
-                                    <input type="number" value={item.quantity} min="1" onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="w-full border rounded-md p-2 border-input focus:ring-1 focus:ring-ring" />
-                                    <input type="number" value={item.cost} min="0" step="0.01" onChange={(e) => handleItemChange(index, 'cost', e.target.value)} className="w-full border rounded-md p-2 border-input focus:ring-1 focus:ring-ring" />
-                                    <button onClick={() => handleRemoveItem(index)} className="text-destructive/80 hover:text-destructive"><Trash2 size={18} /></button>
+                                    <input type="number" placeholder="Qty" value={item.quantity} min="1" onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="w-full border rounded-md p-2 border-input focus:ring-1 focus:ring-ring" />
+                                    <input type="number" placeholder="Cost" value={item.cost} min="0" step="0.01" onChange={(e) => handleItemChange(index, 'cost', e.target.value)} className="w-full border rounded-md p-2 border-input focus:ring-1 focus:ring-ring" />
+                                    <button onClick={() => handleRemoveItem(index)} className="text-destructive/80 hover:text-destructive sm:justify-self-center"><Trash2 size={18} /></button>
                                 </div>
                             ))}
                         </div>

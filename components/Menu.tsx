@@ -170,14 +170,14 @@ const Menu: React.FC = () => {
                     <table className="w-full text-left">
                         <thead className="bg-muted">
                             <tr>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Menu Item</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Classification</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Sales Count</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Sale Price</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Cost</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Profit</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Food Cost %</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground">Actions</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Menu Item</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Classification</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Sales Count</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Sale Price</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Cost</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Profit</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Food Cost %</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -186,7 +186,7 @@ const Menu: React.FC = () => {
                                 const isEditing = editingItemId === item.id;
                                 return (
                                     <tr key={item.id} className="border-b border-border last:border-b-0 hover:bg-accent group">
-                                        <td className="p-4 font-medium">{item.name}</td>
+                                        <td className="p-4 font-medium whitespace-nowrap">{item.name}</td>
                                         <td className="p-4"><ClassificationBadge classification={classification} /></td>
                                         <td className="p-4">
                                             {isEditing ? (
@@ -211,14 +211,14 @@ const Menu: React.FC = () => {
                                                  </div>
                                             )}
                                         </td>
-                                        <td className="p-4 text-foreground font-semibold">{formatCurrency(item.salePrice)}</td>
-                                        <td className="p-4 text-muted-foreground">{formatCurrency(item.costPerServing)}</td>
+                                        <td className="p-4 text-foreground font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
+                                        <td className="p-4 text-muted-foreground whitespace-nowrap">{formatCurrency(item.costPerServing)}</td>
                                         <td className="p-4">
                                             <span className={`font-bold ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                                 {formatCurrency(item.profit)}
                                             </span>
                                         </td>
-                                        <td className="p-4 text-muted-foreground">{item.foodCostPercentage.toFixed(1)}%</td>
+                                        <td className="p-4 text-muted-foreground whitespace-nowrap">{item.foodCostPercentage.toFixed(1)}%</td>
                                         <td className="p-4">
                                             <div className="flex items-center space-x-3">
                                                 <button onClick={() => handleOpenModal(item)} className="text-primary hover:text-primary/80"><Edit size={20} /></button>
@@ -248,7 +248,7 @@ const Menu: React.FC = () => {
                         </select>
                         {errors.recipeId && <p className="text-destructive text-xs mt-1">{errors.recipeId}</p>}
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="salePrice" className="block text-sm font-medium text-foreground">Sale Price</label>
                             <input type="number" name="salePrice" id="salePrice" value={formData.salePrice} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.salePrice ? 'border-destructive' : 'border-input'}`} min="0" step="0.01" />

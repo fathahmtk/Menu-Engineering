@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import { useData } from '../hooks/useDataContext';
 import { Building, ChevronDown, PlusCircle } from 'lucide-react';
@@ -44,7 +45,7 @@ const BusinessSelector: React.FC = () => {
                     <ChevronDown size={16} className="text-muted-foreground" />
                 </button>
                 {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 origin-top-right bg-card rounded-xl shadow-lg ring-1 ring-border z-50">
+                    <div className="absolute right-0 mt-2 w-48 sm:w-56 origin-top-right bg-card rounded-xl shadow-lg ring-1 ring-border z-50">
                         <div className="py-1">
                             <div className="px-4 py-2 text-xs text-muted-foreground uppercase">Switch Business</div>
                             {businesses.map(business => (
