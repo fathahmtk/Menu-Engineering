@@ -18,6 +18,12 @@ const StatusBadge: React.FC<{ status: PurchaseOrder['status'] }> = ({ status }) 
     return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${config[status]}`}>{status}</span>;
 };
 
+// FIX: Define a local type for the form state to avoid TS inference issues.
+type NewPOItem = {
+    itemId: string | null;
+    quantity: number;
+    cost: number;
+};
 
 const Purchasing: React.FC = () => {
     const { purchaseOrders, suppliers, inventory, getSupplierById, addPurchaseOrder, updatePurchaseOrderStatus } = useData();
@@ -31,7 +37,7 @@ const Purchasing: React.FC = () => {
     const [confirmationAction, setConfirmationAction] = useState<{ id: string, status: PurchaseOrder['status'] } | null>(null);
 
     // Form state for new PO
-    const [newPoData, setNewPoData] = useState<{ supplierId: string; items: Omit<PurchaseOrderItem, 'itemId'> & { itemId: string | null }[] }>({
+    const [newPoData, setNewPoData] = useState<{ supplierId: string; items: NewPOItem[] }>({
         supplierId: suppliers[0]?.id || '',
         items: [{ itemId: null, quantity: 1, cost: 0 }]
     });
@@ -51,10 +57,10 @@ const Purchasing: React.FC = () => {
         setIsDetailsModalOpen(true);
     };
 
-    const handleItemChange = (index: number, field: keyof PurchaseOrderItem, value: string) => {
+    const handleItemChange = (index: number, field: keyof NewPOItem, value: string) => {
         const newItems = [...newPoData.items];
         const isNumber = field === 'quantity' || field === 'cost';
-        newItems[index] = { ...newItems[index], [field]: isNumber ? parseFloat(value) || 0 : value };
+        (newItems[index] as any)[field] = isNumber ? parseFloat(value) || 0 : value;
 
         // Auto-update cost when item is selected
         if (field === 'itemId') {
@@ -84,10 +90,10 @@ const Purchasing: React.FC = () => {
             return;
         }
 
-        const finalItems = newPoData.items
-            .filter(item => item.itemId)
+        const finalItems: PurchaseOrderItem[] = newPoData.items
+            .filter((item): item is NewPOItem & { itemId: string } => item.itemId !== null)
             .map(item => ({
-                itemId: item.itemId!,
+                itemId: item.itemId,
                 quantity: item.quantity,
                 cost: item.cost,
             }));

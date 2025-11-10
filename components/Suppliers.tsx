@@ -8,12 +8,14 @@ import { PlusCircle, Mail, Phone, Edit, Trash2 } from 'lucide-react';
 const Suppliers: React.FC = () => {
     const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [currentSupplier, setCurrentSupplier] = useState<Supplier | Omit<Supplier, 'id'> | null>(null);
-    const [formData, setFormData] = useState<Omit<Supplier, 'id'>>({ name: '', contactPerson: '', phone: '', email: '' });
+    // FIX: Change type to Supplier | null for clarity.
+    const [currentSupplier, setCurrentSupplier] = useState<Supplier | null>(null);
+    // FIX: Change type to Omit<Supplier, 'id' | 'businessId'> as businessId is handled by the context.
+    const [formData, setFormData] = useState<Omit<Supplier, 'id' | 'businessId'>>({ name: '', contactPerson: '', phone: '', email: '' });
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
     useEffect(() => {
-        if (currentSupplier && 'id' in currentSupplier) {
+        if (currentSupplier) {
             setFormData({
                 name: currentSupplier.name,
                 contactPerson: currentSupplier.contactPerson,
@@ -52,8 +54,9 @@ const Suppliers: React.FC = () => {
 
     const handleSubmit = () => {
         if (!validate()) return;
-        if (currentSupplier && 'id' in currentSupplier) {
-            updateSupplier({ ...formData, id: currentSupplier.id });
+        // FIX: Add businessId to the updated supplier object to match the Supplier type.
+        if (currentSupplier) {
+            updateSupplier({ ...formData, id: currentSupplier.id, businessId: currentSupplier.businessId });
         } else {
             addSupplier(formData);
         }

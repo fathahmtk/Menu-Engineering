@@ -37,15 +37,17 @@ const Menu: React.FC = () => {
     const { formatCurrency } = useCurrency();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [currentItem, setCurrentItem] = useState<MenuItem | Omit<MenuItem, 'id'> | null>(null);
-    const [formData, setFormData] = useState<Omit<MenuItem, 'id'>>({ name: '', recipeId: '', salePrice: 0, salesCount: 0 });
+    // FIX: Change type to MenuItem | null for clarity.
+    const [currentItem, setCurrentItem] = useState<MenuItem | null>(null);
+    // FIX: Change type to Omit<MenuItem, 'id' | 'businessId'> as businessId is handled by the context.
+    const [formData, setFormData] = useState<Omit<MenuItem, 'id' | 'businessId'>>({ name: '', recipeId: '', salePrice: 0, salesCount: 0 });
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [editingItemId, setEditingItemId] = useState<string | null>(null);
     const [editedSales, setEditedSales] = useState<number>(0);
 
     useEffect(() => {
         const initialRecipeId = recipes.length > 0 ? recipes[0].id : '';
-        if (currentItem && 'id' in currentItem) {
+        if (currentItem) {
             setFormData({
                 name: currentItem.name,
                 recipeId: currentItem.recipeId,
@@ -120,8 +122,9 @@ const Menu: React.FC = () => {
 
     const handleSubmit = () => {
         if (!validate()) return;
-        if (currentItem && 'id' in currentItem) {
-            updateMenuItem({ ...formData, id: currentItem.id });
+        // FIX: Add businessId to the updated menu item object to match the MenuItem type.
+        if (currentItem) {
+            updateMenuItem({ ...formData, id: currentItem.id, businessId: currentItem.businessId });
         } else {
             addMenuItem(formData);
         }

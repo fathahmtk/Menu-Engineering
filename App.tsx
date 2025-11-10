@@ -1,23 +1,26 @@
 
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import Inventory from './components/Inventory';
-import Recipes from './components/Recipes';
-import Suppliers from './components/Suppliers';
-import Menu from './components/Menu';
-import Reports from './components/Reports';
-import Purchasing from './components/Purchasing';
 import { DataProvider } from './hooks/useDataContext';
 import { CurrencyProvider } from './hooks/useCurrencyContext';
 import CurrencySelector from './components/CurrencySelector';
 import BusinessSelector from './components/BusinessSelector';
-import { Menu as MenuIcon, ChefHat } from 'lucide-react';
+import { Menu as MenuIcon, ChefHat, LoaderCircle } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
+
+// Lazy-load page components for better performance
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const Inventory = lazy(() => import('./components/Inventory'));
+const Recipes = lazy(() => import('./components/Recipes'));
+const Suppliers = lazy(() => import('./components/Suppliers'));
+const Purchasing = lazy(() => import('./components/Purchasing'));
+const Menu = lazy(() => import('./components/Menu'));
+const Reports = lazy(() => import('./components/Reports'));
+
 
 type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'reports';
 
-const viewComponents: Record<View, React.FC> = {
+const viewComponents: Record<View, React.LazyExoticComponent<React.FC<{}>>> = {
     dashboard: Dashboard,
     inventory: Inventory,
     recipes: Recipes,
@@ -36,6 +39,15 @@ const viewTitles: Record<View, string> = {
     menu: 'Menu Engineering',
     reports: 'Analytics & Reports',
 };
+
+const LoadingFallback: React.FC = () => (
+    <div className="w-full h-full flex items-center justify-center">
+        <div className="flex flex-col items-center text-primary">
+            <LoaderCircle size={48} className="animate-spin"/>
+            <p className="mt-4 text-lg font-semibold">Loading...</p>
+        </div>
+    </div>
+);
 
 const AppContent: React.FC = () => {
     const { businesses, addBusiness } = useData();
@@ -107,7 +119,9 @@ const AppContent: React.FC = () => {
                     </div>
                 </header>
                 <div className="flex-1 p-4 md:p-6 lg:p-8">
-                    <CurrentViewComponent />
+                    <Suspense fallback={<LoadingFallback />}>
+                        <CurrentViewComponent />
+                    </Suspense>
                 </div>
             </main>
         </div>

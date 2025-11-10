@@ -15,7 +15,8 @@ const Inventory: React.FC = () => {
     const { inventory, getSupplierById, suppliers, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems } = useData();
     const { formatCurrency, currency } = useCurrency();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newItem, setNewItem] = useState<Omit<InventoryItem, 'id'>>({
+    // FIX: Change type to Omit<InventoryItem, 'id' | 'businessId'> as businessId is handled by the context
+    const [newItem, setNewItem] = useState<Omit<InventoryItem, 'id' | 'businessId'>>({
         name: '',
         category: 'Produce',
         quantity: 0,
