@@ -1,14 +1,12 @@
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, ArrowRight, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Lightbulb, Copy, BrainCircuit, FileText, Save, ListChecks, Edit3 } from 'lucide-react';
+import { PlusCircle, ArrowRight, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Lightbulb, Copy, FileText, Save, ListChecks, Edit3 } from 'lucide-react';
 import { Recipe, InventoryItem, Ingredient, RecipeCategory, RecipeTemplate } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { generateRecipeFromPrompt, GeneratedRecipe, GeneratedIngredient } from '../services/geminiService';
 
 const ITEM_UNITS: InventoryItem['unit'][] = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
 
@@ -257,125 +255,6 @@ const CategoryManagerModal: React.FC<{
     );
 }
 
-const GenerateRecipeModal: React.FC<{
-    isOpen: boolean,
-    onClose: () => void,
-}> = ({ isOpen, onClose }) => {
-    const { addRecipe, inventory } = useData();
-    const [prompt, setPrompt] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [generatedRecipe, setGeneratedRecipe] = useState<GeneratedRecipe | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleGenerate = async () => {
-        if (!prompt.trim()) return;
-        setIsLoading(true);
-        setError(null);
-        setGeneratedRecipe(null);
-        try {
-            const result = await generateRecipeFromPrompt(prompt, inventory);
-            if(result) {
-                setGeneratedRecipe(result);
-            } else {
-                setError('Failed to generate recipe. The model may be unavailable or the request was invalid.');
-            }
-        } catch(e: any) {
-            setError(`An error occurred: ${e.message}`);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleSave = () => {
-        if (!generatedRecipe) return;
-
-        const recipeToSave: Omit<Recipe, 'id' | 'businessId'> = {
-            name: generatedRecipe.name,
-            category: generatedRecipe.category,
-            servings: generatedRecipe.servings,
-            instructions: generatedRecipe.instructions,
-            ingredients: generatedRecipe.ingredients
-                .filter(ing => ing.itemId) // Only save ingredients that were matched to inventory
-                .map(ing => ({
-                    itemId: ing.itemId!,
-                    quantity: ing.quantity,
-                    unit: ing.unit,
-                })),
-        };
-        addRecipe(recipeToSave);
-        onClose();
-    };
-    
-    const handleClose = () => {
-        setPrompt('');
-        setGeneratedRecipe(null);
-        setIsLoading(false);
-        setError(null);
-        onClose();
-    };
-
-    return (
-        <Modal isOpen={isOpen} onClose={handleClose} title="Generate Recipe with AI">
-            {!generatedRecipe ? (
-                 <div className="space-y-4">
-                    <div>
-                        <label htmlFor="ai-prompt" className="block text-sm font-medium text-gray-700">Describe the recipe you want to create</label>
-                        <textarea
-                            id="ai-prompt"
-                            rows={4}
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            className="w-full mt-1 p-2 border rounded-md"
-                            placeholder="e.g., A spicy Italian pasta dish with chicken for 4 people. It should be easy to make."
-                        />
-                    </div>
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
-                    <div className="flex justify-end">
-                        <button
-                            onClick={handleGenerate}
-                            disabled={isLoading || !prompt.trim()}
-                            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400 flex items-center"
-                        >
-                            {isLoading ? 'Generating...' : 'Generate'}
-                        </button>
-                    </div>
-                 </div>
-            ) : (
-                <div className="space-y-4">
-                    <h3 className="text-xl font-bold text-primary">{generatedRecipe.name}</h3>
-                    <p><strong>Category:</strong> {generatedRecipe.category}, <strong>Servings:</strong> {generatedRecipe.servings}</p>
-                    <div>
-                        <h4 className="font-semibold">Ingredients</h4>
-                        <ul className="list-disc list-inside text-sm mt-1">
-                            {generatedRecipe.ingredients.map((ing, i) => (
-                                <li key={i} className={!ing.itemId ? 'text-orange-600' : ''}>
-                                    {ing.quantity} {ing.unit} {ing.name}
-                                    {!ing.itemId && <span className="text-xs font-semibold ml-2">(Not in inventory)</span>}
-                                </li>
-                            ))}
-                        </ul>
-                        {generatedRecipe.unmatchedIngredients.length > 0 && 
-                            <p className="text-xs text-orange-700 mt-2 bg-orange-100 p-2 rounded-md">
-                                The highlighted ingredients were not found in your inventory. They will not be added to the recipe upon saving. Please add them to your inventory first if you wish to include them.
-                            </p>
-                        }
-                    </div>
-                     <div>
-                        <h4 className="font-semibold">Instructions</h4>
-                        <ol className="list-decimal list-inside text-sm mt-1 space-y-1">
-                            {generatedRecipe.instructions.map((step, i) => <li key={i}>{step}</li>)}
-                        </ol>
-                    </div>
-                    <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={() => setGeneratedRecipe(null)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Back</button>
-                        <button onClick={handleSave} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-indigo-700">Save Recipe</button>
-                    </div>
-                </div>
-            )}
-        </Modal>
-    )
-}
-
 const Recipes: React.FC = () => {
     const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate } = useData();
     const { formatCurrency } = useCurrency();
@@ -387,7 +266,7 @@ const Recipes: React.FC = () => {
     const [isHistoryVisible, setIsHistoryVisible] = useState(false);
     
     // Modal states
-    const [modalState, setModalState] = useState<{ type: null | 'delete' | 'duplicate' | 'saveTemplate' | 'manageCategories' | 'generateAI' } >({ type: null });
+    const [modalState, setModalState] = useState<{ type: null | 'delete' | 'duplicate' | 'saveTemplate' | 'manageCategories' } >({ type: null });
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const dragItem = React.useRef<any>(null);
@@ -489,7 +368,6 @@ const Recipes: React.FC = () => {
         <>
         <RecipeFormModal isOpen={isNewRecipeModalOpen} onClose={() => setIsNewRecipeModalOpen(false)} onSave={addRecipe} categories={categories} templates={recipeTemplates} />
         <CategoryManagerModal isOpen={modalState.type === 'manageCategories'} onClose={() => setModalState({ type: null })} />
-        <GenerateRecipeModal isOpen={modalState.type === 'generateAI'} onClose={() => setModalState({ type: null })} />
 
         {selectedRecipe && <>
             <ConfirmationModal
@@ -533,14 +411,9 @@ const Recipes: React.FC = () => {
             <Card className="lg:col-span-1">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Recipes</h2>
-                    <div className="flex items-center space-x-2">
-                        <button onClick={() => setModalState({ type: 'generateAI' })} className="flex items-center bg-primary/10 text-primary px-3 py-1.5 rounded-lg hover:bg-primary/20" title="Generate with AI">
-                            <BrainCircuit size={18} className="mr-1.5" /> AI
-                        </button>
-                        <button onClick={() => setIsNewRecipeModalOpen(true)} className="flex items-center text-primary hover:text-indigo-700" title="New Recipe">
-                            <PlusCircle size={22} />
-                        </button>
-                    </div>
+                    <button onClick={() => setIsNewRecipeModalOpen(true)} className="flex items-center text-primary hover:text-indigo-700" title="New Recipe">
+                        <PlusCircle size={22} />
+                    </button>
                 </div>
                  <div className="mb-4 space-y-3">
                     <div className="relative">
