@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem } from '../types';
+import { supabase } from '../services/supabaseClient';
 
 // A custom hook to persist state to localStorage
 function useStickyState<T>(defaultValue: T, key: string): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -51,6 +52,8 @@ interface DataContextType {
   deleteRecipe: (id: string) => { success: boolean; message?: string };
   recordRecipeCostHistory: (recipeId: string) => void;
   duplicateRecipe: (id: string, includeHistory: boolean) => Recipe | undefined;
+  uploadRecipeImage: (recipeId: string, file: File) => Promise<void>;
+  removeRecipeImage: (recipeId: string) => Promise<void>;
 
   addMenuItem: (item: Omit<MenuItem, 'id' | 'businessId'>) => void;
   updateMenuItem: (item: MenuItem) => void;
@@ -72,6 +75,7 @@ interface DataContextType {
   getRecipeById: (id: string) => Recipe | undefined;
   getSupplierById: (id: string) => Supplier | undefined;
   calculateRecipeCost: (recipe: Recipe | null) => number;
+  getConversionFactor: (fromUnit: Ingredient['unit'], toUnit: InventoryItem['unit']) => number | null;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -347,6 +351,71 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   }, [calculateRecipeCost, setRecipes]);
 
+  const uploadRecipeImage = useCallback(async (recipeId: string, file: File) => {
+    if (!activeBusinessId) {
+        throw new Error("No active business selected");
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${activeBusinessId}/${recipeId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('recipe-images')
+        .upload(filePath, file);
+
+    if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        alert('Failed to upload image. Please try again.');
+        return;
+    }
+
+    const { data } = supabase.storage
+        .from('recipe-images')
+        .getPublicUrl(filePath);
+    
+    if (!data.publicUrl) {
+        console.error('Error getting public URL');
+        alert('Image uploaded but failed to get URL.');
+        return;
+    }
+
+    setRecipes(prev => prev.map(recipe => 
+        recipe.id === recipeId ? { ...recipe, imageUrl: data.publicUrl } : recipe
+    ));
+
+  }, [activeBusinessId, setRecipes]);
+
+  const removeRecipeImage = useCallback(async (recipeId: string) => {
+    const recipe = recipes.find(r => r.id === recipeId);
+    if (!recipe || !recipe.imageUrl) return;
+
+    const urlParts = recipe.imageUrl.split('/recipe-images/');
+    if (urlParts.length < 2) {
+        console.error("Could not parse image path from URL:", recipe.imageUrl);
+        // Still allow removing the URL from the recipe object
+    } else {
+        const filePath = urlParts[1];
+        const { error } = await supabase.storage.from('recipe-images').remove([filePath]);
+
+        if (error) {
+            console.error('Error removing image from storage:', error);
+            alert('Failed to remove image from storage, but it will be removed from the recipe.');
+        }
+    }
+
+    setRecipes(prev => {
+        const newRecipes = [...prev];
+        const recipeIndex = newRecipes.findIndex(r => r.id === recipeId);
+        if (recipeIndex > -1) {
+            const { imageUrl, ...rest } = newRecipes[recipeIndex];
+            newRecipes[recipeIndex] = rest;
+        }
+        return newRecipes;
+    });
+  }, [recipes, setRecipes]);
+
+
   // Recipe Template CRUD
   const addRecipeTemplate = useCallback((template: Omit<RecipeTemplate, 'id' | 'businessId'>) => {
     if (!activeBusinessId) return;
@@ -518,7 +587,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       businesses, activeBusinessId, setActiveBusinessId, addBusiness,
       suppliers: activeSuppliers, addSupplier, updateSupplier, deleteSupplier,
       inventory: activeInventory, setInventory, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems,
-      recipes: activeRecipes, addRecipe, updateRecipe, deleteRecipe, recordRecipeCostHistory, duplicateRecipe,
+      recipes: activeRecipes, addRecipe, updateRecipe, deleteRecipe, recordRecipeCostHistory, duplicateRecipe, uploadRecipeImage, removeRecipeImage,
       menuItems: activeMenuItems, addMenuItem, updateMenuItem, deleteMenuItem,
       categories: activeCategories, addCategory, updateCategory, deleteCategory,
       recipeTemplates: activeRecipeTemplates, addRecipeTemplate,
@@ -529,6 +598,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addSale,
       getInventoryItemById, getRecipeById, getSupplierById,
       calculateRecipeCost,
+      getConversionFactor,
     }}>
       {children}
     </DataContext.Provider>

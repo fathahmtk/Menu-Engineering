@@ -4,7 +4,7 @@ import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, ArrowRight, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Lightbulb, Copy, FileText, Save, ListChecks, Edit3 } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Lightbulb, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2 } from 'lucide-react';
 import { Recipe, InventoryItem, Ingredient, RecipeCategory, RecipeTemplate } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
@@ -18,7 +18,8 @@ const RecipeFormModal: React.FC<{
     categories: RecipeCategory[];
     templates: RecipeTemplate[];
 }> = ({ isOpen, onClose, onSave, categories, templates }) => {
-    const { inventory } = useData();
+    const { inventory, getInventoryItemById, getConversionFactor } = useData();
+    const { formatCurrency } = useCurrency();
     const [name, setName] = useState('');
     const [category, setCategory] = useState('');
     const [servings, setServings] = useState(1);
@@ -27,6 +28,18 @@ const RecipeFormModal: React.FC<{
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     
+    const recipeCost = useMemo(() => {
+        return ingredients.reduce((total, ingredient) => {
+            const item = getInventoryItemById(ingredient.itemId);
+            if (!item) return total;
+            const conversionFactor = getConversionFactor(ingredient.unit, item.unit) || 1;
+            return total + (item.unitCost * ingredient.quantity * conversionFactor);
+        }, 0);
+    }, [ingredients, getInventoryItemById, getConversionFactor]);
+
+    const costPerServing = servings > 0 ? recipeCost / servings : 0;
+    const suggestedPrice = costPerServing > 0 ? costPerServing / 0.30 : 0; // Standard 30% food cost target
+
     const resetForm = useCallback(() => {
         setName('');
         setCategory(categories.length > 0 ? categories[0].name : '');
@@ -163,8 +176,27 @@ const RecipeFormModal: React.FC<{
                     </div>
                     <button onClick={handleAddIngredient} className="text-sm text-primary mt-2 flex items-center"><PlusCircle size={16} className="mr-1"/> Add Ingredient</button>
                 </div>
+
+                <div className="bg-primary/5 p-3 rounded-lg text-sm mt-4">
+                    <div className="flex justify-between items-center">
+                        <span className="text-text-secondary">Calculated Total Cost:</span>
+                        <span className="font-semibold text-text-primary">{formatCurrency(recipeCost)}</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                        <span className="text-text-secondary">Cost per Serving:</span>
+                        <span className="font-semibold text-text-primary">{formatCurrency(costPerServing)}</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-primary/20">
+                         <div className="text-text-secondary">
+                            <span className="font-medium">Suggested Sale Price</span>
+                            <p className="text-xs">Based on a 30% food cost target.</p>
+                        </div>
+                        <span className="font-bold text-lg text-primary">{formatCurrency(suggestedPrice)}</span>
+                    </div>
+                </div>
+
                 <div>
-                    <label className="block text-sm font-medium">Instructions (one step per line)</label>
+                    <label className="block text-sm font-medium mt-4">Instructions (one step per line)</label>
                     <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={5} className="w-full mt-1 border rounded-md p-2 border-gray-300"></textarea>
                 </div>
                 <div className="flex justify-end space-x-2 pt-4">
@@ -256,7 +288,7 @@ const CategoryManagerModal: React.FC<{
 }
 
 const Recipes: React.FC = () => {
-    const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate } = useData();
+    const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, uploadRecipeImage, removeRecipeImage } = useData();
     const { formatCurrency } = useCurrency();
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [isNewRecipeModalOpen, setIsNewRecipeModalOpen] = useState(false);
@@ -264,6 +296,7 @@ const Recipes: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     
     // Modal states
     const [modalState, setModalState] = useState<{ type: null | 'delete' | 'duplicate' | 'saveTemplate' | 'manageCategories' } >({ type: null });
@@ -356,13 +389,87 @@ const Recipes: React.FC = () => {
 
     const handleSaveAsTemplate = (templateName: string) => {
         if (!selectedRecipe || !templateName.trim()) return;
-        const { id, name, costHistory, businessId, ...recipeData } = selectedRecipe;
+        const { id, name, costHistory, businessId, imageUrl, ...recipeData } = selectedRecipe;
         addRecipeTemplate({ name: templateName.trim(), recipeData });
     };
 
+    const handleIngredientChange = (ingIndex: number, field: keyof Ingredient, value: string) => {
+        if (!selectedRecipe) return;
+        const newIngredients = [...selectedRecipe.ingredients];
+        const isQuantity = field === 'quantity';
+        const updatedIngredient = {
+            ...newIngredients[ingIndex],
+            [field]: isQuantity ? parseFloat(value) || 0 : value,
+        };
+        newIngredients[ingIndex] = updatedIngredient;
+        const updatedRecipe = { ...selectedRecipe, ingredients: newIngredients };
+        setSelectedRecipe(updatedRecipe);
+        updateRecipe(updatedRecipe);
+    };
+
+    const handleAddIngredientToRecipe = () => {
+        if (!selectedRecipe || inventory.length === 0) return;
+        const newIngredient: Ingredient = { itemId: inventory[0].id, quantity: 1, unit: 'unit' };
+        const updatedRecipe = { ...selectedRecipe, ingredients: [...selectedRecipe.ingredients, newIngredient] };
+        setSelectedRecipe(updatedRecipe);
+        updateRecipe(updatedRecipe);
+    };
+
+    const handleRemoveIngredientFromRecipe = (ingIndex: number) => {
+        if (!selectedRecipe) return;
+        const updatedIngredients = selectedRecipe.ingredients.filter((_, index) => index !== ingIndex);
+        const updatedRecipe = { ...selectedRecipe, ingredients: updatedIngredients };
+        setSelectedRecipe(updatedRecipe);
+        updateRecipe(updatedRecipe);
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0 || !selectedRecipe) {
+            return;
+        }
+        const file = e.target.files[0];
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            alert("File is too large. Please select an image under 5MB.");
+            return;
+        }
+        if (!file.type.startsWith('image/')) {
+            alert("Please select a valid image file.");
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            await uploadRecipeImage(selectedRecipe.id, file);
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred during upload.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+    
+    const handleImageRemove = async () => {
+        if (!selectedRecipe || !selectedRecipe.imageUrl) return;
+        if (window.confirm("Are you sure you want to remove this image?")) {
+            setIsUploading(true); // Re-use for loading state
+            try {
+                await removeRecipeImage(selectedRecipe.id);
+                 // The recipe object in context will be updated, this will cause a re-render.
+                // We need to update the local selectedRecipe state too.
+                setSelectedRecipe(prev => prev ? { ...prev, imageUrl: undefined } : null);
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred while removing the image.");
+            } finally {
+                setIsUploading(false);
+            }
+        }
+    };
+
+
     const selectedRecipeCost = selectedRecipe ? calculateRecipeCost(selectedRecipe) : 0;
     const selectedCostPerServing = (selectedRecipe && selectedRecipe.servings > 0) ? selectedRecipeCost / selectedRecipe.servings : 0;
-    const suggestedSalePrice = selectedCostPerServing > 0 ? selectedCostPerServing / 0.70 : 0;
+    const suggestedSalePrice = selectedCostPerServing > 0 ? selectedCostPerServing / 0.30 : 0;
 
     return (
         <>
@@ -475,12 +582,42 @@ const Recipes: React.FC = () => {
                              </div>
                         </div>
 
+                        <div className="relative group w-full h-48 bg-gray-100 rounded-lg mb-4 flex items-center justify-center overflow-hidden border border-dashed border-gray-300">
+                            {isUploading ? (
+                                <div className="flex flex-col items-center text-primary">
+                                    <Loader2 size={32} className="animate-spin"/>
+                                    <p className="mt-2 text-sm">Processing...</p>
+                                </div>
+                            ) : selectedRecipe.imageUrl ? (
+                                <>
+                                    <img src={selectedRecipe.imageUrl} alt={selectedRecipe.name} className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-4">
+                                        <label htmlFor="image-upload" className="cursor-pointer text-white bg-white/20 p-3 rounded-full hover:bg-white/30" title="Change image">
+                                            <Edit size={20} />
+                                            <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                                        </label>
+                                        <button onClick={handleImageRemove} className="text-white bg-white/20 p-3 rounded-full hover:bg-white/30" title="Remove image">
+                                            <Trash2 size={20} />
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <label htmlFor="image-upload" className="cursor-pointer text-center text-text-secondary p-4 rounded-lg hover:bg-gray-200/50 transition-colors w-full h-full flex flex-col justify-center items-center">
+                                    <UploadCloud size={32} className="mx-auto text-gray-400" />
+                                    <span className="mt-2 block text-sm font-semibold text-primary">Upload an image</span>
+                                    <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                                    <input id="image-upload" type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleImageUpload} />
+                                </label>
+                            )}
+                        </div>
+
+
                         {suggestedSalePrice > 0 && (
                             <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg mb-6 flex items-center">
                                 <Lightbulb className="text-primary mr-4 flex-shrink-0" size={24} />
                                 <div>
                                     <p className="font-semibold text-primary">Suggested Sale Price: {formatCurrency(suggestedSalePrice)}</p>
-                                    <p className="text-sm text-text-secondary">This price is calculated to achieve a 30% profit margin based on your current ingredient costs.</p>
+                                    <p className="text-sm text-text-secondary">This suggestion is based on a 30% food cost target, a common industry benchmark for profitability.</p>
                                 </div>
                             </div>
                         )}
@@ -527,7 +664,12 @@ const Recipes: React.FC = () => {
                             )}
                         </div>
 
-                        <h3 className="text-lg font-semibold mt-6 mb-2">Ingredient Cost Breakdown</h3>
+                         <div className="flex justify-between items-center mt-6 mb-2">
+                             <h3 className="text-lg font-semibold">Ingredients</h3>
+                             <button onClick={handleAddIngredientToRecipe} className="flex items-center text-sm text-primary hover:text-indigo-700">
+                                <Plus size={16} className="mr-1" /> Add Ingredient
+                            </button>
+                        </div>
                          <div className="overflow-x-auto border border-black/10 rounded-lg">
                             <table className="w-full text-left">
                                 <thead className="text-sm border-b border-black/10">
@@ -535,46 +677,58 @@ const Recipes: React.FC = () => {
                                         <th className="p-3 font-semibold">Ingredient</th>
                                         <th className="p-3 font-semibold">Quantity</th>
                                         <th className="p-3 font-semibold">Unit</th>
-                                        <th className="p-3 font-semibold text-right">Total Cost</th>
+                                        <th className="p-3 font-semibold text-right">Cost</th>
+                                        <th className="p-3 font-semibold"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {selectedRecipe.ingredients.map((ing, index) => {
                                         const item = getInventoryItemById(ing.itemId);
-                                        if (!item) return <tr key={index}><td colSpan={4} className="p-3 text-red-500">Inventory item not found!</td></tr>;
-                                        const getConversionFactor = (fromUnit: Ingredient['unit'], toUnit: InventoryItem['unit']): number | null => {
-                                            if (fromUnit === toUnit) return 1;
-                                            const conversions: { [key: string]: { [key: string]: number } } = {
-                                                'kg': { 'g': 1000 }, 'g': { 'kg': 0.001 },
-                                                'L': { 'ml': 1000 }, 'ml': { 'L': 0.001 },
-                                                'dozen': { 'unit': 12 }, 'unit': { 'dozen': 1 / 12 },
-                                            };
-                                            return conversions[fromUnit]?.[toUnit] || null;
-                                        };
-                                        const costConversionFactor = getConversionFactor(ing.unit, item.unit) || 1;
-                                        const ingredientCost = item.unitCost * ing.quantity * costConversionFactor;
+                                        const costConversionFactor = item ? getConversionFactor(ing.unit, item.unit) || 1 : 1;
+                                        const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
                                        
                                         return (
-                                            <tr key={index} className="border-b border-black/5 last:border-b-0 hover:bg-white/20">
-                                                <td className="p-3 font-medium">{item.name}</td>
-                                                <td className="p-3">{ing.quantity}</td>
-                                                <td className="p-3">{ing.unit}</td>
-                                                <td className="p-3 text-right">
-                                                    <div className="flex flex-col items-end">
-                                                        <span className="font-medium text-text-primary">{formatCurrency(ingredientCost)}</span>
-                                                        <span className="text-xs text-text-secondary">
-                                                            {formatCurrency(item.unitCost)} / {item.unit}
-                                                        </span>
-                                                    </div>
+                                            <tr key={`${ing.itemId}-${index}`} className="border-b border-black/5 last:border-b-0 hover:bg-white/20">
+                                                <td className="p-2">
+                                                    <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="w-full border rounded-md p-2 bg-white text-sm">
+                                                        {inventory.map(invItem => <option key={invItem.id} value={invItem.id}>{invItem.name}</option>)}
+                                                    </select>
+                                                </td>
+                                                <td className="p-2">
+                                                     <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="w-20 border rounded-md p-2 text-sm" />
+                                                </td>
+                                                <td className="p-2">
+                                                    <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="w-full border rounded-md p-2 bg-white text-sm">
+                                                        {ITEM_UNITS.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                                                    </select>
+                                                </td>
+                                                <td className="p-2 text-right">
+                                                    {item ? (
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="font-medium text-text-primary text-sm">{formatCurrency(ingredientCost)}</span>
+                                                            <span className="text-xs text-text-secondary">
+                                                                {formatCurrency(item.unitCost)} / {item.unit}
+                                                            </span>
+                                                        </div>
+                                                    ) : <span className="text-red-500 text-xs">Item not found</span>}
+                                                </td>
+                                                <td className="p-2 text-center">
+                                                    <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-red-400 hover:text-red-600"><XCircle size={18} /></button>
                                                 </td>
                                             </tr>
                                         );
                                     })}
                                 </tbody>
-                                <tfoot className="font-bold border-t border-black/10">
+                                <tfoot className="font-semibold border-t-2 border-black/10 text-text-primary">
                                     <tr>
-                                        <td colSpan={3} className="p-3 text-right">Total Recipe Cost:</td>
-                                        <td className="p-3 text-right">{formatCurrency(selectedRecipeCost)}</td>
+                                        <td colSpan={3} className="p-3 text-right text-lg">Total Recipe Cost:</td>
+                                        <td className="p-3 text-right text-lg">{formatCurrency(selectedRecipeCost)}</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr className="bg-primary/5">
+                                        <td colSpan={3} className="p-3 text-right text-primary text-lg">Cost per Serving:</td>
+                                        <td className="p-3 text-right text-primary text-lg">{formatCurrency(selectedCostPerServing)}</td>
+                                        <td></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -601,7 +755,7 @@ const Recipes: React.FC = () => {
                                    <textarea 
                                         value={instruction}
                                         onChange={(e) => handleInstructionChange(index, e.target.value)}
-                                        rows={Math.max(1, instruction.length / 50)}
+                                        rows={Math.max(1, Math.ceil(instruction.length / 50))}
                                         className="flex-grow p-1 border border-transparent hover:border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-md transition-colors w-full text-text-secondary bg-transparent resize-none"
                                    />
                                    <button onClick={() => handleRemoveInstruction(index)} className="ml-2 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity mt-1">

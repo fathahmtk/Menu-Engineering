@@ -57,6 +57,7 @@ export const initialRecipes: Recipe[] = [
     category: 'Main Course',
     servings: 10,
     targetSalePricePerServing: 75,
+    imageUrl: 'https://pscoppugrlcyphpfowvu.supabase.co/storage/v1/object/public/recipe-images/placeholder/lamb-machboos.jpg',
     ingredients: [
       { itemId: 'inv1', quantity: 2.5, unit: 'kg' },
       { itemId: 'inv3', quantity: 2, unit: 'kg' },
@@ -73,6 +74,7 @@ export const initialRecipes: Recipe[] = [
     category: 'Main Course',
     servings: 8,
     targetSalePricePerServing: 45,
+    imageUrl: 'https://pscoppugrlcyphpfowvu.supabase.co/storage/v1/object/public/recipe-images/placeholder/shawarma-plate.jpg',
     ingredients: [
       { itemId: 'inv2', quantity: 2, unit: 'kg' },
       { itemId: 'inv4', quantity: 8, unit: 'unit' },

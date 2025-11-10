@@ -1,4 +1,5 @@
 
+
 import type { Dispatch, SetStateAction } from 'react';
 
 export interface Business {
@@ -44,6 +45,7 @@ export interface Recipe {
   targetSalePricePerServing?: number;
   costHistory?: { date: string; cost: number }[];
   businessId: string;
+  imageUrl?: string;
 }
 
 export interface MenuItem {
@@ -64,7 +66,7 @@ export interface RecipeCategory {
 export interface RecipeTemplate {
   id: string;
   name: string;
-  recipeData: Omit<Recipe, 'id' | 'businessId' | 'name' | 'costHistory'>;
+  recipeData: Omit<Recipe, 'id' | 'businessId' | 'name' | 'costHistory' | 'imageUrl'>;
   businessId: string;
 }
 
@@ -139,6 +141,8 @@ export interface DataContextType {
   deleteRecipe: (id: string) => { success: boolean; message?: string };
   recordRecipeCostHistory: (recipeId: string) => void;
   duplicateRecipe: (id: string, includeHistory: boolean) => Recipe | undefined;
+  uploadRecipeImage: (recipeId: string, file: File) => Promise<void>;
+  removeRecipeImage: (recipeId: string) => Promise<void>;
 
   addMenuItem: (item: Omit<MenuItem, 'id' | 'businessId'>) => void;
   updateMenuItem: (item: MenuItem) => void;
@@ -159,4 +163,5 @@ export interface DataContextType {
   getRecipeById: (id: string) => Recipe | undefined;
   getSupplierById: (id: string) => Supplier | undefined;
   calculateRecipeCost: (recipe: Recipe | null) => number;
+  getConversionFactor: (fromUnit: Ingredient['unit'], toUnit: InventoryItem['unit']) => number | null;
 }
