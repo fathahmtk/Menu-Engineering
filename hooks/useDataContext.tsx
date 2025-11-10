@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
-import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder } from '../types';
+import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem } from '../types';
 
 // A custom hook to persist state to localStorage
 function useStickyState<T>(defaultValue: T, key: string): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -33,6 +33,7 @@ interface DataContextType {
   categories: RecipeCategory[];
   recipeTemplates: RecipeTemplate[];
   purchaseOrders: PurchaseOrder[];
+  sales: Sale[];
   
   // CRUD Operations
   addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => void;
@@ -64,6 +65,8 @@ interface DataContextType {
 
   addPurchaseOrder: (po: Omit<PurchaseOrder, 'id' | 'businessId' | 'status' | 'orderDate' | 'totalCost'>) => void;
   updatePurchaseOrderStatus: (id: string, status: PurchaseOrder['status']) => void;
+  addSale: (items: { menuItemId: string; quantity: number }[]) => void;
+
 
   // Helper functions
   getInventoryItemById: (id: string) => InventoryItem | undefined;
@@ -84,6 +87,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [categories, setCategories] = useStickyState<RecipeCategory[]>([], 'fb_categories');
   const [recipeTemplates, setRecipeTemplates] = useStickyState<RecipeTemplate[]>([], 'fb_recipeTemplates');
   const [purchaseOrders, setPurchaseOrders] = useStickyState<PurchaseOrder[]>([], 'fb_purchaseOrders');
+  const [sales, setSales] = useStickyState<Sale[]>([], 'fb_sales');
   
   const [activeBusinessId, setActiveBusinessIdState] = useState<string | null>(null);
   const [isDataInitialized, setIsDataInitialized] = useState(false);
@@ -103,6 +107,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setCategories(mockData.initialCategories);
         setRecipeTemplates(mockData.initialRecipeTemplates);
         setPurchaseOrders(mockData.initialPurchaseOrders);
+        setSales(mockData.initialSales);
       }
       setIsDataInitialized(true);
     };
@@ -132,6 +137,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const activeCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
   const activeRecipeTemplates = useMemo(() => recipeTemplates.filter(rt => rt.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
   const activePurchaseOrders = useMemo(() => purchaseOrders.filter(po => po.businessId === activeBusinessId), [purchaseOrders, activeBusinessId]);
+  const activeSales = useMemo(() => sales.filter(s => s.businessId === activeBusinessId), [sales, activeBusinessId]);
 
   if (!isDataInitialized) {
     return (
@@ -411,6 +417,85 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     ));
   };
 
+  // Sales CRUD
+  const addSale = (items: { menuItemId: string; quantity: number }[]) => {
+    if (!activeBusinessId) return;
+
+    const saleItems: SaleItem[] = [];
+    let totalRevenue = 0;
+    let totalCost = 0;
+
+    const inventoryUpdates = new Map<string, number>();
+
+    for (const saleItem of items) {
+        const menuItem = menuItems.find(m => m.id === saleItem.menuItemId);
+        if (!menuItem) continue;
+
+        const recipe = recipes.find(r => r.id === menuItem.recipeId);
+        if (!recipe) continue;
+
+        const recipeCost = calculateRecipeCost(recipe);
+        const costPerServing = recipe.servings > 0 ? recipeCost / recipe.servings : 0;
+        
+        // Denormalize data for the sale record
+        saleItems.push({
+            menuItemId: saleItem.menuItemId,
+            quantity: saleItem.quantity,
+            salePrice: menuItem.salePrice,
+            cost: costPerServing,
+        });
+
+        totalRevenue += menuItem.salePrice * saleItem.quantity;
+        totalCost += costPerServing * saleItem.quantity;
+
+        // Tally up inventory deductions
+        for (const ingredient of recipe.ingredients) {
+            const currentQuantity = inventoryUpdates.get(ingredient.itemId) || 0;
+            // The total quantity of this ingredient needed for this line item in the sale
+            const quantityToDecrement = (ingredient.quantity / recipe.servings) * saleItem.quantity;
+            
+            // Handle unit conversions for inventory deduction
+            const inventoryItem = getInventoryItemById(ingredient.itemId);
+            if(inventoryItem) {
+                const conversionFactor = getConversionFactor(ingredient.unit, inventoryItem.unit) || 1;
+                inventoryUpdates.set(ingredient.itemId, currentQuantity + (quantityToDecrement * conversionFactor));
+            }
+        }
+    }
+
+    // Create the sale record
+    const newSale: Sale = {
+        id: `sale${Date.now()}`,
+        businessId: activeBusinessId,
+        items: saleItems,
+        saleDate: new Date().toISOString(),
+        totalRevenue,
+        totalCost,
+        totalProfit: totalRevenue - totalCost,
+    };
+    setSales(prev => [...prev, newSale]);
+    
+    // Update inventory
+    setInventory(prevInventory => {
+        return prevInventory.map(invItem => {
+            if (inventoryUpdates.has(invItem.id)) {
+                return { ...invItem, quantity: invItem.quantity - (inventoryUpdates.get(invItem.id) || 0) };
+            }
+            return invItem;
+        });
+    });
+
+    // Update menu item sales counts
+    setMenuItems(prevMenuItems => {
+        return prevMenuItems.map(menuItem => {
+            const saleItem = items.find(i => i.menuItemId === menuItem.id);
+            if (saleItem) {
+                return { ...menuItem, salesCount: menuItem.salesCount + saleItem.quantity };
+            }
+            return menuItem;
+        });
+    });
+  };
 
   const getRecipeById = (id: string) => recipes.find(recipe => recipe.id === id);
   const getSupplierById = (id: string) => suppliers.find(supplier => supplier.id === id);
@@ -428,6 +513,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       purchaseOrders: activePurchaseOrders,
       addPurchaseOrder,
       updatePurchaseOrderStatus,
+      sales: activeSales,
+      addSale,
       getInventoryItemById, getRecipeById, getSupplierById,
       calculateRecipeCost,
     }}>

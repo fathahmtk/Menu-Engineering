@@ -53,8 +53,8 @@ const Reports: React.FC = () => {
                             fill="#8884d8"
                             dataKey="value"
                             nameKey="name"
-                            // FIX: Handle cases where `percent` might be undefined.
-                            label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                            // FIX: Explicitly convert `percent` to a number to prevent type errors during arithmetic operations.
+                            label={({ name, percent }) => `${name} ${(Number(percent || 0) * 100).toFixed(0)}%`}
                         >
                             {pieData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

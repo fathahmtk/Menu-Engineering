@@ -15,10 +15,11 @@ const Recipes = lazy(() => import('./components/Recipes'));
 const Suppliers = lazy(() => import('./components/Suppliers'));
 const Purchasing = lazy(() => import('./components/Purchasing'));
 const Menu = lazy(() => import('./components/Menu'));
+const Sales = lazy(() => import('./components/Sales'));
 const Reports = lazy(() => import('./components/Reports'));
 
 
-type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'reports';
+type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'sales' | 'reports';
 
 const viewComponents: Record<View, React.LazyExoticComponent<React.FC<{}>>> = {
     dashboard: Dashboard,
@@ -27,6 +28,7 @@ const viewComponents: Record<View, React.LazyExoticComponent<React.FC<{}>>> = {
     suppliers: Suppliers,
     purchasing: Purchasing,
     menu: Menu,
+    sales: Sales,
     reports: Reports,
 };
 
@@ -37,6 +39,7 @@ const viewTitles: Record<View, string> = {
     suppliers: 'Supplier Directory',
     purchasing: 'Purchase Orders',
     menu: 'Menu Engineering',
+    sales: 'Sales & Transactions',
     reports: 'Analytics & Reports',
 };
 

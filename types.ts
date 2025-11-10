@@ -85,6 +85,24 @@ export interface PurchaseOrder {
   businessId: string;
 }
 
+export interface SaleItem {
+  menuItemId: string;
+  quantity: number;
+  // Denormalized for easier reporting
+  salePrice: number; // Price per unit at time of sale
+  cost: number; // Cost per unit at time of sale
+}
+
+export interface Sale {
+  id: string;
+  items: SaleItem[];
+  saleDate: string;
+  totalRevenue: number;
+  totalCost: number;
+  totalProfit: number;
+  businessId: string;
+}
+
 
 export interface DataContextType {
   // Business Management
@@ -101,6 +119,7 @@ export interface DataContextType {
   categories: RecipeCategory[];
   recipeTemplates: RecipeTemplate[];
   purchaseOrders: PurchaseOrder[];
+  sales: Sale[];
   
   // CRUD Operations
   addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => void;
@@ -133,6 +152,7 @@ export interface DataContextType {
 
   addPurchaseOrder: (po: Omit<PurchaseOrder, 'id' | 'businessId' | 'status' | 'orderDate' | 'totalCost'>) => void;
   updatePurchaseOrderStatus: (id: string, status: PurchaseOrder['status']) => void;
+  addSale: (items: { menuItemId: string; quantity: number }[]) => void;
 
   // Helper functions
   getInventoryItemById: (id: string) => InventoryItem | undefined;

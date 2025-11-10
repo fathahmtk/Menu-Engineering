@@ -1,5 +1,5 @@
 
-import { Business, Supplier, InventoryItem, Recipe, MenuItem, RecipeCategory, RecipeTemplate, PurchaseOrder } from '../types';
+import { Business, Supplier, InventoryItem, Recipe, MenuItem, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale } from '../types';
 
 export const initialBusinesses: Business[] = [
   { id: 'biz1', name: 'Main Restaurant' },
@@ -189,5 +189,45 @@ export const initialPurchaseOrders: PurchaseOrder[] = [
     orderDate: '2024-07-18',
     totalCost: 600,
     businessId: 'biz2',
+  },
+];
+
+export const initialSales: Sale[] = [
+  // Biz 1
+  {
+    id: 'sale1',
+    businessId: 'biz1',
+    saleDate: '2024-07-28T10:00:00Z',
+    items: [
+      { menuItemId: 'menu1', quantity: 2, salePrice: 75, cost: 21.22 },
+      { menuItemId: 'menu2', quantity: 1, salePrice: 45, cost: 8.23 },
+    ],
+    totalRevenue: 195,
+    totalCost: 50.67,
+    totalProfit: 144.33,
+  },
+  {
+    id: 'sale2',
+    businessId: 'biz1',
+    saleDate: '2024-07-29T12:30:00Z',
+    items: [
+      { menuItemId: 'menu2', quantity: 3, salePrice: 45, cost: 8.23 },
+    ],
+    totalRevenue: 135,
+    totalCost: 24.69,
+    totalProfit: 110.31,
+  },
+  // Biz 2
+  {
+    id: 'sale101',
+    businessId: 'biz2',
+    saleDate: '2024-07-28T09:15:00Z',
+    items: [
+      { menuItemId: 'menu101', quantity: 2, salePrice: 18, cost: 2.79 },
+      { menuItemId: 'menu102', quantity: 1, salePrice: 25, cost: 2.50 },
+    ],
+    totalRevenue: 61,
+    totalCost: 8.08,
+    totalProfit: 52.92,
   },
 ];
