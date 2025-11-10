@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -95,36 +96,36 @@ const Sales: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <Card>
                     <div className="flex items-center">
-                        <div className="p-3 bg-green-100 rounded-full"><TrendingUp className="text-secondary" /></div>
+                        <div className="p-3 bg-emerald-100 rounded-full"><TrendingUp className="text-emerald-600" /></div>
                         <div className="ml-4">
-                            <p className="text-sm text-text-secondary">Total Revenue</p>
+                            <p className="text-sm text-muted-foreground">Total Revenue</p>
                             <p className="text-2xl font-bold">{formatCurrency(salesMetrics.totalRevenue)}</p>
                         </div>
                     </div>
                 </Card>
                 <Card>
                     <div className="flex items-center">
-                        <div className="p-3 bg-indigo-100 rounded-full"><DollarSign className="text-primary" /></div>
+                        <div className="p-3 bg-primary/10 rounded-full"><DollarSign className="text-primary" /></div>
                         <div className="ml-4">
-                            <p className="text-sm text-text-secondary">Total Profit</p>
+                            <p className="text-sm text-muted-foreground">Total Profit</p>
                             <p className="text-2xl font-bold">{formatCurrency(salesMetrics.totalProfit)}</p>
                         </div>
                     </div>
                 </Card>
                 <Card>
                     <div className="flex items-center">
-                        <div className="p-3 bg-yellow-100 rounded-full"><Receipt className="text-yellow-500" /></div>
+                        <div className="p-3 bg-amber-100 rounded-full"><Receipt className="text-amber-600" /></div>
                         <div className="ml-4">
-                            <p className="text-sm text-text-secondary">Total Transactions</p>
+                            <p className="text-sm text-muted-foreground">Total Transactions</p>
                             <p className="text-2xl font-bold">{salesMetrics.totalSalesCount}</p>
                         </div>
                     </div>
                 </Card>
                  <Card>
                     <div className="flex items-center">
-                        <div className="p-3 bg-blue-100 rounded-full"><BarChart className="text-blue-500" /></div>
+                        <div className="p-3 bg-sky-100 rounded-full"><BarChart className="text-sky-600" /></div>
                         <div className="ml-4">
-                            <p className="text-sm text-text-secondary">Avg. Sale Value</p>
+                            <p className="text-sm text-muted-foreground">Avg. Sale Value</p>
                             <p className="text-2xl font-bold">{formatCurrency(salesMetrics.averageSaleValue)}</p>
                         </div>
                     </div>
@@ -140,7 +141,7 @@ const Sales: React.FC = () => {
                             <YAxis tickFormatter={(value) => formatCurrency(value)} />
                             <Tooltip formatter={(value: number) => formatCurrency(value)} />
                             <Legend />
-                            <Line type="monotone" dataKey="revenue" stroke="#8884d8" name="Revenue" />
+                            <Line type="monotone" dataKey="revenue" stroke="hsl(244, 76%, 58%)" name="Revenue" />
                             <Line type="monotone" dataKey="profit" stroke="#82ca9d" name="Profit" />
                         </LineChart>
                     </ResponsiveContainer>
@@ -148,7 +149,7 @@ const Sales: React.FC = () => {
                 <Card className="lg:col-span-2">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">Recent Transactions</h3>
-                         <button onClick={openModal} className="flex items-center bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors text-sm">
+                         <button onClick={openModal} className="flex items-center bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:bg-primary/90 transition-colors text-sm">
                             <PlusCircle size={16} className="mr-2" />
                             Record Sale
                         </button>
@@ -158,14 +159,14 @@ const Sales: React.FC = () => {
                             {sortedSales.slice(0, 10).map(sale => {
                                 const mainItem = menuItems.find(mi => mi.id === sale.items[0].menuItemId);
                                 return (
-                                    <li key={sale.id} className="flex justify-between items-center p-2 rounded-md hover:bg-gray-50/50">
+                                    <li key={sale.id} className="flex justify-between items-center p-2 rounded-md hover:bg-accent">
                                         <div>
-                                            <p className="font-medium">{mainItem?.name || 'Unknown Item'} {sale.items.length > 1 ? ` & ${sale.items.length - 1} more` : ''}</p>
-                                            <p className="text-xs text-text-secondary">{new Date(sale.saleDate).toLocaleString()}</p>
+                                            <p className="font-medium text-foreground">{mainItem?.name || 'Unknown Item'} {sale.items.length > 1 ? ` & ${sale.items.length - 1} more` : ''}</p>
+                                            <p className="text-xs text-muted-foreground">{new Date(sale.saleDate).toLocaleString()}</p>
                                         </div>
                                         <div className="text-right">
                                             <p className="font-semibold">{formatCurrency(sale.totalRevenue)}</p>
-                                            <p className="text-xs text-green-600">Profit: {formatCurrency(sale.totalProfit)}</p>
+                                            <p className="text-xs text-emerald-600">Profit: {formatCurrency(sale.totalProfit)}</p>
                                         </div>
                                     </li>
                                 )
@@ -182,7 +183,7 @@ const Sales: React.FC = () => {
                             <select
                                 value={item.menuItemId}
                                 onChange={e => handleItemChange(item.id, 'menuItemId', e.target.value)}
-                                className="w-full border rounded-md p-2 bg-white"
+                                className="w-full border rounded-md p-2 bg-background border-input focus:ring-1 focus:ring-ring"
                             >
                                 {menuItems.map(mi => <option key={mi.id} value={mi.id}>{mi.name}</option>)}
                             </select>
@@ -191,13 +192,13 @@ const Sales: React.FC = () => {
                                 value={item.quantity}
                                 min="1"
                                 onChange={e => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                                className="w-full border rounded-md p-2"
+                                className="w-full border rounded-md p-2 border-input focus:ring-1 focus:ring-ring"
                                 placeholder="Qty"
                             />
                             <button
                                 onClick={() => removeSaleItem(item.id)}
                                 disabled={saleItems.length <= 1}
-                                className="text-red-500 hover:text-red-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                                className="text-destructive/80 hover:text-destructive disabled:text-muted disabled:cursor-not-allowed"
                             >
                                 <Trash2 size={18} />
                             </button>
@@ -206,12 +207,12 @@ const Sales: React.FC = () => {
                     <button onClick={addSaleItem} className="text-sm text-primary flex items-center">
                         <PlusCircle size={16} className="mr-1" /> Add another item
                     </button>
-                    <div className="text-right font-bold text-lg pt-4 border-t">
+                    <div className="text-right font-bold text-lg pt-4 border-t border-border">
                         Total: {formatCurrency(modalSaleTotal)}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
-                        <button onClick={handleRecordSale} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-indigo-700">Record Sale</button>
+                        <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">Cancel</button>
+                        <button onClick={handleRecordSale} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">Record Sale</button>
                     </div>
                 </div>
             </Modal>

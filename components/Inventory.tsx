@@ -17,7 +17,6 @@ const Inventory: React.FC = () => {
     const { inventory, getSupplierById, suppliers, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems, ingredientUnits } = useData();
     const { formatCurrency, currency } = useCurrency();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    // FIX: Change type to Omit<InventoryItem, 'id' | 'businessId'> as businessId is handled by the context
     const [newItem, setNewItem] = useState<Omit<InventoryItem, 'id' | 'businessId'>>({
         name: '',
         category: 'Produce',
@@ -30,12 +29,10 @@ const Inventory: React.FC = () => {
     });
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-    // State for inline editing
     const [editingItemId, setEditingItemId] = useState<string | null>(null);
     const [editedCost, setEditedCost] = useState<number>(0);
     const [editedPrice, setEditedPrice] = useState<number>(0);
 
-    // State for bulk actions
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
     const [bulkActionType, setBulkActionType] = useState<'cost' | 'price' | 'supplier' | null>(null);
@@ -102,7 +99,6 @@ const Inventory: React.FC = () => {
         if (window.confirm('Are you sure you want to delete this item?')) deleteInventoryItem(itemId);
     };
 
-    // Bulk action handlers
     const handleSelect = (itemId: string) => {
         setSelectedItems(prev => {
             const newSelection = new Set(prev);
@@ -173,42 +169,42 @@ const Inventory: React.FC = () => {
         <>
             <Card>
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">Inventory List</h2>
+                    <h2 className="text-xl font-bold text-foreground">Inventory List</h2>
                     <button 
                         onClick={handleOpenModal}
-                        className="flex items-center bg-primary text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                        className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
                         <PlusCircle size={20} className="mr-2" />
                         Add Item
                     </button>
                 </div>
 
                 {selectedItems.size > 0 && (
-                    <div className="bg-primary/10 border border-primary/20 p-3 rounded-lg mb-4 flex items-center justify-between flex-wrap gap-2">
-                        <p className="text-primary font-semibold text-sm">{selectedItems.size} items selected</p>
+                    <div className="bg-muted border border-border p-3 rounded-lg mb-4 flex items-center justify-between flex-wrap gap-2">
+                        <p className="text-foreground font-semibold text-sm">{selectedItems.size} items selected</p>
                         <div className="flex items-center space-x-2">
-                            <button onClick={() => openBulkModal('cost')} className="text-sm flex items-center bg-white/50 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-white/80"><DollarSign size={14} className="mr-1.5" /> Update Cost</button>
-                            <button onClick={() => openBulkModal('price')} className="text-sm flex items-center bg-white/50 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-white/80"><DollarSign size={14} className="mr-1.5" /> Update Price</button>
-                            <button onClick={() => openBulkModal('supplier')} className="text-sm flex items-center bg-white/50 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-white/80"><Truck size={14} className="mr-1.5" /> Update Supplier</button>
-                            <button onClick={() => setIsConfirmDeleteOpen(true)} className="text-sm flex items-center bg-red-500 text-white px-3 py-1.5 rounded-md hover:bg-red-600"><Trash2 size={14} className="mr-1.5" /> Delete</button>
+                            <button onClick={() => openBulkModal('cost')} className="text-sm flex items-center bg-background border border-border px-3 py-1.5 rounded-md hover:bg-accent"><DollarSign size={14} className="mr-1.5" /> Update Cost</button>
+                            <button onClick={() => openBulkModal('price')} className="text-sm flex items-center bg-background border border-border px-3 py-1.5 rounded-md hover:bg-accent"><DollarSign size={14} className="mr-1.5" /> Update Price</button>
+                            <button onClick={() => openBulkModal('supplier')} className="text-sm flex items-center bg-background border border-border px-3 py-1.5 rounded-md hover:bg-accent"><Truck size={14} className="mr-1.5" /> Update Supplier</button>
+                            <button onClick={() => setIsConfirmDeleteOpen(true)} className="text-sm flex items-center bg-destructive text-destructive-foreground px-3 py-1.5 rounded-md hover:bg-destructive/90"><Trash2 size={14} className="mr-1.5" /> Delete</button>
                         </div>
                     </div>
                 )}
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="border-b border-black/10">
+                        <thead className="bg-muted">
                             <tr>
                                 <th className="p-4 w-4">
-                                    <input type="checkbox" onChange={handleSelectAll} checked={isAllSelected} aria-label="Select all items" />
+                                    <input type="checkbox" onChange={handleSelectAll} checked={isAllSelected} aria-label="Select all items" className="rounded border-gray-300 text-primary focus:ring-primary" />
                                 </th>
-                                <th className="p-4 font-semibold">Name</th>
-                                <th className="p-4 font-semibold">Category</th>
-                                <th className="p-4 font-semibold">Stock</th>
-                                <th className="p-4 font-semibold">Unit Cost</th>
-                                <th className="p-4 font-semibold">Unit Price</th>
-                                <th className="p-4 font-semibold">Supplier</th>
-                                <th className="p-4 font-semibold">Status</th>
-                                <th className="p-4 font-semibold">Actions</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Name</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Category</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Stock</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Unit Cost</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Unit Price</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Supplier</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Status</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -218,27 +214,27 @@ const Inventory: React.FC = () => {
                                 const isEditing = editingItemId === item.id;
 
                                 return (
-                                    <tr key={item.id} className={`border-b border-black/5 last:border-b-0 transition-colors hover:bg-white/20 ${selectedItems.has(item.id) ? 'bg-primary/10' : ''}`}>
+                                    <tr key={item.id} className={`border-b border-border last:border-b-0 transition-colors hover:bg-accent ${selectedItems.has(item.id) ? 'bg-primary/10' : ''}`}>
                                         <td className="p-4">
-                                            <input type="checkbox" onChange={() => handleSelect(item.id)} checked={selectedItems.has(item.id)} aria-label={`Select ${item.name}`} />
+                                            <input type="checkbox" onChange={() => handleSelect(item.id)} checked={selectedItems.has(item.id)} aria-label={`Select ${item.name}`} className="rounded border-gray-300 text-primary focus:ring-primary" />
                                         </td>
-                                        <td className="p-4 font-medium">{item.name}</td>
-                                        <td className="p-4 text-text-secondary">{item.category}</td>
-                                        <td className="p-4 text-text-secondary">{item.quantity} {item.unit}</td>
-                                        <td className="p-4 text-text-secondary">
+                                        <td className="p-4 font-medium text-foreground">{item.name}</td>
+                                        <td className="p-4 text-muted-foreground">{item.category}</td>
+                                        <td className="p-4 text-muted-foreground">{item.quantity} {item.unit}</td>
+                                        <td className="p-4 text-muted-foreground">
                                             {isEditing ? (
-                                                <input type="number" value={editedCost} onChange={(e) => setEditedCost(parseFloat(e.target.value) || 0)} className="w-24 px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" autoFocus step="0.01" min="0.01" />
+                                                <input type="number" value={editedCost} onChange={(e) => setEditedCost(parseFloat(e.target.value) || 0)} className="w-24 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm" autoFocus step="0.01" min="0.01" />
                                             ) : ( formatCurrency(item.unitCost) )}
                                         </td>
-                                        <td className="p-4 text-text-secondary">
+                                        <td className="p-4 text-muted-foreground">
                                             {isEditing ? (
-                                                <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(parseFloat(e.target.value) || 0)} className="w-24 px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" step="0.01" min="0.01" />
+                                                <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(parseFloat(e.target.value) || 0)} className="w-24 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm" step="0.01" min="0.01" />
                                             ) : ( formatCurrency(item.unitPrice) )}
                                         </td>
-                                        <td className="p-4 text-text-secondary">{supplier?.name || 'N/A'}</td>
+                                        <td className="p-4 text-muted-foreground">{supplier?.name || 'N/A'}</td>
                                         <td className="p-4">
                                             {isLowStock ? (
-                                                <span className="flex items-center text-red-600 bg-red-100 px-2 py-1 rounded-full text-xs font-semibold">
+                                                <span className="flex items-center text-destructive bg-destructive/10 px-2 py-1 rounded-full text-xs font-semibold">
                                                     <AlertTriangle size={14} className="mr-1" />Low Stock
                                                 </span>
                                             ) : (
@@ -250,12 +246,12 @@ const Inventory: React.FC = () => {
                                                 {isEditing ? (
                                                     <>
                                                         <button onClick={() => handleSave(item.id)} className="text-green-600 hover:text-green-800" aria-label="Save cost"><Save size={20} /></button>
-                                                        <button onClick={handleCancel} className="text-gray-600 hover:text-gray-800" aria-label="Cancel edit"><XCircle size={20} /></button>
+                                                        <button onClick={handleCancel} className="text-muted-foreground hover:text-foreground" aria-label="Cancel edit"><XCircle size={20} /></button>
                                                     </>
                                                 ) : (
-                                                    <button onClick={() => handleEdit(item)} className="text-primary hover:text-indigo-700" aria-label="Edit item cost"><Edit size={20} /></button>
+                                                    <button onClick={() => handleEdit(item)} className="text-primary hover:text-primary/80" aria-label="Edit item cost"><Edit size={20} /></button>
                                                 )}
-                                                <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-700" aria-label="Delete item"><Trash2 size={20} /></button>
+                                                <button onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive/80" aria-label="Delete item"><Trash2 size={20} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -268,37 +264,37 @@ const Inventory: React.FC = () => {
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Add New Inventory Item">
                 <div className="space-y-4">
                      <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">Item Name</label>
-                        <input type="text" name="name" id="name" value={newItem.name} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${errors.name ? 'border-red-500' : 'border-gray-300'}`} />
-                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                        <label htmlFor="name" className="block text-sm font-medium text-foreground">Item Name</label>
+                        <input type="text" name="name" id="name" value={newItem.name} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.name ? 'border-destructive' : 'border-input'}`} />
+                        {errors.name && <p className="text-destructive text-xs mt-1">{errors.name}</p>}
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <div>
-                            <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
-                            <select name="category" id="category" value={newItem.category} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                            <label htmlFor="category" className="block text-sm font-medium text-foreground">Category</label>
+                            <select name="category" id="category" value={newItem.category} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm">
                                 {ITEM_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                             </select>
                         </div>
                          <div>
-                            <label htmlFor="supplierId" className="block text-sm font-medium text-gray-700">Supplier</label>
-                            <select name="supplierId" id="supplierId" value={newItem.supplierId} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${errors.supplierId ? 'border-red-500' : 'border-gray-300'}`}>
+                            <label htmlFor="supplierId" className="block text-sm font-medium text-foreground">Supplier</label>
+                            <select name="supplierId" id="supplierId" value={newItem.supplierId} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.supplierId ? 'border-destructive' : 'border-input'}`}>
                                 <option value="" disabled>Select a supplier</option>
                                 {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
                             </select>
-                            {errors.supplierId && <p className="text-red-500 text-xs mt-1">{errors.supplierId}</p>}
+                            {errors.supplierId && <p className="text-destructive text-xs mt-1">{errors.supplierId}</p>}
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">Quantity</label>
-                            <input type="number" min="0" name="quantity" id="quantity" value={newItem.quantity} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${errors.quantity ? 'border-red-500' : 'border-gray-300'}`} />
-                            {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>}
+                            <label htmlFor="quantity" className="block text-sm font-medium text-foreground">Quantity</label>
+                            <input type="number" min="0" name="quantity" id="quantity" value={newItem.quantity} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.quantity ? 'border-destructive' : 'border-input'}`} />
+                            {errors.quantity && <p className="text-destructive text-xs mt-1">{errors.quantity}</p>}
                         </div>
                         <div>
-                            <label htmlFor="unit" className="block text-sm font-medium text-gray-700">Unit</label>
-                            <select name="unit" id="unit" value={newItem.unit} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                            <label htmlFor="unit" className="block text-sm font-medium text-foreground">Unit</label>
+                            <select name="unit" id="unit" value={newItem.unit} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm">
                                 {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                             </select>
                         </div>
@@ -306,27 +302,27 @@ const Inventory: React.FC = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="unitCost" className="block text-sm font-medium text-gray-700">Unit Cost ({currency})</label>
-                            <input type="number" min="0" step="0.01" name="unitCost" id="unitCost" value={newItem.unitCost} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${errors.unitCost ? 'border-red-500' : 'border-gray-300'}`} />
-                            {errors.unitCost && <p className="text-red-500 text-xs mt-1">{errors.unitCost}</p>}
+                            <label htmlFor="unitCost" className="block text-sm font-medium text-foreground">Unit Cost ({currency})</label>
+                            <input type="number" min="0" step="0.01" name="unitCost" id="unitCost" value={newItem.unitCost} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.unitCost ? 'border-destructive' : 'border-input'}`} />
+                            {errors.unitCost && <p className="text-destructive text-xs mt-1">{errors.unitCost}</p>}
                         </div>
                         <div>
-                            <label htmlFor="unitPrice" className="block text-sm font-medium text-gray-700">Unit Price ({currency})</label>
-                            <input type="number" min="0" step="0.01" name="unitPrice" id="unitPrice" value={newItem.unitPrice} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${errors.unitPrice ? 'border-red-500' : 'border-gray-300'}`} />
-                            {errors.unitPrice && <p className="text-red-500 text-xs mt-1">{errors.unitPrice}</p>}
+                            <label htmlFor="unitPrice" className="block text-sm font-medium text-foreground">Unit Price ({currency})</label>
+                            <input type="number" min="0" step="0.01" name="unitPrice" id="unitPrice" value={newItem.unitPrice} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.unitPrice ? 'border-destructive' : 'border-input'}`} />
+                            {errors.unitPrice && <p className="text-destructive text-xs mt-1">{errors.unitPrice}</p>}
                         </div>
                     </div>
                      <div className="grid grid-cols-1">
                         <div>
-                            <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-gray-700">Low Stock Threshold</label>
-                            <input type="number" min="0" name="lowStockThreshold" id="lowStockThreshold" value={newItem.lowStockThreshold} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${errors.lowStockThreshold ? 'border-red-500' : 'border-gray-300'}`} />
-                            {errors.lowStockThreshold && <p className="text-red-500 text-xs mt-1">{errors.lowStockThreshold}</p>}
+                            <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-foreground">Low Stock Threshold</label>
+                            <input type="number" min="0" name="lowStockThreshold" id="lowStockThreshold" value={newItem.lowStockThreshold} onChange={handleInputChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.lowStockThreshold ? 'border-destructive' : 'border-input'}`} />
+                            {errors.lowStockThreshold && <p className="text-destructive text-xs mt-1">{errors.lowStockThreshold}</p>}
                         </div>
                     </div>
 
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
-                        <button onClick={handleAddItem} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-indigo-700">Add Item</button>
+                        <button onClick={handleCloseModal} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">Cancel</button>
+                        <button onClick={handleAddItem} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">Add Item</button>
                     </div>
                 </div>
             </Modal>
@@ -334,28 +330,28 @@ const Inventory: React.FC = () => {
                 <div className="space-y-4">
                     {bulkActionType === 'cost' && (
                         <div>
-                            <label htmlFor="bulkCost" className="block text-sm font-medium text-gray-700">New Unit Cost ({currency})</label>
-                            <input type="number" id="bulkCost" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${bulkError ? 'border-red-500' : 'border-gray-300'}`} min="0" step="0.01" autoFocus />
+                            <label htmlFor="bulkCost" className="block text-sm font-medium text-foreground">New Unit Cost ({currency})</label>
+                            <input type="number" id="bulkCost" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${bulkError ? 'border-destructive' : 'border-input'}`} min="0" step="0.01" autoFocus />
                         </div>
                     )}
                     {bulkActionType === 'price' && (
                         <div>
-                            <label htmlFor="bulkPrice" className="block text-sm font-medium text-gray-700">New Unit Price ({currency})</label>
-                            <input type="number" id="bulkPrice" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${bulkError ? 'border-red-500' : 'border-gray-300'}`} min="0" step="0.01" autoFocus />
+                            <label htmlFor="bulkPrice" className="block text-sm font-medium text-foreground">New Unit Price ({currency})</label>
+                            <input type="number" id="bulkPrice" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${bulkError ? 'border-destructive' : 'border-input'}`} min="0" step="0.01" autoFocus />
                         </div>
                     )}
                     {bulkActionType === 'supplier' && (
                          <div>
-                            <label htmlFor="bulkSupplier" className="block text-sm font-medium text-gray-700">New Supplier</label>
-                            <select id="bulkSupplier" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`mt-1 block w-full px-3 py-2 border bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${bulkError ? 'border-red-500' : 'border-gray-300'}`}>
+                            <label htmlFor="bulkSupplier" className="block text-sm font-medium text-foreground">New Supplier</label>
+                            <select id="bulkSupplier" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`mt-1 block w-full px-3 py-2 border bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${bulkError ? 'border-destructive' : 'border-input'}`}>
                                 {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
                             </select>
                         </div>
                     )}
-                    {bulkError && <p className="text-red-500 text-xs mt-1">{bulkError}</p>}
+                    {bulkError && <p className="text-destructive text-xs mt-1">{bulkError}</p>}
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={closeBulkModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
-                        <button onClick={handleBulkUpdate} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-indigo-700">Update Items</button>
+                        <button onClick={closeBulkModal} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">Cancel</button>
+                        <button onClick={handleBulkUpdate} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">Update Items</button>
                     </div>
                 </div>
             </Modal>
@@ -374,14 +370,14 @@ const Inventory: React.FC = () => {
                         )}
                         {deletionResult.failedItems.length > 0 && (
                             <div>
-                                <p className="text-red-600">Could not delete {deletionResult.failedItems.length} items because they are used in recipes:</p>
-                                <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
+                                <p className="text-destructive">Could not delete {deletionResult.failedItems.length} items because they are used in recipes:</p>
+                                <ul className="list-disc list-inside text-sm text-muted-foreground mt-1">
                                     {deletionResult.failedItems.map(name => <li key={name}>{name}</li>)}
                                 </ul>
                             </div>
                         )}
                         <div className="flex justify-end mt-4">
-                            <button onClick={() => setDeletionResult(null)} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-indigo-700">
+                            <button onClick={() => setDeletionResult(null)} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
                                 OK
                             </button>
                         </div>

@@ -10,20 +10,20 @@ const CurrencySelector: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="text-sm text-gray-500">Loading...</div>;
+    return <div className="text-sm text-muted-foreground animate-pulse">...</div>;
   }
   
   if(Object.keys(supportedCurrencies).length <= 1) return null;
 
   return (
     <div className="flex items-center space-x-2">
-        <Globe size={20} className="text-text-secondary" />
+        <Globe size={20} className="text-muted-foreground" />
         <select
             id="currency"
             name="currency"
             value={currency}
             onChange={handleCurrencyChange}
-            className="block w-full pl-3 pr-8 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md bg-transparent"
+            className="block w-full pl-2 pr-8 py-1 text-base border-0 focus:outline-none focus:ring-0 sm:text-sm rounded-md bg-transparent text-muted-foreground"
             aria-label="Select currency"
         >
             {supportedCurrencies.map((code) => (

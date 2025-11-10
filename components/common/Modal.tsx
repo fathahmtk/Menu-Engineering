@@ -14,10 +14,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex justify-center items-center p-4 backdrop-blur-sm">
-      <div className="bg-white/80 backdrop-blur-2xl rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col border border-white/40">
-        <div className="flex justify-between items-center p-4 border-b border-black/10">
-          <h2 className="text-xl font-bold">{title}</h2>
-          <button onClick={onClose} className="text-text-secondary hover:text-text-primary">
+      <div className="bg-card rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col border border-border">
+        <div className="flex justify-between items-center p-4 border-b border-border">
+          <h2 className="text-xl font-bold text-foreground">{title}</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X size={24} />
           </button>
         </div>

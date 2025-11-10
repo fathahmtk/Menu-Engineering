@@ -39,51 +39,51 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="col-span-1">
                 <div className="flex items-center">
-                    <div className="p-3 bg-indigo-100 rounded-full">
+                    <div className="p-3 bg-primary/10 rounded-full">
                         <DollarSign className="text-primary" />
                     </div>
                     <div className="ml-4">
-                        <p className="text-sm text-text-secondary">Total Inventory Value</p>
-                        <p className="text-2xl font-bold">{formatCurrency(totalInventoryValue)}</p>
+                        <p className="text-sm text-muted-foreground">Total Inventory Value</p>
+                        <p className="text-2xl font-bold text-foreground">{formatCurrency(totalInventoryValue)}</p>
                     </div>
                 </div>
             </Card>
             <Card className="col-span-1">
                 <div className="flex items-center">
-                    <div className="p-3 bg-red-100 rounded-full">
-                        <AlertTriangle className="text-red-500" />
+                    <div className="p-3 bg-destructive/10 rounded-full">
+                        <AlertTriangle className="text-destructive" />
                     </div>
                     <div className="ml-4">
-                        <p className="text-sm text-text-secondary">Low Stock Items</p>
-                        <p className="text-2xl font-bold">{lowStockItems}</p>
+                        <p className="text-sm text-muted-foreground">Low Stock Items</p>
+                        <p className="text-2xl font-bold text-foreground">{lowStockItems}</p>
                     </div>
                 </div>
             </Card>
             <Card className="col-span-1">
                 <div className="flex items-center">
                     <div className="p-3 bg-green-100 rounded-full">
-                        <BookCheck className="text-secondary" />
+                        <BookCheck className="text-green-600" />
                     </div>
                     <div className="ml-4">
-                        <p className="text-sm text-text-secondary">Total Recipes</p>
-                        <p className="text-2xl font-bold">{recipes.length}</p>
+                        <p className="text-sm text-muted-foreground">Total Recipes</p>
+                        <p className="text-2xl font-bold text-foreground">{recipes.length}</p>
                     </div>
                 </div>
             </Card>
             <Card className="col-span-1">
                  <div className="flex items-center">
-                    <div className="p-3 bg-yellow-100 rounded-full">
-                        <PieChart className="text-yellow-500" />
+                    <div className="p-3 bg-amber-100 rounded-full">
+                        <PieChart className="text-amber-600" />
                     </div>
                     <div className="ml-4">
-                        <p className="text-sm text-text-secondary">Avg. Menu Profit</p>
-                        <p className="text-2xl font-bold">{formatCurrency(totalMenuProfitability / menuItems.length || 0)}</p>
+                        <p className="text-sm text-muted-foreground">Avg. Menu Profit</p>
+                        <p className="text-2xl font-bold text-foreground">{formatCurrency(totalMenuProfitability / menuItems.length || 0)}</p>
                     </div>
                 </div>
             </Card>
 
             <Card className="col-span-1 md:col-span-2 lg:col-span-4">
-                <h3 className="text-lg font-semibold mb-4">Top 5 Most Profitable Menu Items</h3>
+                <h3 className="text-lg font-semibold mb-4 text-foreground">Top 5 Most Profitable Menu Items</h3>
                 <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={menuProfitabilityData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                         <XAxis dataKey="name" tick={{ fontSize: 12 }} />

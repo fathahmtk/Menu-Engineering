@@ -10,17 +10,17 @@ type Classification = 'Star' | 'Plowhorse' | 'Puzzle' | 'Dog';
 
 const ClassificationBadge: React.FC<{ classification: Classification }> = ({ classification }) => {
     const config = {
-        Star: { icon: <Star size={14} />, color: 'green', label: 'Star' },
-        Plowhorse: { icon: <Grip size={14} />, color: 'blue', label: 'Plowhorse' },
-        Puzzle: { icon: <Puzzle size={14} />, color: 'orange', label: 'Puzzle' },
-        Dog: { icon: <ThumbsDown size={14} />, color: 'red', label: 'Dog' },
+        Star: { icon: <Star size={14} />, color: 'emerald', label: 'Star' },
+        Plowhorse: { icon: <Grip size={14} />, color: 'sky', label: 'Plowhorse' },
+        Puzzle: { icon: <Puzzle size={14} />, color: 'amber', label: 'Puzzle' },
+        Dog: { icon: <ThumbsDown size={14} />, color: 'rose', label: 'Dog' },
     };
     const { icon, color, label } = config[classification];
     const colors = {
-        green: 'bg-green-100 text-green-700',
-        blue: 'bg-blue-100 text-blue-700',
-        orange: 'bg-orange-100 text-orange-700',
-        red: 'bg-red-100 text-red-700',
+        emerald: 'bg-emerald-100 text-emerald-800',
+        sky: 'bg-sky-100 text-sky-800',
+        amber: 'bg-amber-100 text-amber-800',
+        rose: 'bg-rose-100 text-rose-800',
     }
 
     return (
@@ -37,9 +37,7 @@ const Menu: React.FC = () => {
     const { formatCurrency } = useCurrency();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    // FIX: Change type to MenuItem | null for clarity.
     const [currentItem, setCurrentItem] = useState<MenuItem | null>(null);
-    // FIX: Change type to Omit<MenuItem, 'id' | 'businessId'> as businessId is handled by the context.
     const [formData, setFormData] = useState<Omit<MenuItem, 'id' | 'businessId'>>({ name: '', recipeId: '', salePrice: 0, salesCount: 0 });
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -122,7 +120,6 @@ const Menu: React.FC = () => {
 
     const handleSubmit = () => {
         if (!validate()) return;
-        // FIX: Add businessId to the updated menu item object to match the MenuItem type.
         if (currentItem) {
             updateMenuItem({ ...formData, id: currentItem.id, businessId: currentItem.businessId });
         } else {
@@ -137,7 +134,6 @@ const Menu: React.FC = () => {
         }
     };
     
-    // Inline editing handlers
     const handleEditSales = (item: MenuItem) => {
         setEditingItemId(item.id);
         setEditedSales(item.salesCount);
@@ -165,23 +161,23 @@ const Menu: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Menu Engineering</h2>
-                    <button onClick={() => handleOpenModal()} className="flex items-center bg-primary text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                    <button onClick={() => handleOpenModal()} className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
                         <PlusCircle size={20} className="mr-2" />
                         Add Menu Item
                     </button>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="border-b border-black/10">
+                        <thead className="bg-muted">
                             <tr>
-                                <th className="p-4 font-semibold">Menu Item</th>
-                                <th className="p-4 font-semibold">Classification</th>
-                                <th className="p-4 font-semibold">Sales Count</th>
-                                <th className="p-4 font-semibold">Sale Price</th>
-                                <th className="p-4 font-semibold">Cost</th>
-                                <th className="p-4 font-semibold">Profit</th>
-                                <th className="p-4 font-semibold">Food Cost %</th>
-                                <th className="p-4 font-semibold">Actions</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Menu Item</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Classification</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Sales Count</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Sale Price</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Cost</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Profit</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Food Cost %</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -189,7 +185,7 @@ const Menu: React.FC = () => {
                                 const classification = getClassification(item.profit, item.salesCount);
                                 const isEditing = editingItemId === item.id;
                                 return (
-                                    <tr key={item.id} className="border-b border-black/5 last:border-b-0 hover:bg-white/20 group">
+                                    <tr key={item.id} className="border-b border-border last:border-b-0 hover:bg-accent group">
                                         <td className="p-4 font-medium">{item.name}</td>
                                         <td className="p-4"><ClassificationBadge classification={classification} /></td>
                                         <td className="p-4">
@@ -199,34 +195,34 @@ const Menu: React.FC = () => {
                                                         type="number"
                                                         value={editedSales}
                                                         onChange={(e) => setEditedSales(parseInt(e.target.value) || 0)}
-                                                        className="w-20 px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                                        className="w-20 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm"
                                                         autoFocus
                                                         min="0"
                                                     />
                                                     <button onClick={() => handleSaveSales(item.id)} className="text-green-600 hover:text-green-800"><Save size={18} /></button>
-                                                    <button onClick={handleCancelSalesEdit} className="text-gray-600 hover:text-gray-800"><XCircle size={18} /></button>
+                                                    <button onClick={handleCancelSalesEdit} className="text-muted-foreground hover:text-foreground"><XCircle size={18} /></button>
                                                 </div>
                                             ) : (
-                                                 <div className="flex items-center space-x-2">
+                                                 <div className="flex items-center space-x-2 text-muted-foreground">
                                                     <span>{item.salesCount}</span>
-                                                    <button onClick={() => handleEditSales(item)} className="text-primary hover:text-indigo-700 opacity-0 group-hover:opacity-100" aria-label="Edit sales count">
+                                                    <button onClick={() => handleEditSales(item)} className="text-primary hover:text-primary/80 opacity-0 group-hover:opacity-100" aria-label="Edit sales count">
                                                         <Edit size={16} />
                                                     </button>
                                                  </div>
                                             )}
                                         </td>
-                                        <td className="p-4 text-text-secondary font-semibold">{formatCurrency(item.salePrice)}</td>
-                                        <td className="p-4 text-text-secondary">{formatCurrency(item.costPerServing)}</td>
+                                        <td className="p-4 text-foreground font-semibold">{formatCurrency(item.salePrice)}</td>
+                                        <td className="p-4 text-muted-foreground">{formatCurrency(item.costPerServing)}</td>
                                         <td className="p-4">
-                                            <span className={`font-bold ${item.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            <span className={`font-bold ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                                 {formatCurrency(item.profit)}
                                             </span>
                                         </td>
-                                        <td className="p-4 text-text-secondary">{item.foodCostPercentage.toFixed(1)}%</td>
+                                        <td className="p-4 text-muted-foreground">{item.foodCostPercentage.toFixed(1)}%</td>
                                         <td className="p-4">
                                             <div className="flex items-center space-x-3">
-                                                <button onClick={() => handleOpenModal(item)} className="text-primary hover:text-indigo-700"><Edit size={20} /></button>
-                                                <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-700"><Trash2 size={20} /></button>
+                                                <button onClick={() => handleOpenModal(item)} className="text-primary hover:text-primary/80"><Edit size={20} /></button>
+                                                <button onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={20} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -240,33 +236,33 @@ const Menu: React.FC = () => {
              <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={currentItem ? 'Edit Menu Item' : 'Add New Menu Item'}>
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">Menu Item Name</label>
-                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm sm:text-sm ${errors.name ? 'border-red-500' : 'border-gray-300'}`} />
-                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                        <label htmlFor="name" className="block text-sm font-medium text-foreground">Menu Item Name</label>
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.name ? 'border-destructive' : 'border-input'}`} />
+                        {errors.name && <p className="text-destructive text-xs mt-1">{errors.name}</p>}
                     </div>
                      <div>
-                        <label htmlFor="recipeId" className="block text-sm font-medium text-gray-700">Recipe</label>
-                        <select name="recipeId" id="recipeId" value={formData.recipeId} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border bg-white rounded-md shadow-sm sm:text-sm ${errors.recipeId ? 'border-red-500' : 'border-gray-300'}`}>
+                        <label htmlFor="recipeId" className="block text-sm font-medium text-foreground">Recipe</label>
+                        <select name="recipeId" id="recipeId" value={formData.recipeId} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.recipeId ? 'border-destructive' : 'border-input'}`}>
                             <option value="" disabled>Select a recipe</option>
                             {recipes.map(rec => <option key={rec.id} value={rec.id}>{rec.name}</option>)}
                         </select>
-                        {errors.recipeId && <p className="text-red-500 text-xs mt-1">{errors.recipeId}</p>}
+                        {errors.recipeId && <p className="text-destructive text-xs mt-1">{errors.recipeId}</p>}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="salePrice" className="block text-sm font-medium text-gray-700">Sale Price</label>
-                            <input type="number" name="salePrice" id="salePrice" value={formData.salePrice} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm sm:text-sm ${errors.salePrice ? 'border-red-500' : 'border-gray-300'}`} min="0" step="0.01" />
-                            {errors.salePrice && <p className="text-red-500 text-xs mt-1">{errors.salePrice}</p>}
+                            <label htmlFor="salePrice" className="block text-sm font-medium text-foreground">Sale Price</label>
+                            <input type="number" name="salePrice" id="salePrice" value={formData.salePrice} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.salePrice ? 'border-destructive' : 'border-input'}`} min="0" step="0.01" />
+                            {errors.salePrice && <p className="text-destructive text-xs mt-1">{errors.salePrice}</p>}
                         </div>
                          <div>
-                            <label htmlFor="salesCount" className="block text-sm font-medium text-gray-700">Sales Count</label>
-                            <input type="number" name="salesCount" id="salesCount" value={formData.salesCount} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm sm:text-sm ${errors.salesCount ? 'border-red-500' : 'border-gray-300'}`} min="0" />
-                            {errors.salesCount && <p className="text-red-500 text-xs mt-1">{errors.salesCount}</p>}
+                            <label htmlFor="salesCount" className="block text-sm font-medium text-foreground">Sales Count</label>
+                            <input type="number" name="salesCount" id="salesCount" value={formData.salesCount} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.salesCount ? 'border-destructive' : 'border-input'}`} min="0" />
+                            {errors.salesCount && <p className="text-destructive text-xs mt-1">{errors.salesCount}</p>}
                         </div>
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
-                        <button onClick={handleSubmit} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-indigo-700">Save Item</button>
+                        <button onClick={handleCloseModal} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">Cancel</button>
+                        <button onClick={handleSubmit} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">Save Item</button>
                     </div>
                 </div>
             </Modal>
