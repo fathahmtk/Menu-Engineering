@@ -7,7 +7,7 @@ export interface Business {
 }
 
 export interface Supplier {
-  id: string;
+  id:string;
   name: string;
   contactPerson: string;
   phone: string;
@@ -124,7 +124,7 @@ export interface DataContextType {
   // CRUD Operations
   addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => void;
   updateSupplier: (supplier: Supplier) => void;
-  deleteSupplier: (id: string) => void;
+  deleteSupplier: (id: string) => { success: boolean; message?: string };
   
   // Fix: Use imported Dispatch and SetStateAction types.
   setInventory: Dispatch<SetStateAction<InventoryItem[]>>;

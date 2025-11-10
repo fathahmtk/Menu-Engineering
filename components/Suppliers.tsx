@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -65,7 +66,10 @@ const Suppliers: React.FC = () => {
 
     const handleDelete = (id: string) => {
         if (window.confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
-            deleteSupplier(id);
+            const result = deleteSupplier(id);
+            if (!result.success) {
+                alert(result.message);
+            }
         }
     };
 

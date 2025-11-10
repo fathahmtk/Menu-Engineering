@@ -38,7 +38,7 @@ interface DataContextType {
   // CRUD Operations
   addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => void;
   updateSupplier: (supplier: Supplier) => void;
-  deleteSupplier: (id: string) => void;
+  deleteSupplier: (id: string) => { success: boolean; message?: string };
   
   setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
   addInventoryItem: (item: Omit<InventoryItem, 'id' | 'businessId'>) => InventoryItem;
@@ -196,8 +196,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const updateSupplier = (updatedSupplier: Supplier) => {
     setSuppliers(prev => prev.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
   };
-  const deleteSupplier = (id: string) => {
+  const deleteSupplier = (id: string): { success: boolean; message?: string } => {
+    const isUsed = activeInventory.some(item => item.supplierId === id);
+    if (isUsed) {
+        return { success: false, message: 'Cannot delete supplier. It is currently assigned to one or more inventory items.' };
+    }
     setSuppliers(prev => prev.filter(s => s.id !== id));
+    return { success: true };
   };
   
   // Inventory CRUD
