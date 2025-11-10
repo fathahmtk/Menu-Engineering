@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
-import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate } from '../types';
-import { initialBusinesses, initialSuppliers, initialInventory, initialRecipes, initialMenuItems, initialCategories, initialRecipeTemplates } from './mockData';
+import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder } from '../types';
+import { initialBusinesses, initialSuppliers, initialInventory, initialRecipes, initialMenuItems, initialCategories, initialRecipeTemplates, initialPurchaseOrders } from './mockData';
 
 // A custom hook to persist state to localStorage
 function useStickyState<T>(defaultValue: T, key: string): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -33,6 +33,7 @@ interface DataContextType {
   menuItems: MenuItem[];
   categories: RecipeCategory[];
   recipeTemplates: RecipeTemplate[];
+  purchaseOrders: PurchaseOrder[];
   
   // CRUD Operations
   addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => void;
@@ -62,6 +63,8 @@ interface DataContextType {
 
   addRecipeTemplate: (template: Omit<RecipeTemplate, 'id' | 'businessId'>) => void;
 
+  addPurchaseOrder: (po: Omit<PurchaseOrder, 'id' | 'businessId' | 'status' | 'orderDate' | 'totalCost'>) => void;
+  updatePurchaseOrderStatus: (id: string, status: PurchaseOrder['status']) => void;
 
   // Helper functions
   getInventoryItemById: (id: string) => InventoryItem | undefined;
@@ -81,7 +84,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [menuItems, setMenuItems] = useStickyState<MenuItem[]>(initialMenuItems, 'fb_menuItems');
   const [categories, setCategories] = useStickyState<RecipeCategory[]>(initialCategories, 'fb_categories');
   const [recipeTemplates, setRecipeTemplates] = useStickyState<RecipeTemplate[]>(initialRecipeTemplates, 'fb_recipeTemplates');
-  
+  const [purchaseOrders, setPurchaseOrders] = useStickyState<PurchaseOrder[]>(initialPurchaseOrders, 'fb_purchaseOrders');
+
   const [activeBusinessId, setActiveBusinessIdState] = useState<string | null>(null);
 
   useEffect(() => {
@@ -116,6 +120,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const activeMenuItems = useMemo(() => menuItems.filter(m => m.businessId === activeBusinessId), [menuItems, activeBusinessId]);
   const activeCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
   const activeRecipeTemplates = useMemo(() => recipeTemplates.filter(rt => rt.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
+  const activePurchaseOrders = useMemo(() => purchaseOrders.filter(po => po.businessId === activeBusinessId), [purchaseOrders, activeBusinessId]);
 
   // Helper functions
   const getInventoryItemById = (id: string) => inventory.find(item => item.id === id);
@@ -330,6 +335,48 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setMenuItems(prev => prev.filter(m => m.id !== id));
   };
 
+  // Purchase Order CRUD
+  const addPurchaseOrder = (po: Omit<PurchaseOrder, 'id' | 'businessId' | 'status' | 'orderDate' | 'totalCost'>) => {
+    if (!activeBusinessId) return;
+    const totalCost = po.items.reduce((sum, item) => sum + item.cost * item.quantity, 0);
+    const newPO: PurchaseOrder = {
+      ...po,
+      id: `po${Date.now()}`,
+      businessId: activeBusinessId,
+      status: 'Pending',
+      orderDate: new Date().toISOString().split('T')[0],
+      totalCost,
+    };
+    setPurchaseOrders(prev => [...prev, newPO]);
+  };
+
+  const updatePurchaseOrderStatus = (id: string, status: PurchaseOrder['status']) => {
+    const order = purchaseOrders.find(po => po.id === id);
+    if (!order) return;
+
+    if (status === 'Completed' && order.status !== 'Completed') {
+      const inventoryMap = new Map(inventory.map(i => [i.id, { ...i }]));
+      order.items.forEach(orderItem => {
+        if (inventoryMap.has(orderItem.itemId)) {
+          const item = inventoryMap.get(orderItem.itemId)!;
+          item.quantity += orderItem.quantity;
+        }
+      });
+      setInventory(Array.from(inventoryMap.values()));
+    }
+
+    setPurchaseOrders(prev => prev.map(po => 
+      po.id === id 
+        ? { 
+            ...po, 
+            status,
+            completionDate: status === 'Completed' ? new Date().toISOString().split('T')[0] : po.completionDate
+          } 
+        : po
+    ));
+  };
+
+
   const getRecipeById = (id: string) => recipes.find(recipe => recipe.id === id);
   const getSupplierById = (id: string) => suppliers.find(supplier => supplier.id === id);
 
@@ -343,6 +390,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       menuItems: activeMenuItems, addMenuItem, updateMenuItem, deleteMenuItem,
       categories: activeCategories, addCategory, updateCategory, deleteCategory,
       recipeTemplates: activeRecipeTemplates, addRecipeTemplate,
+      purchaseOrders: activePurchaseOrders,
+      addPurchaseOrder,
+      updatePurchaseOrderStatus,
       getInventoryItemById, getRecipeById, getSupplierById,
       calculateRecipeCost,
     }}>

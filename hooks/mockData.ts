@@ -1,5 +1,5 @@
 
-import { Business, Supplier, InventoryItem, Recipe, MenuItem, RecipeCategory, RecipeTemplate } from '../types';
+import { Business, Supplier, InventoryItem, Recipe, MenuItem, RecipeCategory, RecipeTemplate, PurchaseOrder } from '../types';
 
 export const initialBusinesses: Business[] = [
   { id: 'biz1', name: 'Main Restaurant' },
@@ -136,5 +136,58 @@ export const initialRecipeTemplates: RecipeTemplate[] = [
       instructions: ['Combine all ingredients in a bowl.', 'Add protein and marinate for at least 30 minutes.'],
       targetSalePricePerServing: 0,
     },
+  },
+];
+
+export const initialPurchaseOrders: PurchaseOrder[] = [
+  // Biz 1: Main Restaurant
+  {
+    id: 'po1',
+    supplierId: 'sup1',
+    items: [
+      { itemId: 'inv1', quantity: 20, cost: 48 },
+      { itemId: 'inv2', quantity: 30, cost: 26 },
+    ],
+    status: 'Completed',
+    orderDate: '2024-07-10',
+    completionDate: '2024-07-12',
+    totalCost: 1740,
+    businessId: 'biz1',
+  },
+  {
+    id: 'po2',
+    supplierId: 'sup3',
+    items: [
+      { itemId: 'inv10', quantity: 50, cost: 6 },
+      { itemId: 'inv15', quantity: 100, cost: 4 },
+    ],
+    status: 'Pending',
+    orderDate: '2024-07-20',
+    totalCost: 700,
+    businessId: 'biz1',
+  },
+  // Biz 2: Corner Cafe
+  {
+    id: 'po101',
+    supplierId: 'sup5',
+    items: [
+      { itemId: 'inv101', quantity: 10, cost: 85 },
+    ],
+    status: 'Pending',
+    orderDate: '2024-07-22',
+    totalCost: 850,
+    businessId: 'biz2',
+  },
+    {
+    id: 'po102',
+    supplierId: 'sup6',
+    items: [
+      { itemId: 'inv102', quantity: 50, cost: 6 },
+      { itemId: 'inv103', quantity: 10, cost: 30 },
+    ],
+    status: 'Cancelled',
+    orderDate: '2024-07-18',
+    totalCost: 600,
+    businessId: 'biz2',
   },
 ];

@@ -7,6 +7,7 @@ import Recipes from './components/Recipes';
 import Suppliers from './components/Suppliers';
 import Menu from './components/Menu';
 import Reports from './components/Reports';
+import Purchasing from './components/Purchasing';
 import { DataProvider } from './hooks/useDataContext';
 import { CurrencyProvider } from './hooks/useCurrencyContext';
 import CurrencySelector from './components/CurrencySelector';
@@ -14,13 +15,14 @@ import BusinessSelector from './components/BusinessSelector';
 import { Menu as MenuIcon, ChefHat } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
 
-type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'menu' | 'reports';
+type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'reports';
 
 const viewComponents: Record<View, React.FC> = {
     dashboard: Dashboard,
     inventory: Inventory,
     recipes: Recipes,
     suppliers: Suppliers,
+    purchasing: Purchasing,
     menu: Menu,
     reports: Reports,
 };
@@ -30,6 +32,7 @@ const viewTitles: Record<View, string> = {
     inventory: 'Inventory Management',
     recipes: 'Recipe Costing',
     suppliers: 'Supplier Directory',
+    purchasing: 'Purchase Orders',
     menu: 'Menu Engineering',
     reports: 'Analytics & Reports',
 };

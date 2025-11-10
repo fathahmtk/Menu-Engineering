@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { LayoutDashboard, ShoppingCart, BookOpen, Truck, Utensils, BarChart2, ChefHat, X } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, BookOpen, Truck, Utensils, BarChart2, ChefHat, X, ClipboardList } from 'lucide-react';
 
-type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'menu' | 'reports';
+type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'reports';
 
 interface SidebarProps {
   currentView: View;
@@ -36,6 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
     { id: 'inventory', label: 'Inventory', icon: <ShoppingCart size={20} /> },
     { id: 'recipes', label: 'Recipes', icon: <BookOpen size={20} /> },
     { id: 'suppliers', label: 'Suppliers', icon: <Truck size={20} /> },
+    { id: 'purchasing', label: 'Purchasing', icon: <ClipboardList size={20} /> },
     { id: 'menu', label: 'Menu', icon: <Utensils size={20} /> },
     { id: 'reports', label: 'Reports', icon: <BarChart2 size={20} /> },
   ];

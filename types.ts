@@ -68,6 +68,24 @@ export interface RecipeTemplate {
   businessId: string;
 }
 
+export interface PurchaseOrderItem {
+  itemId: string;
+  quantity: number;
+  cost: number; // Cost per unit at time of purchase
+}
+
+export interface PurchaseOrder {
+  id: string;
+  supplierId: string;
+  items: PurchaseOrderItem[];
+  status: 'Pending' | 'Completed' | 'Cancelled';
+  orderDate: string;
+  completionDate?: string;
+  totalCost: number;
+  businessId: string;
+}
+
+
 export interface DataContextType {
   // Business Management
   businesses: Business[];
@@ -82,6 +100,7 @@ export interface DataContextType {
   menuItems: MenuItem[];
   categories: RecipeCategory[];
   recipeTemplates: RecipeTemplate[];
+  purchaseOrders: PurchaseOrder[];
   
   // CRUD Operations
   addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => void;
@@ -111,6 +130,9 @@ export interface DataContextType {
   deleteCategory: (id: string) => { success: boolean; message?: string };
 
   addRecipeTemplate: (template: Omit<RecipeTemplate, 'id' | 'businessId'>) => void;
+
+  addPurchaseOrder: (po: Omit<PurchaseOrder, 'id' | 'businessId' | 'status' | 'orderDate' | 'totalCost'>) => void;
+  updatePurchaseOrderStatus: (id: string, status: PurchaseOrder['status']) => void;
 
   // Helper functions
   getInventoryItemById: (id: string) => InventoryItem | undefined;
