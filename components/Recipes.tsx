@@ -4,11 +4,11 @@ import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Lightbulb, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2 } from 'lucide-react';
-import { Recipe, InventoryItem, Ingredient, RecipeCategory, RecipeTemplate } from '../types';
+import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Lightbulb, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight } from 'lucide-react';
+import { Recipe, Ingredient, RecipeCategory, RecipeTemplate, IngredientUnit } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
-const ITEM_UNITS: InventoryItem['unit'][] = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
+const DEFAULT_UNITS: string[] = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
 
 // Sub-components for Modals to keep main component cleaner
 const RecipeFormModal: React.FC<{
@@ -18,7 +18,7 @@ const RecipeFormModal: React.FC<{
     categories: RecipeCategory[];
     templates: RecipeTemplate[];
 }> = ({ isOpen, onClose, onSave, categories, templates }) => {
-    const { inventory, getInventoryItemById, getConversionFactor } = useData();
+    const { inventory, getInventoryItemById, getConversionFactor, ingredientUnits } = useData();
     const { formatCurrency } = useCurrency();
     const [name, setName] = useState('');
     const [category, setCategory] = useState('');
@@ -28,6 +28,10 @@ const RecipeFormModal: React.FC<{
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     
+    const allUnits = useMemo(() => {
+        return [...new Set([...DEFAULT_UNITS, ...ingredientUnits.map(u => u.name)])]
+    }, [ingredientUnits]);
+
     const recipeCost = useMemo(() => {
         return ingredients.reduce((total, ingredient) => {
             const item = getInventoryItemById(ingredient.itemId);
@@ -168,7 +172,7 @@ const RecipeFormModal: React.FC<{
                                </select>
                                <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="w-full border rounded-md p-2" />
                                <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="w-full border rounded-md p-2 bg-white">
-                                   {ITEM_UNITS.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                                   {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                                </select>
                                <button onClick={() => handleRemoveIngredient(index)} className="text-red-500 hover:text-red-700"><X size={18} /></button>
                            </div>
@@ -212,7 +216,7 @@ const CategoryManagerModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
 }> = ({ isOpen, onClose }) => {
-    const { categories, addCategory, updateCategory, deleteCategory, recipes } = useData();
+    const { categories, addCategory, updateCategory, deleteCategory } = useData();
     const [newCategoryName, setNewCategoryName] = useState('');
     const [editingCategory, setEditingCategory] = useState<{ id: string, name: string} | null>(null);
 
@@ -226,9 +230,6 @@ const CategoryManagerModal: React.FC<{
     const handleUpdate = () => {
         if (editingCategory && editingCategory.name.trim()) {
             updateCategory(editingCategory.id, editingCategory.name.trim());
-            const oldCategory = categories.find(c => c.id === editingCategory.id);
-            // This is a simplified update; a real app might need to update all recipes using this category.
-            // Our current data model uses string names, so this is mainly for the managed list.
             setEditingCategory(null);
         }
     };
@@ -287,8 +288,86 @@ const CategoryManagerModal: React.FC<{
     );
 }
 
+const UnitManagerModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+}> = ({ isOpen, onClose }) => {
+    const { ingredientUnits, addUnit, updateUnit, deleteUnit } = useData();
+    const [newUnitName, setNewUnitName] = useState('');
+    const [editingUnit, setEditingUnit] = useState<IngredientUnit | null>(null);
+
+    const handleAdd = () => {
+        if (newUnitName.trim()) {
+            addUnit(newUnitName.trim());
+            setNewUnitName('');
+        }
+    };
+
+    const handleUpdate = () => {
+        if (editingUnit && editingUnit.name.trim()) {
+            updateUnit(editingUnit.id, editingUnit.name.trim());
+            setEditingUnit(null);
+        }
+    };
+    
+    const handleDelete = (id: string) => {
+        const result = deleteUnit(id);
+        if(!result.success) {
+            alert(result.message);
+        }
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Manage Ingredient Units">
+            <div className="space-y-4">
+                <div>
+                    <h3 className="text-md font-semibold mb-2">Add New Unit</h3>
+                    <div className="flex space-x-2">
+                        <input
+                            type="text"
+                            value={newUnitName}
+                            onChange={(e) => setNewUnitName(e.target.value)}
+                            placeholder="e.g., pinch, bunch"
+                            className="flex-grow p-2 border rounded-md"
+                        />
+                        <button onClick={handleAdd} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400" disabled={!newUnitName.trim()}>Add</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 className="text-md font-semibold mb-2">Custom Units</h3>
+                    <ul className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-2 bg-gray-50/50">
+                        {ingredientUnits.map(unit => (
+                            <li key={unit.id} className="flex items-center justify-between p-2 hover:bg-gray-100 rounded">
+                                {editingUnit?.id === unit.id ? (
+                                    <input
+                                        type="text"
+                                        value={editingUnit.name}
+                                        onChange={(e) => setEditingUnit({ ...editingUnit, name: e.target.value })}
+                                        onBlur={handleUpdate}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
+                                        className="p-1 border rounded-md w-full"
+                                        autoFocus
+                                    />
+                                ) : (
+                                    <span>{unit.name}</span>
+                                )}
+                                <div className="space-x-2">
+                                     <button onClick={() => setEditingUnit(unit)} className="text-primary hover:text-indigo-700"><Edit3 size={16} /></button>
+                                     <button onClick={() => handleDelete(unit.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
+                                </div>
+                            </li>
+                        ))}
+                         {ingredientUnits.length === 0 && <li className="text-center text-gray-500 py-2">No custom units created yet.</li>}
+                    </ul>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
+
 const Recipes: React.FC = () => {
-    const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, uploadRecipeImage, removeRecipeImage } = useData();
+    const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage } = useData();
     const { formatCurrency } = useCurrency();
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [isNewRecipeModalOpen, setIsNewRecipeModalOpen] = useState(false);
@@ -299,11 +378,15 @@ const Recipes: React.FC = () => {
     const [isUploading, setIsUploading] = useState(false);
     
     // Modal states
-    const [modalState, setModalState] = useState<{ type: null | 'delete' | 'duplicate' | 'saveTemplate' | 'manageCategories' } >({ type: null });
+    const [modalState, setModalState] = useState<{ type: null | 'delete' | 'duplicate' | 'saveTemplate' | 'manageCategories' | 'manageUnits' } >({ type: null });
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const dragItem = React.useRef<any>(null);
     const dragOverItem = React.useRef<any>(null);
+    
+    const allUnits = useMemo(() => {
+        return [...new Set([...DEFAULT_UNITS, ...ingredientUnits.map(u => u.name)])]
+    }, [ingredientUnits]);
 
     const filteredRecipes = useMemo(() => {
         return recipes
@@ -475,6 +558,8 @@ const Recipes: React.FC = () => {
         <>
         <RecipeFormModal isOpen={isNewRecipeModalOpen} onClose={() => setIsNewRecipeModalOpen(false)} onSave={addRecipe} categories={categories} templates={recipeTemplates} />
         <CategoryManagerModal isOpen={modalState.type === 'manageCategories'} onClose={() => setModalState({ type: null })} />
+        <UnitManagerModal isOpen={modalState.type === 'manageUnits'} onClose={() => setModalState({ type: null })} />
+
 
         {selectedRecipe && <>
             <ConfirmationModal
@@ -547,6 +632,9 @@ const Recipes: React.FC = () => {
                         </select>
                         <button onClick={() => setModalState({ type: 'manageCategories' })} className="p-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50" title="Manage Categories">
                            <ListChecks size={20} className="text-gray-600"/>
+                        </button>
+                         <button onClick={() => setModalState({ type: 'manageUnits' })} className="p-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50" title="Manage Units">
+                           <Weight size={20} className="text-gray-600"/>
                         </button>
                     </div>
                 </div>
@@ -699,7 +787,7 @@ const Recipes: React.FC = () => {
                                                 </td>
                                                 <td className="p-2">
                                                     <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="w-full border rounded-md p-2 bg-white text-sm">
-                                                        {ITEM_UNITS.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                                                        {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                                                     </select>
                                                 </td>
                                                 <td className="p-2 text-right">

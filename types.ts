@@ -21,7 +21,7 @@ export interface InventoryItem {
   name:string;
   category: 'Produce' | 'Meat' | 'Dairy' | 'Pantry' | 'Bakery' | 'Beverages' | 'Seafood';
   quantity: number;
-  unit: 'kg' | 'g' | 'L' | 'ml' | 'unit' | 'dozen';
+  unit: string;
   unitCost: number;
   unitPrice: number;
   supplierId: string;
@@ -32,7 +32,7 @@ export interface InventoryItem {
 export interface Ingredient {
   itemId: string;
   quantity: number;
-  unit: 'kg' | 'g' | 'L' | 'ml' | 'unit' | 'dozen';
+  unit: string;
 }
 
 export interface Recipe {
@@ -58,6 +58,12 @@ export interface MenuItem {
 }
 
 export interface RecipeCategory {
+  id: string;
+  name: string;
+  businessId: string;
+}
+
+export interface IngredientUnit {
   id: string;
   name: string;
   businessId: string;
@@ -119,6 +125,7 @@ export interface DataContextType {
   recipes: Recipe[];
   menuItems: MenuItem[];
   categories: RecipeCategory[];
+  ingredientUnits: IngredientUnit[];
   recipeTemplates: RecipeTemplate[];
   purchaseOrders: PurchaseOrder[];
   sales: Sale[];
@@ -151,6 +158,10 @@ export interface DataContextType {
   addCategory: (name: string) => void;
   updateCategory: (id: string, name: string) => void;
   deleteCategory: (id: string) => { success: boolean; message?: string };
+
+  addUnit: (name: string) => void;
+  updateUnit: (id: string, name: string) => void;
+  deleteUnit: (id: string) => { success: boolean; message?: string };
 
   addRecipeTemplate: (template: Omit<RecipeTemplate, 'id' | 'businessId'>) => void;
 

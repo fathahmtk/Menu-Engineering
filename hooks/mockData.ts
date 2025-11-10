@@ -1,5 +1,6 @@
 
-import { Business, Supplier, InventoryItem, Recipe, MenuItem, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale } from '../types';
+
+import { Business, Supplier, InventoryItem, Recipe, MenuItem, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, IngredientUnit } from '../types';
 
 export const initialBusinesses: Business[] = [
   { id: 'biz1', name: 'Main Restaurant' },
@@ -35,7 +36,7 @@ export const initialInventory: InventoryItem[] = [
   { id: 'inv101', name: 'Espresso Beans', category: 'Pantry', quantity: 20, unit: 'kg', unitCost: 85, unitPrice: 100, supplierId: 'sup5', lowStockThreshold: 5, businessId: 'biz2' },
   { id: 'inv102', name: 'Full-Fat Milk', category: 'Dairy', quantity: 30, unit: 'L', unitCost: 6, unitPrice: 8, supplierId: 'sup6', lowStockThreshold: 10, businessId: 'biz2' },
   { id: 'inv103', name: 'Croissants', category: 'Bakery', quantity: 5, unit: 'dozen', unitCost: 30, unitPrice: 40, supplierId: 'sup6', lowStockThreshold: 2, businessId: 'biz2' },
-  { id: 'inv104', name: 'Avocado', category: 'Produce', quantity: 15, unit: 'kg', unitCost: 25, unitPrice: 30, supplierId: 'sup3', lowStockThreshold: 4, businessId: 'biz2' },
+  { id: 'inv104', name: 'Avocado', category: 'Produce', quantity: 15, unit: 'unit', unitCost: 4, unitPrice: 6, supplierId: 'sup3', lowStockThreshold: 10, businessId: 'biz2' },
   { id: 'inv105', name: 'Sourdough Bread', category: 'Bakery', quantity: 10, unit: 'unit', unitCost: 18, unitPrice: 25, supplierId: 'sup6', lowStockThreshold: 3, businessId: 'biz2' },
 ];
 
@@ -47,6 +48,13 @@ export const initialCategories: RecipeCategory[] = [
   { id: 'cat101', name: 'Beverages', businessId: 'biz2' },
   { id: 'cat102', name: 'Breakfast', businessId: 'biz2' },
   { id: 'cat103', name: 'Pastries', businessId: 'biz2' },
+];
+
+export const initialIngredientUnits: IngredientUnit[] = [
+  { id: 'unit1', name: 'pinch', businessId: 'biz1' },
+  { id: 'unit2', name: 'dash', businessId: 'biz1' },
+  { id: 'unit3', name: 'bunch', businessId: 'biz1' },
+  { id: 'unit101', name: 'shot', businessId: 'biz2' },
 ];
 
 export const initialRecipes: Recipe[] = [

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem } from '../types';
+import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem, IngredientUnit } from '../types';
 import { supabase } from '../services/supabaseClient';
 
 // A custom hook to persist state to localStorage
@@ -31,6 +31,7 @@ interface DataContextType {
   recipes: Recipe[];
   menuItems: MenuItem[];
   categories: RecipeCategory[];
+  ingredientUnits: IngredientUnit[];
   recipeTemplates: RecipeTemplate[];
   purchaseOrders: PurchaseOrder[];
   sales: Sale[];
@@ -63,6 +64,10 @@ interface DataContextType {
   updateCategory: (id: string, name: string) => void;
   deleteCategory: (id: string) => { success: boolean; message?: string };
 
+  addUnit: (name: string) => void;
+  updateUnit: (id: string, name: string) => void;
+  deleteUnit: (id: string) => { success: boolean; message?: string };
+
   addRecipeTemplate: (template: Omit<RecipeTemplate, 'id' | 'businessId'>) => void;
 
   addPurchaseOrder: (po: Omit<PurchaseOrder, 'id' | 'businessId' | 'status' | 'orderDate' | 'totalCost'>) => void;
@@ -88,6 +93,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [recipes, setRecipes] = useStickyState<Recipe[]>([], 'fb_recipes');
   const [menuItems, setMenuItems] = useStickyState<MenuItem[]>([], 'fb_menuItems');
   const [categories, setCategories] = useStickyState<RecipeCategory[]>([], 'fb_categories');
+  const [ingredientUnits, setIngredientUnits] = useStickyState<IngredientUnit[]>([], 'fb_ingredientUnits');
   const [recipeTemplates, setRecipeTemplates] = useStickyState<RecipeTemplate[]>([], 'fb_recipeTemplates');
   const [purchaseOrders, setPurchaseOrders] = useStickyState<PurchaseOrder[]>([], 'fb_purchaseOrders');
   const [sales, setSales] = useStickyState<Sale[]>([], 'fb_sales');
@@ -108,6 +114,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setRecipes(mockData.initialRecipes);
         setMenuItems(mockData.initialMenuItems);
         setCategories(mockData.initialCategories);
+        setIngredientUnits(mockData.initialIngredientUnits);
         setRecipeTemplates(mockData.initialRecipeTemplates);
         setPurchaseOrders(mockData.initialPurchaseOrders);
         setSales(mockData.initialSales);
@@ -151,13 +158,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const getInventoryItemById = useCallback((id: string) => inventory.find(item => item.id === id), [inventory]);
   
   const getConversionFactor = useCallback((fromUnit: Ingredient['unit'], toUnit: InventoryItem['unit']): number | null => {
-      if (fromUnit === toUnit) return 1;
+      if (fromUnit.toLowerCase() === toUnit.toLowerCase()) return 1;
       const conversions: { [key: string]: { [key: string]: number } } = {
           'kg': { 'g': 1000 }, 'g': { 'kg': 0.001 },
-          'L': { 'ml': 1000 }, 'ml': { 'L': 0.001 },
+          'l': { 'ml': 1000 }, 'ml': { 'l': 0.001 },
           'dozen': { 'unit': 12 }, 'unit': { 'dozen': 1 / 12 },
       };
-      return conversions[fromUnit]?.[toUnit] || null;
+      const from = fromUnit.toLowerCase();
+      const to = toUnit.toLowerCase();
+      return conversions[from]?.[to] || null;
   }, []);
 
   const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
@@ -276,6 +285,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCategories(prev => prev.filter(c => c.id !== id));
     return { success: true };
   }, [recipes, categories, activeBusinessId, setCategories]);
+
+  // Unit CRUD
+  const addUnit = useCallback((name: string) => {
+      if (!activeBusinessId) return;
+      if (ingredientUnits.some(u => u.name.toLowerCase() === name.toLowerCase() && u.businessId === activeBusinessId)) return;
+      const newUnit = { id: `unit${Date.now()}`, name, businessId: activeBusinessId };
+      setIngredientUnits(prev => [...prev, newUnit]);
+  }, [ingredientUnits, activeBusinessId, setIngredientUnits]);
+
+  const updateUnit = useCallback((id: string, name: string) => {
+      setIngredientUnits(prev => prev.map(u => (u.id === id ? { ...u, name } : u)));
+  }, [setIngredientUnits]);
+
+  const deleteUnit = useCallback((id: string) => {
+      const unitToDelete = ingredientUnits.find(u => u.id === id);
+      if (!unitToDelete) return { success: false, message: 'Unit not found.' };
+
+      const isUsedInRecipes = recipes.some(r =>
+          r.businessId === activeBusinessId && r.ingredients.some(i => i.unit.toLowerCase() === unitToDelete.name.toLowerCase())
+      );
+      const isUsedInInventory = inventory.some(i =>
+          i.businessId === activeBusinessId && i.unit.toLowerCase() === unitToDelete.name.toLowerCase()
+      );
+
+      if (isUsedInRecipes || isUsedInInventory) {
+          return { success: false, message: 'Cannot delete unit. It is currently used in recipes or inventory items.' };
+      }
+      setIngredientUnits(prev => prev.filter(u => u.id !== id));
+      return { success: true };
+  }, [recipes, inventory, ingredientUnits, activeBusinessId, setIngredientUnits]);
 
   // Recipe CRUD
   const addRecipe = useCallback((recipe: Omit<Recipe, 'id' | 'businessId'>) => {
@@ -568,6 +607,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const activeRecipes = useMemo(() => recipes.filter(r => r.businessId === activeBusinessId), [recipes, activeBusinessId]);
   const activeMenuItems = useMemo(() => menuItems.filter(m => m.businessId === activeBusinessId), [menuItems, activeBusinessId]);
   const activeCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
+  const activeIngredientUnits = useMemo(() => ingredientUnits.filter(u => u.businessId === activeBusinessId), [ingredientUnits, activeBusinessId]);
   const activeRecipeTemplates = useMemo(() => recipeTemplates.filter(rt => rt.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
   const activePurchaseOrders = useMemo(() => purchaseOrders.filter(po => po.businessId === activeBusinessId), [purchaseOrders, activeBusinessId]);
   const activeSales = useMemo(() => sales.filter(s => s.businessId === activeBusinessId), [sales, activeBusinessId]);
@@ -590,6 +630,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       recipes: activeRecipes, addRecipe, updateRecipe, deleteRecipe, recordRecipeCostHistory, duplicateRecipe, uploadRecipeImage, removeRecipeImage,
       menuItems: activeMenuItems, addMenuItem, updateMenuItem, deleteMenuItem,
       categories: activeCategories, addCategory, updateCategory, deleteCategory,
+      ingredientUnits: activeIngredientUnits, addUnit, updateUnit, deleteUnit,
       recipeTemplates: activeRecipeTemplates, addRecipeTemplate,
       purchaseOrders: activePurchaseOrders,
       addPurchaseOrder,

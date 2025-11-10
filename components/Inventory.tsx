@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
@@ -9,10 +10,11 @@ import { AlertTriangle, PlusCircle, Edit, Save, XCircle, Trash2, Edit2, DollarSi
 import { InventoryItem } from '../types';
 
 const ITEM_CATEGORIES: InventoryItem['category'][] = ['Produce', 'Meat', 'Dairy', 'Pantry', 'Bakery', 'Beverages', 'Seafood'];
-const ITEM_UNITS: InventoryItem['unit'][] = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
+const DEFAULT_UNITS = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
+
 
 const Inventory: React.FC = () => {
-    const { inventory, getSupplierById, suppliers, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems } = useData();
+    const { inventory, getSupplierById, suppliers, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems, ingredientUnits } = useData();
     const { formatCurrency, currency } = useCurrency();
     const [isModalOpen, setIsModalOpen] = useState(false);
     // FIX: Change type to Omit<InventoryItem, 'id' | 'businessId'> as businessId is handled by the context
@@ -42,6 +44,10 @@ const Inventory: React.FC = () => {
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
     const [deletionResult, setDeletionResult] = useState<{ deletedCount: number; failedItems: string[] } | null>(null);
 
+    const allUnits = useMemo(() => {
+        const customUnits = ingredientUnits.map(u => u.name);
+        return [...new Set([...DEFAULT_UNITS, ...customUnits])];
+    }, [ingredientUnits]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -293,7 +299,7 @@ const Inventory: React.FC = () => {
                         <div>
                             <label htmlFor="unit" className="block text-sm font-medium text-gray-700">Unit</label>
                             <select name="unit" id="unit" value={newItem.unit} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
-                                {ITEM_UNITS.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                                {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                             </select>
                         </div>
                     </div>
