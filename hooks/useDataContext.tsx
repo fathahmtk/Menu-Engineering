@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
 import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder } from '../types';
-import { initialBusinesses, initialSuppliers, initialInventory, initialRecipes, initialMenuItems, initialCategories, initialRecipeTemplates, initialPurchaseOrders } from './mockData';
 
 // A custom hook to persist state to localStorage
 function useStickyState<T>(defaultValue: T, key: string): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -76,19 +75,44 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Master data lists using localStorage persistence
-  const [businesses, setBusinesses] = useStickyState<Business[]>(initialBusinesses, 'fb_businesses');
-  const [suppliers, setSuppliers] = useStickyState<Supplier[]>(initialSuppliers, 'fb_suppliers');
-  const [inventory, setInventory] = useStickyState<InventoryItem[]>(initialInventory, 'fb_inventory');
-  const [recipes, setRecipes] = useStickyState<Recipe[]>(initialRecipes, 'fb_recipes');
-  const [menuItems, setMenuItems] = useStickyState<MenuItem[]>(initialMenuItems, 'fb_menuItems');
-  const [categories, setCategories] = useStickyState<RecipeCategory[]>(initialCategories, 'fb_categories');
-  const [recipeTemplates, setRecipeTemplates] = useStickyState<RecipeTemplate[]>(initialRecipeTemplates, 'fb_recipeTemplates');
-  const [purchaseOrders, setPurchaseOrders] = useStickyState<PurchaseOrder[]>(initialPurchaseOrders, 'fb_purchaseOrders');
-
+  // Master data lists using localStorage persistence, initialized empty
+  const [businesses, setBusinesses] = useStickyState<Business[]>([], 'fb_businesses');
+  const [suppliers, setSuppliers] = useStickyState<Supplier[]>([], 'fb_suppliers');
+  const [inventory, setInventory] = useStickyState<InventoryItem[]>([], 'fb_inventory');
+  const [recipes, setRecipes] = useStickyState<Recipe[]>([], 'fb_recipes');
+  const [menuItems, setMenuItems] = useStickyState<MenuItem[]>([], 'fb_menuItems');
+  const [categories, setCategories] = useStickyState<RecipeCategory[]>([], 'fb_categories');
+  const [recipeTemplates, setRecipeTemplates] = useStickyState<RecipeTemplate[]>([], 'fb_recipeTemplates');
+  const [purchaseOrders, setPurchaseOrders] = useStickyState<PurchaseOrder[]>([], 'fb_purchaseOrders');
+  
   const [activeBusinessId, setActiveBusinessIdState] = useState<string | null>(null);
+  const [isDataInitialized, setIsDataInitialized] = useState(false);
 
   useEffect(() => {
+    const initializeData = async () => {
+      // Check if data is already in localStorage. If not, it's the first load.
+      const isFirstLoad = !window.localStorage.getItem('fb_businesses');
+
+      if (isFirstLoad) {
+        const mockData = await import('./mockData');
+        setBusinesses(mockData.initialBusinesses);
+        setSuppliers(mockData.initialSuppliers);
+        setInventory(mockData.initialInventory);
+        setRecipes(mockData.initialRecipes);
+        setMenuItems(mockData.initialMenuItems);
+        setCategories(mockData.initialCategories);
+        setRecipeTemplates(mockData.initialRecipeTemplates);
+        setPurchaseOrders(mockData.initialPurchaseOrders);
+      }
+      setIsDataInitialized(true);
+    };
+
+    initializeData();
+  }, []); // Empty dependency array ensures this runs only once.
+
+  useEffect(() => {
+    if (!isDataInitialized) return; // Don't run until data is loaded
+    
     const savedBusinessId = localStorage.getItem('activeBusinessId');
     if (savedBusinessId && businesses.some(b => b.id === savedBusinessId)) {
       setActiveBusinessIdState(savedBusinessId);
@@ -97,7 +121,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } else {
       setActiveBusinessIdState(null);
     }
-  }, [businesses]);
+  }, [businesses, isDataInitialized]);
+
+  // Memoized filtered data based on active business
+  // Moved before early return to comply with Rules of Hooks
+  const activeSuppliers = useMemo(() => suppliers.filter(s => s.businessId === activeBusinessId), [suppliers, activeBusinessId]);
+  const activeInventory = useMemo(() => inventory.filter(i => i.businessId === activeBusinessId), [inventory, activeBusinessId]);
+  const activeRecipes = useMemo(() => recipes.filter(r => r.businessId === activeBusinessId), [recipes, activeBusinessId]);
+  const activeMenuItems = useMemo(() => menuItems.filter(m => m.businessId === activeBusinessId), [menuItems, activeBusinessId]);
+  const activeCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
+  const activeRecipeTemplates = useMemo(() => recipeTemplates.filter(rt => rt.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
+  const activePurchaseOrders = useMemo(() => purchaseOrders.filter(po => po.businessId === activeBusinessId), [purchaseOrders, activeBusinessId]);
+
+  if (!isDataInitialized) {
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-transparent">
+            <div className="text-center p-8">
+                <p className="text-lg font-semibold text-primary">Initializing Application Data...</p>
+            </div>
+        </div>
+    );
+  }
 
   const setActiveBusinessId = (id: string) => {
     localStorage.setItem('activeBusinessId', id);
@@ -112,15 +156,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setActiveBusinessId(newBusiness.id);
     }
   };
-
-  // Memoized filtered data based on active business
-  const activeSuppliers = useMemo(() => suppliers.filter(s => s.businessId === activeBusinessId), [suppliers, activeBusinessId]);
-  const activeInventory = useMemo(() => inventory.filter(i => i.businessId === activeBusinessId), [inventory, activeBusinessId]);
-  const activeRecipes = useMemo(() => recipes.filter(r => r.businessId === activeBusinessId), [recipes, activeBusinessId]);
-  const activeMenuItems = useMemo(() => menuItems.filter(m => m.businessId === activeBusinessId), [menuItems, activeBusinessId]);
-  const activeCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
-  const activeRecipeTemplates = useMemo(() => recipeTemplates.filter(rt => rt.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
-  const activePurchaseOrders = useMemo(() => purchaseOrders.filter(po => po.businessId === activeBusinessId), [purchaseOrders, activeBusinessId]);
 
   // Helper functions
   const getInventoryItemById = (id: string) => inventory.find(item => item.id === id);

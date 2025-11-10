@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Card from './common/Card';
 import { useData } from '../hooks/useDataContext';
@@ -6,7 +5,7 @@ import { useCurrency } from '../hooks/useCurrencyContext';
 import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 const Reports: React.FC = () => {
-    const { inventory, menuItems, getRecipeById, getInventoryItemById } = useData();
+    const { inventory, menuItems, getRecipeById, calculateRecipeCost } = useData();
     const { formatCurrency } = useCurrency();
 
     // Data for Inventory Cost by Category
@@ -25,18 +24,10 @@ const Reports: React.FC = () => {
     }));
 
     // Data for Menu Item Profitability
-    const calculateRecipeCost = (recipeId: string): number => {
-        const recipe = getRecipeById(recipeId);
-        if (!recipe) return 0;
-        return recipe.ingredients.reduce((total, ingredient) => {
-            const item = getInventoryItemById(ingredient.itemId);
-            return total + (item ? item.unitCost * ingredient.quantity : 0);
-        }, 0);
-    };
-
     const barData = menuItems.map(item => {
         const recipe = getRecipeById(item.recipeId);
-        const costPerServing = recipe ? calculateRecipeCost(item.recipeId) / recipe.servings : 0;
+        const totalCost = calculateRecipeCost(recipe);
+        const costPerServing = (recipe && recipe.servings > 0) ? totalCost / recipe.servings : 0;
         const profit = item.salePrice - costPerServing;
         return {
             name: item.name,
@@ -62,7 +53,8 @@ const Reports: React.FC = () => {
                             fill="#8884d8"
                             dataKey="value"
                             nameKey="name"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            // FIX: Handle cases where `percent` might be undefined.
+                            label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                         >
                             {pieData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
