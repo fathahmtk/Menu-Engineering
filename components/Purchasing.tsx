@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -12,9 +13,9 @@ import { PurchaseOrder, PurchaseOrderItem } from '../types';
 
 const StatusBadge: React.FC<{ status: PurchaseOrder['status'] }> = ({ status }) => {
     const config = {
-        Pending: 'bg-amber-400/10 text-amber-300',
-        Completed: 'bg-teal-400/10 text-teal-300',
-        Cancelled: 'bg-red-400/10 text-red-300',
+        Pending: 'bg-amber-500/10 text-amber-600',
+        Completed: 'bg-teal-500/10 text-teal-600',
+        Cancelled: 'bg-red-500/10 text-red-600',
     };
     return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${config[status]}`}>{status}</span>;
 };
@@ -137,7 +138,7 @@ const Purchasing: React.FC = () => {
                 </div>
                 <div className="overflow-x-auto md:overflow-visible">
                     <table className="w-full text-left responsive-table">
-                        <thead className="bg-black/20">
+                        <thead className="bg-[var(--color-secondary)]">
                             <tr>
                                 <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">PO #</th>
                                 <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Supplier</th>
@@ -155,9 +156,9 @@ const Purchasing: React.FC = () => {
                                 const isOverdue = order.status === 'Pending' && order.dueDate && new Date(order.dueDate) < today;
 
                                 return (
-                                <tr key={order.id} className={`border-b border-[var(--color-border)] last:border-b-0 hover:bg-white/5 ${isOverdue ? 'bg-[var(--color-destructive)]/5' : ''}`}>
+                                <tr key={order.id} className={`border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-secondary)] ${isOverdue ? 'bg-[var(--color-destructive)]/5' : ''}`}>
                                     <td data-label="PO #" className="p-4 font-medium text-[var(--color-primary)] whitespace-nowrap">#{order.id.slice(-6).toUpperCase()}</td>
-                                    <td data-label="Supplier" className="p-4 text-white whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
+                                    <td data-label="Supplier" className="p-4 text-[var(--color-text-primary)] whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
                                     <td data-label="Order Date" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
                                     <td data-label="Due Date" className={`p-4 text-[var(--color-text-muted)] whitespace-nowrap ${isOverdue ? 'font-bold text-[var(--color-destructive)]' : ''}`}>
                                         {order.dueDate ? new Date(order.dueDate).toLocaleDateString() : 'N/A'}
@@ -166,10 +167,10 @@ const Purchasing: React.FC = () => {
                                     <td data-label="Status" className="p-4"><StatusBadge status={order.status} /></td>
                                     <td data-label="Actions" className="p-4">
                                         <div className="flex items-center space-x-3">
-                                            <button onClick={() => handleViewDetails(order)} className="text-[var(--color-text-muted)] hover:text-white" title="View Details"><Eye size={20} /></button>
+                                            <button onClick={() => handleViewDetails(order)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" title="View Details"><Eye size={20} /></button>
                                             {order.status === 'Pending' && (
                                                 <>
-                                                    <button onClick={() => handleStatusChange(order.id, 'Completed')} className="text-green-400 hover:opacity-80" title="Mark as Completed"><CheckCircle size={20} /></button>
+                                                    <button onClick={() => handleStatusChange(order.id, 'Completed')} className="text-green-500 hover:opacity-80" title="Mark as Completed"><CheckCircle size={20} /></button>
                                                     <button onClick={() => handleStatusChange(order.id, 'Cancelled')} className="text-[var(--color-destructive)] hover:opacity-80" title="Cancel Order"><XCircle size={20} /></button>
                                                 </>
                                             )}
@@ -192,7 +193,7 @@ const Purchasing: React.FC = () => {
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-white/80">Supplier</label>
+                            <label className="block text-sm font-medium text-[var(--color-text-muted)]">Supplier</label>
                             <select
                                 value={newPoData.supplierId}
                                 onChange={(e) => setNewPoData({ ...newPoData, supplierId: e.target.value })}
@@ -202,7 +203,7 @@ const Purchasing: React.FC = () => {
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="dueDate" className="block text-sm font-medium text-white/80">Due Date</label>
+                            <label htmlFor="dueDate" className="block text-sm font-medium text-[var(--color-text-muted)]">Due Date</label>
                             <input
                                 type="date"
                                 id="dueDate"
@@ -214,7 +215,7 @@ const Purchasing: React.FC = () => {
                     </div>
 
                     <div>
-                        <h4 className="text-sm font-medium mb-2 text-white/80">Items</h4>
+                        <h4 className="text-sm font-medium mb-2 text-[var(--color-text-muted)]">Items</h4>
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                             {newPoData.items.map((item, index) => (
                                 <div key={index} className="flex flex-col sm:grid sm:grid-cols-[1fr,80px,100px,auto] gap-2 sm:items-center border border-transparent sm:border-0 rounded-md p-2 sm:p-0">

@@ -23,11 +23,11 @@ const CurrencySelector: React.FC = () => {
             name="currency"
             value={currency}
             onChange={handleCurrencyChange}
-            className="block w-full pl-2 pr-8 py-1 text-base border-0 focus:outline-none focus:ring-0 sm:text-sm rounded-md bg-transparent text-[var(--color-text-muted)] hover:text-white"
+            className="block w-full pl-2 pr-8 py-1 text-base border-0 focus:outline-none focus:ring-0 sm:text-sm rounded-md bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
             aria-label="Select currency"
         >
             {supportedCurrencies.map((code) => (
-                <option key={code} value={code} className="bg-[var(--color-card)] text-white">
+                <option key={code} value={code} className="bg-[var(--color-card)] text-[var(--color-text-primary)]">
                     {code}
                 </option>
             ))}

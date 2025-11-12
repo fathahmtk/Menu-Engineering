@@ -69,19 +69,19 @@ const OnboardingScreen: React.FC = () => {
     return (
         <div 
             className="relative flex items-center justify-center min-h-screen bg-cover bg-center p-4"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop')" }}
+            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1974&auto=format&fit=crop')" }}
         >
-            <div className="absolute inset-0 bg-black/50 z-0"></div>
-            <div className="text-center w-full max-w-lg mx-auto z-10 p-8 rounded-2xl shadow-2xl border border-white/20"
-                 style={{ background: 'rgba(17, 20, 24, 0.7)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
+            <div className="absolute inset-0 bg-white/50 z-0"></div>
+            <div className="text-center w-full max-w-lg mx-auto z-10 p-8 rounded-2xl shadow-2xl border border-black/10"
+                 style={{ background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
             >
                 <ChefHat className="text-[var(--color-primary)] mx-auto" size={48} />
-                <h1 className="text-4xl font-bold mt-4 text-white">Welcome to F&B Costing Pro</h1>
+                <h1 className="text-4xl font-bold mt-4 text-[var(--color-text-primary)]">Welcome to F&B Costing Pro</h1>
                 <p className="text-[var(--color-text-muted)] mt-4 mb-2 max-w-md mx-auto">
                     Take control of your kitchen's profitability. Our tools help you manage inventory, perfect recipe costs, and analyze sales with ease.
                 </p>
-                <div className="text-left bg-white/5 p-4 rounded-lg my-6 border border-white/10">
-                    <h2 className="font-semibold text-lg mb-2 text-white">Key Features:</h2>
+                <div className="text-left bg-black/5 p-4 rounded-lg my-6 border border-black/10">
+                    <h2 className="font-semibold text-lg mb-2 text-[var(--color-text-primary)]">Key Features:</h2>
                     <ul className="space-y-2 text-[var(--color-text-muted)]">
                         <li className="flex items-start"><CheckCircle className="text-[var(--color-primary)] w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Inventory Control:</b> Track stock levels and supplier costs in real-time.</span></li>
                         <li className="flex items-start"><CheckCircle className="text-[var(--color-primary)] w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Recipe Costing:</b> Calculate costs per serving and set profitable menu prices.</span></li>
@@ -107,7 +107,7 @@ const OnboardingScreen: React.FC = () => {
                         Create Business
                     </button>
                 </div>
-                <footer className="mt-8 text-center text-xs text-white/40">
+                <footer className="mt-8 text-center text-xs text-[var(--color-text-muted)]">
                     <p>Developed by <strong>Noor Digital Solution - Abdul Fathah</strong></p>
                     <p>
                         <a href="mailto:abdulfathahntk@gmail.com" className="hover:underline">abdulfathahntk@gmail.com</a> | 

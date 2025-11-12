@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
         return acc + (item.salePrice - costPerServing);
     }, 0);
 
-    const COLORS = ['#FFC107', '#4CAF50', '#2196F3', '#9C27B0', '#F44336'];
+    const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'];
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -92,7 +92,7 @@ const Dashboard: React.FC = () => {
                           formatter={(value: number) => formatCurrency(value)}
                           contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', color: 'var(--color-text-primary)' }}
                           labelStyle={{ color: 'var(--color-text-primary)' }}
-                          cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
+                          cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
                         />
                         <Legend wrapperStyle={{ color: 'var(--color-text-muted)' }} />
                         <Bar dataKey="profit" name="Profit" fill="var(--color-primary)">
@@ -100,7 +100,7 @@ const Dashboard: React.FC = () => {
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Bar>
-                         <Bar dataKey="revenue" name="Revenue" fill="var(--color-secondary)" />
+                         <Bar dataKey="revenue" name="Revenue" fill="var(--color-border)" />
                     </BarChart>
                 </ResponsiveContainer>
             </Card>

@@ -241,7 +241,7 @@ const Inventory: React.FC = () => {
         <>
             <Card>
                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-2 justify-between items-start sm:items-center mb-4">
-                    <h2 className="text-xl font-bold text-white">Inventory List</h2>
+                    <h2 className="text-xl font-bold">Inventory List</h2>
                     <div className="flex items-center space-x-2">
                         <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
                         <button 
@@ -254,8 +254,8 @@ const Inventory: React.FC = () => {
                 </div>
 
                 {selectedItems.size > 0 && (
-                    <div className="bg-black/20 border border-[var(--color-border)] p-3 rounded-lg mb-4 flex items-center justify-between flex-wrap gap-2">
-                        <p className="text-white font-semibold text-sm">{selectedItems.size} items selected</p>
+                    <div className="bg-[var(--color-secondary)] border border-[var(--color-border)] p-3 rounded-lg mb-4 flex items-center justify-between flex-wrap gap-2">
+                        <p className="font-semibold text-sm">{selectedItems.size} items selected</p>
                         <div className="flex items-center space-x-2 flex-wrap gap-2">
                             <button onClick={() => openBulkModal('cost')} className="text-sm flex items-center bg-[var(--color-card)] border border-[var(--color-border)] px-3 py-1.5 rounded-md hover:bg-[var(--color-border)]"><DollarSign size={14} className="mr-1.5" /> Update Cost</button>
                             <button onClick={() => openBulkModal('price')} className="text-sm flex items-center bg-[var(--color-card)] border border-[var(--color-border)] px-3 py-1.5 rounded-md hover:bg-[var(--color-border)]"><DollarSign size={14} className="mr-1.5" /> Update Price</button>
@@ -266,7 +266,7 @@ const Inventory: React.FC = () => {
                 )}
 
                 <table className="w-full text-left responsive-table">
-                    <thead className="bg-black/20">
+                    <thead className="bg-[var(--color-secondary)]">
                         <tr>
                             <th className="p-4 w-4">
                                 <input type="checkbox" onChange={handleSelectAll} checked={isAllSelected} aria-label="Select all items" className="rounded border-gray-500 text-[var(--color-primary)] focus:ring-[var(--color-primary)] bg-transparent" />
@@ -288,11 +288,11 @@ const Inventory: React.FC = () => {
                             const isEditing = editingItemId === item.id;
 
                             return (
-                                <tr key={item.id} className={`border-b border-[var(--color-border)] last:border-b-0 transition-colors hover:bg-white/5 ${selectedItems.has(item.id) ? 'bg-[var(--color-primary)]/10' : ''}`}>
+                                <tr key={item.id} className={`border-b border-[var(--color-border)] last:border-b-0 transition-colors hover:bg-[var(--color-secondary)] ${selectedItems.has(item.id) ? 'bg-[var(--color-primary)]/10' : ''}`}>
                                     <td className="p-4 checkbox-cell">
                                         <input type="checkbox" onChange={() => handleSelect(item.id)} checked={selectedItems.has(item.id)} aria-label={`Select ${item.name}`} className="rounded border-gray-500 text-[var(--color-primary)] focus:ring-[var(--color-primary)] bg-transparent" />
                                     </td>
-                                    <td data-label="Name" className="p-4 font-medium text-white whitespace-nowrap">{item.name}</td>
+                                    <td data-label="Name" className="p-4 font-medium text-[var(--color-text-primary)] whitespace-nowrap">{item.name}</td>
                                     <td data-label="Category" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.category}</td>
                                     <td data-label="Stock" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.quantity} {item.unit}</td>
                                     <td data-label="Unit Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">
@@ -312,7 +312,7 @@ const Inventory: React.FC = () => {
                                                 <AlertTriangle size={14} className="mr-1" />Low Stock
                                             </span>
                                         ) : (
-                                            <span className="text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full text-xs font-semibold">In Stock</span>
+                                            <span className="text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full text-xs font-semibold">In Stock</span>
                                         )}
                                     </td>
                                     <td data-label="Actions" className="p-4">
@@ -320,7 +320,7 @@ const Inventory: React.FC = () => {
                                             {isEditing ? (
                                                 <>
                                                     <button onClick={() => handleSave(item.id)} className="text-green-500 hover:text-green-400" aria-label="Save cost"><Save size={20} /></button>
-                                                    <button onClick={handleCancel} className="text-[var(--color-text-muted)] hover:text-white" aria-label="Cancel edit"><XCircle size={20} /></button>
+                                                    <button onClick={handleCancel} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" aria-label="Cancel edit"><XCircle size={20} /></button>
                                                 </>
                                             ) : (
                                                 <button onClick={() => handleEdit(item)} className="text-[var(--color-primary)] hover:opacity-80" aria-label="Edit item cost"><Edit size={20} /></button>
@@ -345,7 +345,7 @@ const Inventory: React.FC = () => {
                 renderPreview={(item: any, index: number) => (
                     <div key={index} className="p-2 text-sm flex justify-between">
                         <div>
-                            <p className="font-semibold">{item.name}</p>
+                            <p className="font-semibold text-[var(--color-text-primary)]">{item.name}</p>
                             <p className="text-[var(--color-text-muted)]">{item.quantity} {item.unit} from {item.supplierName}</p>
                         </div>
                         <div className="text-right">
@@ -358,20 +358,20 @@ const Inventory: React.FC = () => {
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Add New Inventory Item">
                 <div className="space-y-4">
                      <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-white/80">Item Name</label>
+                        <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text-muted)]">Item Name</label>
                         <input type="text" name="name" id="name" value={newItem.name} onChange={handleInputChange} className={`luxury-input mt-1 block w-full ${errors.name ? 'border-[var(--color-destructive)]' : ''}`} />
                         {errors.name && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.name}</p>}
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <div>
-                            <label htmlFor="category" className="block text-sm font-medium text-white/80">Category</label>
+                            <label htmlFor="category" className="block text-sm font-medium text-[var(--color-text-muted)]">Category</label>
                             <select name="category" id="category" value={newItem.category} onChange={handleInputChange} className="luxury-select mt-1 block w-full">
                                 {ITEM_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                             </select>
                         </div>
                          <div>
-                            <label htmlFor="supplierId" className="block text-sm font-medium text-white/80">Supplier</label>
+                            <label htmlFor="supplierId" className="block text-sm font-medium text-[var(--color-text-muted)]">Supplier</label>
                             <select name="supplierId" id="supplierId" value={newItem.supplierId} onChange={handleInputChange} className={`luxury-select mt-1 block w-full ${errors.supplierId ? 'border-[var(--color-destructive)]' : ''}`}>
                                 <option value="" disabled>Select a supplier</option>
                                 {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
@@ -382,12 +382,12 @@ const Inventory: React.FC = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="quantity" className="block text-sm font-medium text-white/80">Quantity</label>
+                            <label htmlFor="quantity" className="block text-sm font-medium text-[var(--color-text-muted)]">Quantity</label>
                             <input type="number" min="0" name="quantity" id="quantity" value={newItem.quantity} onChange={handleInputChange} className={`luxury-input mt-1 block w-full ${errors.quantity ? 'border-[var(--color-destructive)]' : ''}`} />
                             {errors.quantity && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.quantity}</p>}
                         </div>
                         <div>
-                            <label htmlFor="unit" className="block text-sm font-medium text-white/80">Unit</label>
+                            <label htmlFor="unit" className="block text-sm font-medium text-[var(--color-text-muted)]">Unit</label>
                             <select name="unit" id="unit" value={newItem.unit} onChange={handleInputChange} className="luxury-select mt-1 block w-full">
                                 {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                             </select>
@@ -396,19 +396,19 @@ const Inventory: React.FC = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="unitCost" className="block text-sm font-medium text-white/80">Unit Cost ({currency})</label>
+                            <label htmlFor="unitCost" className="block text-sm font-medium text-[var(--color-text-muted)]">Unit Cost ({currency})</label>
                             <input type="number" min="0" step="0.01" name="unitCost" id="unitCost" value={newItem.unitCost} onChange={handleInputChange} className={`luxury-input mt-1 block w-full ${errors.unitCost ? 'border-[var(--color-destructive)]' : ''}`} />
                             {errors.unitCost && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.unitCost}</p>}
                         </div>
                         <div>
-                            <label htmlFor="unitPrice" className="block text-sm font-medium text-white/80">Unit Price ({currency})</label>
+                            <label htmlFor="unitPrice" className="block text-sm font-medium text-[var(--color-text-muted)]">Unit Price ({currency})</label>
                             <input type="number" min="0" step="0.01" name="unitPrice" id="unitPrice" value={newItem.unitPrice} onChange={handleInputChange} className={`luxury-input mt-1 block w-full ${errors.unitPrice ? 'border-[var(--color-destructive)]' : ''}`} />
                             {errors.unitPrice && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.unitPrice}</p>}
                         </div>
                     </div>
                      <div className="grid grid-cols-1">
                         <div>
-                            <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-white/80">Low Stock Threshold</label>
+                            <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-[var(--color-text-muted)]">Low Stock Threshold</label>
                             <input type="number" min="0" name="lowStockThreshold" id="lowStockThreshold" value={newItem.lowStockThreshold} onChange={handleInputChange} className={`luxury-input mt-1 block w-full ${errors.lowStockThreshold ? 'border-[var(--color-destructive)]' : ''}`} />
                             {errors.lowStockThreshold && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.lowStockThreshold}</p>}
                         </div>
@@ -424,19 +424,19 @@ const Inventory: React.FC = () => {
                 <div className="space-y-4">
                     {bulkActionType === 'cost' && (
                         <div>
-                            <label htmlFor="bulkCost" className="block text-sm font-medium text-white/80">New Unit Cost ({currency})</label>
+                            <label htmlFor="bulkCost" className="block text-sm font-medium text-[var(--color-text-muted)]">New Unit Cost ({currency})</label>
                             <input type="number" id="bulkCost" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`luxury-input mt-1 block w-full ${bulkError ? 'border-[var(--color-destructive)]' : ''}`} min="0" step="0.01" autoFocus />
                         </div>
                     )}
                     {bulkActionType === 'price' && (
                         <div>
-                            <label htmlFor="bulkPrice" className="block text-sm font-medium text-white/80">New Unit Price ({currency})</label>
+                            <label htmlFor="bulkPrice" className="block text-sm font-medium text-[var(--color-text-muted)]">New Unit Price ({currency})</label>
                             <input type="number" id="bulkPrice" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`luxury-input mt-1 block w-full ${bulkError ? 'border-[var(--color-destructive)]' : ''}`} min="0" step="0.01" autoFocus />
                         </div>
                     )}
                     {bulkActionType === 'supplier' && (
                          <div>
-                            <label htmlFor="bulkSupplier" className="block text-sm font-medium text-white/80">New Supplier</label>
+                            <label htmlFor="bulkSupplier" className="block text-sm font-medium text-[var(--color-text-muted)]">New Supplier</label>
                             <select id="bulkSupplier" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`luxury-select mt-1 block w-full ${bulkError ? 'border-[var(--color-destructive)]' : ''}`}>
                                 {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
                             </select>

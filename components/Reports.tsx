@@ -36,7 +36,7 @@ const Reports: React.FC = () => {
     }).sort((a, b) => b.profit - a.profit);
     
 
-    const COLORS = ['#FFC107', '#4CAF50', '#2196F3', '#9C27B0', '#F44336', '#795548', '#00BCD4'];
+    const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#64748B', '#0EA5E9'];
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -79,7 +79,7 @@ const Reports: React.FC = () => {
                             formatter={(value: number) => formatCurrency(value)}
                             contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
                             labelStyle={{ color: 'var(--color-text-primary)' }}
-                            cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
+                            cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
                         />
                         <Legend wrapperStyle={{ color: 'var(--color-text-muted)' }} />
                         <Bar dataKey="profit" name="Profit per Serving">

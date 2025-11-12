@@ -17,10 +17,10 @@ const ClassificationBadge: React.FC<{ classification: Classification }> = ({ cla
     };
     const { icon, label } = config[classification];
     const colorClasses = {
-        Star: 'bg-teal-400/10 text-teal-300',
-        Plowhorse: 'bg-sky-400/10 text-sky-300',
-        Puzzle: 'bg-amber-400/10 text-amber-300',
-        Dog: 'bg-red-400/10 text-red-300',
+        Star: 'bg-teal-500/10 text-teal-600',
+        Plowhorse: 'bg-sky-500/10 text-sky-600',
+        Puzzle: 'bg-amber-500/10 text-amber-600',
+        Dog: 'bg-red-500/10 text-red-600',
     };
 
     return (
@@ -167,7 +167,7 @@ const Menu: React.FC = () => {
                     </button>
                 </div>
                 <table className="w-full text-left responsive-table">
-                    <thead className="bg-black/20">
+                    <thead className="bg-[var(--color-secondary)]">
                         <tr>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Menu Item</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Classification</th>
@@ -184,7 +184,7 @@ const Menu: React.FC = () => {
                             const classification = getClassification(item.profit, item.salesCount);
                             const isEditing = editingItemId === item.id;
                             return (
-                                <tr key={item.id} className="border-b border-[var(--color-border)] last:border-b-0 hover:bg-white/5 group">
+                                <tr key={item.id} className="border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-secondary)] group">
                                     <td data-label="Menu Item" className="p-4 font-medium whitespace-nowrap">{item.name}</td>
                                     <td data-label="Classification" className="p-4"><ClassificationBadge classification={classification} /></td>
                                     <td data-label="Sales Count" className="p-4">
@@ -198,8 +198,8 @@ const Menu: React.FC = () => {
                                                     autoFocus
                                                     min="0"
                                                 />
-                                                <button onClick={() => handleSaveSales(item.id)} className="text-green-500 hover:text-green-400"><Save size={18} /></button>
-                                                <button onClick={handleCancelSalesEdit} className="text-[var(--color-text-muted)] hover:text-white"><XCircle size={18} /></button>
+                                                <button onClick={() => handleSaveSales(item.id)} className="text-green-500 hover:text-green-600"><Save size={18} /></button>
+                                                <button onClick={handleCancelSalesEdit} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"><XCircle size={18} /></button>
                                             </div>
                                         ) : (
                                              <div className="flex items-center space-x-2 text-[var(--color-text-muted)]">
@@ -210,10 +210,10 @@ const Menu: React.FC = () => {
                                              </div>
                                         )}
                                     </td>
-                                    <td data-label="Sale Price" className="p-4 text-white font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
+                                    <td data-label="Sale Price" className="p-4 text-[var(--color-text-primary)] font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
                                     <td data-label="Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(item.costPerServing)}</td>
                                     <td data-label="Profit" className="p-4">
-                                        <span className={`font-bold ${item.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        <span className={`font-bold ${item.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                             {formatCurrency(item.profit)}
                                         </span>
                                     </td>
@@ -234,12 +234,12 @@ const Menu: React.FC = () => {
              <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={currentItem ? 'Edit Menu Item' : 'Add New Menu Item'}>
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-white/80">Menu Item Name</label>
+                        <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text-muted)]">Menu Item Name</label>
                         <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.name ? 'border-[var(--color-destructive)]' : ''}`} />
                         {errors.name && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.name}</p>}
                     </div>
                      <div>
-                        <label htmlFor="recipeId" className="block text-sm font-medium text-white/80">Recipe</label>
+                        <label htmlFor="recipeId" className="block text-sm font-medium text-[var(--color-text-muted)]">Recipe</label>
                         <select name="recipeId" id="recipeId" value={formData.recipeId} onChange={handleChange} className={`luxury-select mt-1 block w-full ${errors.recipeId ? 'border-[var(--color-destructive)]' : ''}`}>
                             <option value="" disabled>Select a recipe</option>
                             {recipes.map(rec => <option key={rec.id} value={rec.id}>{rec.name}</option>)}
@@ -248,12 +248,12 @@ const Menu: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="salePrice" className="block text-sm font-medium text-white/80">Sale Price</label>
+                            <label htmlFor="salePrice" className="block text-sm font-medium text-[var(--color-text-muted)]">Sale Price</label>
                             <input type="number" name="salePrice" id="salePrice" value={formData.salePrice} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.salePrice ? 'border-[var(--color-destructive)]' : ''}`} min="0" step="0.01" />
                             {errors.salePrice && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.salePrice}</p>}
                         </div>
                          <div>
-                            <label htmlFor="salesCount" className="block text-sm font-medium text-white/80">Sales Count</label>
+                            <label htmlFor="salesCount" className="block text-sm font-medium text-[var(--color-text-muted)]">Sales Count</label>
                             <input type="number" name="salesCount" id="salesCount" value={formData.salesCount} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.salesCount ? 'border-[var(--color-destructive)]' : ''}`} min="0" />
                             {errors.salesCount && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.salesCount}</p>}
                         </div>

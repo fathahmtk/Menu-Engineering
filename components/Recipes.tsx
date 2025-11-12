@@ -123,7 +123,7 @@ const RecipeFormModal: React.FC<{
         <Modal isOpen={isOpen} onClose={handleClose} title="Create New Recipe">
              <div className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-white/80">Use a Template (Optional)</label>
+                    <label className="block text-sm font-medium text-[var(--color-text-muted)]">Use a Template (Optional)</label>
                     <select
                         onChange={(e) => handleTemplateSelect(e.target.value)}
                         className="luxury-select mt-1 block w-full"
@@ -135,12 +135,12 @@ const RecipeFormModal: React.FC<{
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-white/80">Recipe Name</label>
+                        <label className="block text-sm font-medium text-[var(--color-text-muted)]">Recipe Name</label>
                         <input type="text" value={name} onChange={e => setName(e.target.value)} className={`luxury-input w-full mt-1 ${errors.name ? 'border-[var(--color-destructive)]' : ''}`} />
                         {errors.name && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.name}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-white/80">Category</label>
+                        <label className="block text-sm font-medium text-[var(--color-text-muted)]">Category</label>
                          <input
                             type="text"
                             value={category}
@@ -157,17 +157,17 @@ const RecipeFormModal: React.FC<{
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-white/80">Servings</label>
+                        <label className="block text-sm font-medium text-[var(--color-text-muted)]">Servings</label>
                         <input type="number" min="1" value={servings} onChange={e => setServings(parseInt(e.target.value) || 1)} className={`luxury-input w-full mt-1 ${errors.servings ? 'border-[var(--color-destructive)]' : ''}`} />
                         {errors.servings && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.servings}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-white/80">Target Sale Price/Serving</label>
+                        <label className="block text-sm font-medium text-[var(--color-text-muted)]">Target Sale Price/Serving</label>
                         <input type="number" min="0" step="0.01" value={targetSalePricePerServing} onChange={e => setTargetSalePrice(parseFloat(e.target.value) || 0)} className="luxury-input w-full mt-1" />
                     </div>
                 </div>
                 <div>
-                    <h4 className="text-sm font-medium mb-2 text-white/80">Ingredients</h4>
+                    <h4 className="text-sm font-medium mb-2 text-[var(--color-text-muted)]">Ingredients</h4>
                     {errors.ingredients && <p className="text-[var(--color-destructive)] text-xs mb-2">{errors.ingredients}</p>}
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                        {ingredients.map((ing, index) => (
@@ -186,14 +186,14 @@ const RecipeFormModal: React.FC<{
                     <button onClick={handleAddIngredient} className="text-sm text-[var(--color-primary)] mt-2 flex items-center"><PlusCircle size={16} className="mr-1"/> Add Ingredient</button>
                 </div>
 
-                <div className="bg-black/20 p-3 rounded-lg text-sm mt-4 border border-[var(--color-border)]">
+                <div className="bg-[var(--color-secondary)] p-3 rounded-lg text-sm mt-4 border border-[var(--color-border)]">
                     <div className="flex justify-between items-center">
                         <span className="text-[var(--color-text-muted)]">Calculated Total Cost:</span>
-                        <span className="font-semibold text-white">{formatCurrency(recipeCost)}</span>
+                        <span className="font-semibold">{formatCurrency(recipeCost)}</span>
                     </div>
                     <div className="flex justify-between items-center mt-1">
                         <span className="text-[var(--color-text-muted)]">Cost per Serving:</span>
-                        <span className="font-semibold text-white">{formatCurrency(costPerServing)}</span>
+                        <span className="font-semibold">{formatCurrency(costPerServing)}</span>
                     </div>
                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-[var(--color-border)]">
                          <div className="text-[var(--color-text-muted)]">
@@ -205,7 +205,7 @@ const RecipeFormModal: React.FC<{
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium mt-4 text-white/80">Instructions (one step per line)</label>
+                    <label className="block text-sm font-medium mt-4 text-[var(--color-text-muted)]">Instructions (one step per line)</label>
                     <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={5} className="luxury-input w-full mt-1"></textarea>
                 </div>
                 <div className="flex justify-end space-x-2 pt-4">
@@ -250,7 +250,7 @@ const CategoryManagerModal: React.FC<{
         <Modal isOpen={isOpen} onClose={onClose} title="Manage Recipe Categories">
             <div className="space-y-4">
                 <div>
-                    <h3 className="text-md font-semibold mb-2 text-white/80">Add New Category</h3>
+                    <h3 className="text-md font-semibold mb-2 text-[var(--color-text-muted)]">Add New Category</h3>
                     <div className="flex space-x-2">
                         <input
                             type="text"
@@ -263,10 +263,10 @@ const CategoryManagerModal: React.FC<{
                     </div>
                 </div>
                 <div>
-                    <h3 className="text-md font-semibold mb-2 text-white/80">Existing Categories</h3>
-                    <ul className="space-y-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-black/20">
+                    <h3 className="text-md font-semibold mb-2 text-[var(--color-text-muted)]">Existing Categories</h3>
+                    <ul className="space-y-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-secondary)]">
                         {categories.map(cat => (
-                            <li key={cat.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded">
+                            <li key={cat.id} className="flex items-center justify-between p-2 hover:bg-[var(--color-border)] rounded">
                                 {editingCategory?.id === cat.id ? (
                                     <input
                                         type="text"
@@ -278,7 +278,7 @@ const CategoryManagerModal: React.FC<{
                                         autoFocus
                                     />
                                 ) : (
-                                    <span className="text-white">{cat.name}</span>
+                                    <span>{cat.name}</span>
                                 )}
                                 <div className="space-x-2">
                                      <button onClick={() => setEditingCategory(cat)} className="text-[var(--color-primary)] hover:opacity-80"><Edit3 size={16} /></button>
@@ -326,7 +326,7 @@ const UnitManagerModal: React.FC<{
         <Modal isOpen={isOpen} onClose={onClose} title="Manage Ingredient Units">
             <div className="space-y-4">
                 <div>
-                    <h3 className="text-md font-semibold mb-2 text-white/80">Add New Unit</h3>
+                    <h3 className="text-md font-semibold mb-2 text-[var(--color-text-muted)]">Add New Unit</h3>
                     <div className="flex space-x-2">
                         <input
                             type="text"
@@ -339,10 +339,10 @@ const UnitManagerModal: React.FC<{
                     </div>
                 </div>
                 <div>
-                    <h3 className="text-md font-semibold mb-2 text-white/80">Custom Units</h3>
-                    <ul className="space-y-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-black/20">
+                    <h3 className="text-md font-semibold mb-2 text-[var(--color-text-muted)]">Custom Units</h3>
+                    <ul className="space-y-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-secondary)]">
                         {ingredientUnits.map(unit => (
-                            <li key={unit.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded">
+                            <li key={unit.id} className="flex items-center justify-between p-2 hover:bg-[var(--color-border)] rounded">
                                 {editingUnit?.id === unit.id ? (
                                     <input
                                         type="text"
@@ -354,7 +354,7 @@ const UnitManagerModal: React.FC<{
                                         autoFocus
                                     />
                                 ) : (
-                                    <span className="text-white">{unit.name}</span>
+                                    <span>{unit.name}</span>
                                 )}
                                 <div className="space-x-2">
                                      <button onClick={() => setEditingUnit(unit)} className="text-[var(--color-primary)] hover:opacity-80"><Edit3 size={16} /></button>
@@ -731,7 +731,7 @@ const Recipes: React.FC = () => {
                     handleSaveAsTemplate(templateName);
                     setModalState({ type: null });
                 }}>
-                    <label htmlFor="templateName" className="block text-sm font-medium text-white/80">Template Name</label>
+                    <label htmlFor="templateName" className="block text-sm font-medium text-[var(--color-text-muted)]">Template Name</label>
                     <input type="text" name="templateName" id="templateName" defaultValue={`${selectedRecipe.name} Base`} className="luxury-input mt-1 block w-full" required />
                     <div className="flex justify-end space-x-2 pt-4 mt-2">
                         <button type="button" onClick={() => setModalState({ type: null })} className="luxury-btn luxury-btn-secondary">Cancel</button>
@@ -776,10 +776,10 @@ const Recipes: React.FC = () => {
                                 <option value="all">All Categories</option>
                                 {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
                             </select>
-                            <button onClick={() => setModalState({ type: 'manageCategories' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-border)]" title="Manage Categories">
+                            <button onClick={() => setModalState({ type: 'manageCategories' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-secondary)]" title="Manage Categories">
                                <ListChecks size={20} className="text-[var(--color-text-muted)]"/>
                             </button>
-                             <button onClick={() => setModalState({ type: 'manageUnits' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-border)]" title="Manage Units">
+                             <button onClick={() => setModalState({ type: 'manageUnits' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-secondary)]" title="Manage Units">
                                <Weight size={20} className="text-[var(--color-text-muted)]"/>
                             </button>
                         </div>
@@ -788,10 +788,10 @@ const Recipes: React.FC = () => {
                         {filteredRecipes.map(recipe => (
                             <li
                                 key={recipe.id}
-                                className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedRecipe?.id === recipe.id ? 'bg-[var(--color-primary)]/10' : 'hover:bg-white/5'}`}
+                                className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedRecipe?.id === recipe.id ? 'bg-[var(--color-primary)]/10' : 'hover:bg-[var(--color-secondary)]'}`}
                                 onClick={() => { setSelectedRecipe(recipe); setIsHistoryVisible(false); }}
                             >
-                                <div className="font-semibold text-white">{recipe.name}</div>
+                                <div className="font-semibold">{recipe.name}</div>
                                 <div className="text-xs text-[var(--color-text-muted)] mt-1">Cost/Serving: {formatCurrency(calculateRecipeCost(recipe) / (recipe.servings || 1))}</div>
                             </li>
                         ))}
@@ -813,19 +813,19 @@ const Recipes: React.FC = () => {
                             <div className="flex justify-between items-start mb-4">
                                  <h2 className="text-2xl font-bold">{selectedRecipe.name}</h2>
                                  <div className="flex items-center space-x-2">
-                                    <button onClick={() => setModalState({ type: 'saveTemplate'})} className="p-2 rounded-full hover:bg-white/10" title="Save as Template">
+                                    <button onClick={() => setModalState({ type: 'saveTemplate'})} className="p-2 rounded-full hover:bg-[var(--color-secondary)]" title="Save as Template">
                                         <FileText size={20} className="text-[var(--color-primary)]" />
                                     </button>
-                                    <button onClick={() => setModalState({ type: 'duplicate'})} className="p-2 rounded-full hover:bg-white/10" title="Duplicate Recipe">
+                                    <button onClick={() => setModalState({ type: 'duplicate'})} className="p-2 rounded-full hover:bg-[var(--color-secondary)]" title="Duplicate Recipe">
                                         <Copy size={20} className="text-[var(--color-primary)]" />
                                     </button>
-                                    <button onClick={() => setModalState({ type: 'delete'})} className="p-2 rounded-full hover:bg-white/10" title="Delete Recipe">
+                                    <button onClick={() => setModalState({ type: 'delete'})} className="p-2 rounded-full hover:bg-[var(--color-secondary)]" title="Delete Recipe">
                                         <Trash2 size={20} className="text-[var(--color-destructive)]" />
                                     </button>
                                  </div>
                             </div>
 
-                            <div className="relative group w-full h-48 bg-black/20 rounded-lg mb-4 flex items-center justify-center overflow-hidden border border-dashed border-[var(--color-border)]">
+                            <div className="relative group w-full h-48 bg-[var(--color-secondary)] rounded-lg mb-4 flex items-center justify-center overflow-hidden border border-dashed border-[var(--color-border)]">
                                 {isUploading ? (
                                     <div className="flex flex-col items-center text-[var(--color-primary)]">
                                         <Loader2 size={32} className="animate-spin"/>
@@ -845,7 +845,7 @@ const Recipes: React.FC = () => {
                                         </div>
                                     </>
                                 ) : (
-                                    <label htmlFor="image-upload" className="cursor-pointer text-center text-[var(--color-text-muted)] p-4 rounded-lg hover:bg-white/5 transition-colors w-full h-full flex flex-col justify-center items-center">
+                                    <label htmlFor="image-upload" className="cursor-pointer text-center text-[var(--color-text-muted)] p-4 rounded-lg hover:bg-[var(--color-border)] transition-colors w-full h-full flex flex-col justify-center items-center">
                                         <UploadCloud size={32} className="mx-auto" />
                                         <span className="mt-2 block text-sm font-semibold text-[var(--color-primary)]">Upload an image</span>
                                         <p className="text-xs">PNG, JPG up to 5MB</p>
@@ -868,7 +868,7 @@ const Recipes: React.FC = () => {
                             <div className="mt-6">
                                 <button
                                     onClick={() => setIsHistoryVisible(!isHistoryVisible)}
-                                    className="flex items-center justify-between w-full p-3 bg-black/20 hover:bg-white/5 rounded-lg border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                                    className="flex items-center justify-between w-full p-3 bg-[var(--color-secondary)] hover:bg-[var(--color-border)] rounded-lg border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                                     aria-expanded={isHistoryVisible}
                                 >
                                     <div className="flex items-center">
@@ -915,7 +915,7 @@ const Recipes: React.FC = () => {
                                 </button>
                             </div>
                             <div className="border border-[var(--color-border)] rounded-lg">
-                                <div className="hidden md:grid md:grid-cols-[1fr,100px,120px,100px,40px] gap-x-2 px-3 py-2 text-sm bg-black/20 text-[var(--color-text-muted)] font-semibold">
+                                <div className="hidden md:grid md:grid-cols-[1fr,100px,120px,100px,40px] gap-x-2 px-3 py-2 text-sm bg-[var(--color-secondary)] text-[var(--color-text-muted)] font-semibold">
                                     <span>Ingredient</span>
                                     <span>Quantity</span>
                                     <span>Unit</span>
@@ -929,7 +929,7 @@ const Recipes: React.FC = () => {
                                         const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
                                         
                                         return (
-                                            <div key={`${ing.itemId}-${index}`} className="p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-white/5 space-y-2 md:space-y-0">
+                                            <div key={`${ing.itemId}-${index}`} className="p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-secondary)] space-y-2 md:space-y-0">
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Ingredient</label>
                                                     <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="luxury-select w-full text-sm">
@@ -950,7 +950,7 @@ const Recipes: React.FC = () => {
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Cost</label>
                                                     {item ? (
                                                         <div className="flex flex-col items-end">
-                                                            <span className="font-medium text-white text-sm">{formatCurrency(ingredientCost)}</span>
+                                                            <span className="font-medium text-sm">{formatCurrency(ingredientCost)}</span>
                                                             <span className="text-xs text-[var(--color-text-muted)]">
                                                                 {formatCurrency(item.unitCost)} / {item.unit}
                                                             </span>
@@ -964,7 +964,7 @@ const Recipes: React.FC = () => {
                                         );
                                     })}
                                 </div>
-                                <div className="font-semibold border-t-2 border-[var(--color-border)] text-white">
+                                <div className="font-semibold border-t-2 border-[var(--color-border)]">
                                     <div className="flex justify-between items-center p-3">
                                         <span className="text-right text-lg">Total Recipe Cost:</span>
                                         <span className="text-right text-lg">{formatCurrency(selectedRecipeCost)}</span>
@@ -1010,7 +1010,7 @@ const Recipes: React.FC = () => {
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full text-[var(--color-text-muted)] p-8 text-center">
                             <FileText size={48} className="mb-4 text-[var(--color-border)]" />
-                            <h3 className="text-lg font-semibold text-white">No Recipe Selected</h3>
+                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">No Recipe Selected</h3>
                             <p className="max-w-xs mt-1">Select a recipe from the list to view its details, or create a new one to get started.</p>
                              <button onClick={() => setIsNewRecipeModalOpen(true)} className="mt-4 luxury-btn luxury-btn-primary">
                                 <PlusCircle size={20} className="mr-2" />

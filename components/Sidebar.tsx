@@ -23,11 +23,11 @@ const NavItem: React.FC<{
     className={`flex items-center p-3 my-1 cursor-pointer rounded-lg transition-all duration-200 relative ${
       isActive
         ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-lg'
-        : 'text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)]'
+        : 'text-[var(--color-text-muted)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-primary)]'
     }`}
     onClick={onClick}
   >
-    {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-3/4 w-1 bg-white/50 rounded-r-full"></div>}
+    {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-3/4 w-1 bg-[var(--color-primary-foreground)] rounded-r-full"></div>}
     {icon}
     <span className="ml-4 font-medium">{label}</span>
   </li>
@@ -57,11 +57,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
   return (
     <>
       <div className={`fixed lg:static inset-0 bg-black bg-opacity-60 z-30 transition-opacity lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsOpen(false)}></div>
-      <aside className={`bg-[hsl(220,18%,6%)] w-64 min-h-screen p-4 flex flex-col fixed lg:static z-40 transform transition-transform duration-300 shadow-2xl ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 border-r border-[var(--color-border)]`}>
+      <aside className={`bg-[var(--color-card)] w-64 min-h-screen p-4 flex flex-col fixed lg:static z-40 transform transition-transform duration-300 shadow-2xl ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 border-r border-[var(--color-border)]`}>
         <div className="flex items-center justify-between mb-8">
             <div className="flex items-center">
                  <ChefHat className="text-[var(--color-primary)]" size={32} />
-                 <h1 className="text-2xl font-bold ml-2 text-white">F&B Pro</h1>
+                 <h1 className="text-2xl font-bold ml-2 text-[var(--color-text-primary)]">F&B Pro</h1>
             </div>
             <button onClick={() => setIsOpen(false)} className="lg:hidden text-[var(--color-text-muted)]">
                 <X size={24} />
@@ -84,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
         <div className="mt-auto">
              <button
                 onClick={signOut}
-                className="w-full flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)]"
+                className="w-full flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors text-[var(--color-text-muted)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-primary)]"
               >
                 <LogOut size={20} />
                 <span className="ml-4 font-medium">Logout</span>

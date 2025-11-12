@@ -37,12 +37,12 @@ const BusinessSelector: React.FC = () => {
                 <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
-                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition-colors"
+                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-black/5 transition-colors"
                     aria-haspopup="true"
                     aria-expanded={isDropdownOpen}
                 >
                     <Building size={20} className="text-[var(--color-primary)]" />
-                    <span className="font-semibold text-white hidden sm:inline">{activeBusiness.name}</span>
+                    <span className="font-semibold text-[var(--color-text-primary)] hidden sm:inline">{activeBusiness.name}</span>
                     <ChevronDown size={16} className="text-[var(--color-text-muted)]" />
                 </button>
                 {isDropdownOpen && (
@@ -55,7 +55,7 @@ const BusinessSelector: React.FC = () => {
                                     href="#"
                                     onClick={(e) => { e.preventDefault(); handleSelectBusiness(business.id); }}
                                     className={`block px-4 py-2 text-sm ${
-                                        activeBusinessId === business.id ? 'font-bold text-[var(--color-primary)] bg-white/5' : 'text-white hover:bg-white/5'
+                                        activeBusinessId === business.id ? 'font-bold text-[var(--color-primary)] bg-[var(--color-secondary)]' : 'text-[var(--color-text-primary)] hover:bg-[var(--color-secondary)]'
                                     }`}
                                 >
                                     {business.name}
@@ -65,7 +65,7 @@ const BusinessSelector: React.FC = () => {
                             <a
                                 href="#"
                                 onClick={(e) => { e.preventDefault(); setIsModalOpen(true); setIsDropdownOpen(false); }}
-                                className="block px-4 py-2 text-sm text-white hover:bg-white/5 flex items-center"
+                                className="block px-4 py-2 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-secondary)] flex items-center"
                             >
                                 <PlusCircle size={16} className="mr-2" />
                                 Manage Businesses
@@ -78,15 +78,15 @@ const BusinessSelector: React.FC = () => {
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Manage Businesses">
                 <div className="space-y-4">
                     <div>
-                        <h3 className="text-md font-semibold text-white/80 mb-2">Existing Businesses</h3>
-                        <ul className="space-y-2 max-h-40 overflow-y-auto pr-2 border border-[var(--color-border)] rounded-md p-2 bg-black/20">
+                        <h3 className="text-md font-semibold text-[var(--color-text-muted)] mb-2">Existing Businesses</h3>
+                        <ul className="space-y-2 max-h-40 overflow-y-auto pr-2 border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-secondary)]">
                             {businesses.map(business => (
-                                <li key={business.id} className="text-[var(--color-text-muted)] px-2 py-1">{business.name}</li>
+                                <li key={business.id} className="text-[var(--color-text-primary)] px-2 py-1">{business.name}</li>
                             ))}
                         </ul>
                     </div>
                     <div>
-                         <h3 className="text-md font-semibold text-white/80 mb-2">Add New Business</h3>
+                         <h3 className="text-md font-semibold text-[var(--color-text-muted)] mb-2">Add New Business</h3>
                          <div className="flex space-x-2">
                              <input
                                 type="text"
