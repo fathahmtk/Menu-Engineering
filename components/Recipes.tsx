@@ -681,6 +681,27 @@ const Recipes: React.FC = () => {
     const selectedCostPerServing = (selectedRecipe && selectedRecipe.servings > 0) ? selectedRecipeCost / selectedRecipe.servings : 0;
     const suggestedSalePrice = selectedCostPerServing > 0 ? selectedCostPerServing / 0.30 : 0;
 
+    const costAnalysisData = useMemo(() => {
+        if (!selectedRecipe || !selectedRecipeCost) return [];
+        
+        return selectedRecipe.ingredients
+            .map(ing => {
+                const item = getInventoryItemById(ing.itemId);
+                if (!item) return { name: 'Unknown Ingredient', cost: 0, percentage: 0 };
+                
+                const costConversionFactor = getConversionFactor(ing.unit, item.unit) || 1;
+                const ingredientCost = item.unitCost * ing.quantity * costConversionFactor;
+                const percentage = selectedRecipeCost > 0 ? (ingredientCost / selectedRecipeCost) * 100 : 0;
+                
+                return {
+                    name: item.name,
+                    cost: ingredientCost,
+                    percentage: percentage,
+                };
+            })
+            .sort((a, b) => b.cost - a.cost);
+    }, [selectedRecipe, getInventoryItemById, getConversionFactor, selectedRecipeCost]);
+
     return (
         <>
         <RecipeFormModal isOpen={isNewRecipeModalOpen} onClose={() => setIsNewRecipeModalOpen(false)} onSave={addRecipe} categories={categories} templates={recipeTemplates} />
@@ -927,9 +948,11 @@ const Recipes: React.FC = () => {
                                         const item = getInventoryItemById(ing.itemId);
                                         const costConversionFactor = item ? getConversionFactor(ing.unit, item.unit) || 1 : 1;
                                         const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
+                                        const costPercentage = selectedRecipeCost > 0 ? (ingredientCost / selectedRecipeCost) * 100 : 0;
+                                        const isHighCost = costPercentage >= 25;
                                         
                                         return (
-                                            <div key={`${ing.itemId}-${index}`} className="p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0">
+                                            <div key={`${ing.itemId}-${index}`} className={`p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0 transition-colors ${isHighCost ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''}`}>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Ingredient</label>
                                                     <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="can-select text-sm">
@@ -952,7 +975,7 @@ const Recipes: React.FC = () => {
                                                         <div className="flex flex-col items-end">
                                                             <span className="font-medium text-sm">{formatCurrency(ingredientCost)}</span>
                                                             <span className="text-xs text-[var(--color-text-muted)]">
-                                                                {formatCurrency(item.unitCost)} / {item.unit}
+                                                                ({costPercentage.toFixed(1)}% of total)
                                                             </span>
                                                         </div>
                                                     ) : <span className="text-[var(--color-danger)] text-xs">Item not found</span>}
@@ -975,6 +998,29 @@ const Recipes: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div className="mt-6">
+                                <h3 className="text-lg font-semibold">Cost Contribution Analysis</h3>
+                                <p className="text-sm text-[var(--color-text-muted)] mb-3">Breakdown of ingredients sorted by their impact on the total recipe cost.</p>
+                                <div className="space-y-3 border border-[var(--color-border)] rounded-lg p-4 bg-[var(--color-background)]">
+                                    {costAnalysisData.length > 0 ? costAnalysisData.map((data, index) => (
+                                        <div key={index}>
+                                            <div className="flex justify-between items-center text-sm mb-1">
+                                                <span className="font-medium text-[var(--color-text-primary)]">{data.name}</span>
+                                                <span className="font-semibold text-[var(--color-text-secondary)]">{formatCurrency(data.cost)} ({data.percentage.toFixed(1)}%)</span>
+                                            </div>
+                                            <div className="w-full bg-[var(--color-input)] rounded-full h-2">
+                                                <div
+                                                    className="bg-[var(--color-primary)] h-2 rounded-full transition-width duration-500"
+                                                    style={{ width: `${data.percentage}%` }}
+                                                    title={`${data.percentage.toFixed(1)}% of total cost`}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    )) : <p className="text-center text-sm text-[var(--color-text-muted)] py-4">No ingredients to analyze.</p>}
+                                </div>
+                            </div>
+                            
                             <div className="flex justify-between items-center mt-6 mb-2">
                                  <h3 className="text-lg font-semibold">Instructions</h3>
                                  <button onClick={handleAddInstruction} className="flex items-center text-sm text-[var(--color-primary)] hover:opacity-80 font-semibold">
