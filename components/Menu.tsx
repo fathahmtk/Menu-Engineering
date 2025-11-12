@@ -161,13 +161,13 @@ const Menu: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Menu Engineering</h2>
-                    <button onClick={() => handleOpenModal()} className="can-btn can-btn-primary">
+                    <button onClick={() => handleOpenModal()} className="ican-btn ican-btn-primary">
                         <PlusCircle size={20} className="mr-2" />
                         Add Menu Item
                     </button>
                 </div>
                 <table className="w-full text-left responsive-table">
-                    <thead className="can-table-header">
+                    <thead className="ican-table-header">
                         <tr>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Menu Item</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Classification</th>
@@ -194,7 +194,7 @@ const Menu: React.FC = () => {
                                                     type="number"
                                                     value={editedSales}
                                                     onChange={(e) => setEditedSales(parseInt(e.target.value) || 0)}
-                                                    className="can-input w-20 py-1"
+                                                    className="ican-input w-20 py-1"
                                                     autoFocus
                                                     min="0"
                                                 />
@@ -235,12 +235,12 @@ const Menu: React.FC = () => {
                 <div className="space-y-4">
                     <div>
                         <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text-muted)]">Menu Item Name</label>
-                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`can-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`ican-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
                         {errors.name && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.name}</p>}
                     </div>
                      <div>
                         <label htmlFor="recipeId" className="block text-sm font-medium text-[var(--color-text-muted)]">Recipe</label>
-                        <select name="recipeId" id="recipeId" value={formData.recipeId} onChange={handleChange} className={`can-select mt-1 ${errors.recipeId ? 'border-[var(--color-danger)]' : ''}`}>
+                        <select name="recipeId" id="recipeId" value={formData.recipeId} onChange={handleChange} className={`ican-select mt-1 ${errors.recipeId ? 'border-[var(--color-danger)]' : ''}`}>
                             <option value="" disabled>Select a recipe</option>
                             {recipes.map(rec => <option key={rec.id} value={rec.id}>{rec.name}</option>)}
                         </select>
@@ -249,18 +249,18 @@ const Menu: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="salePrice" className="block text-sm font-medium text-[var(--color-text-muted)]">Sale Price</label>
-                            <input type="number" name="salePrice" id="salePrice" value={formData.salePrice} onChange={handleChange} className={`can-input mt-1 ${errors.salePrice ? 'border-[var(--color-danger)]' : ''}`} min="0" step="0.01" />
+                            <input type="number" name="salePrice" id="salePrice" value={formData.salePrice} onChange={handleChange} className={`ican-input mt-1 ${errors.salePrice ? 'border-[var(--color-danger)]' : ''}`} min="0" step="0.01" />
                             {errors.salePrice && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.salePrice}</p>}
                         </div>
                          <div>
                             <label htmlFor="salesCount" className="block text-sm font-medium text-[var(--color-text-muted)]">Sales Count</label>
-                            <input type="number" name="salesCount" id="salesCount" value={formData.salesCount} onChange={handleChange} className={`can-input mt-1 ${errors.salesCount ? 'border-[var(--color-danger)]' : ''}`} min="0" />
+                            <input type="number" name="salesCount" id="salesCount" value={formData.salesCount} onChange={handleChange} className={`ican-input mt-1 ${errors.salesCount ? 'border-[var(--color-danger)]' : ''}`} min="0" />
                             {errors.salesCount && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.salesCount}</p>}
                         </div>
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseModal} className="can-btn can-btn-secondary">Cancel</button>
-                        <button onClick={handleSubmit} className="can-btn can-btn-primary">Save Item</button>
+                        <button onClick={handleCloseModal} className="ican-btn ican-btn-secondary">Cancel</button>
+                        <button onClick={handleSubmit} className="ican-btn ican-btn-primary">Save Item</button>
                     </div>
                 </div>
             </Modal>

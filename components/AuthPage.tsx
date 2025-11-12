@@ -42,7 +42,7 @@ const AuthPage: React.FC = () => {
                     </p>
                 </div>
 
-                <div className="can-card p-8">
+                <div className="ican-card p-8">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {isSignUp && (
                             <div className="relative">
@@ -50,7 +50,7 @@ const AuthPage: React.FC = () => {
                                 <input
                                     type="text"
                                     placeholder="Full Name"
-                                    className="can-input pl-10"
+                                    className="ican-input pl-10"
                                     required
                                 />
                             </div>
@@ -62,7 +62,7 @@ const AuthPage: React.FC = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Email Address"
-                                className="can-input pl-10"
+                                className="ican-input pl-10"
                                 required
                             />
                         </div>
@@ -73,7 +73,7 @@ const AuthPage: React.FC = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Password"
-                                className="can-input pl-10"
+                                className="ican-input pl-10"
                                 required
                             />
                         </div>
@@ -83,7 +83,7 @@ const AuthPage: React.FC = () => {
                                 <input
                                     type="password"
                                     placeholder="Confirm Password"
-                                    className="can-input pl-10"
+                                    className="ican-input pl-10"
                                     required
                                 />
                             </div>
@@ -104,7 +104,7 @@ const AuthPage: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className={`w-full can-btn can-btn-primary py-3 ${isLoading ? 'can-btn-disabled' : ''}`}
+                            className={`w-full ican-btn ican-btn-primary py-3 ${isLoading ? 'ican-btn-disabled' : ''}`}
                         >
                             {isLoading ? (
                                 <LoaderCircle size={20} className="animate-spin" />

@@ -131,14 +131,14 @@ const Purchasing: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Purchase Orders</h2>
-                    <button onClick={handleOpenFormModal} className="can-btn can-btn-primary">
+                    <button onClick={handleOpenFormModal} className="ican-btn ican-btn-primary">
                         <PlusCircle size={20} className="mr-2" />
                         Create PO
                     </button>
                 </div>
                 <div className="overflow-x-auto md:overflow-visible">
                     <table className="w-full text-left responsive-table">
-                        <thead className="can-table-header">
+                        <thead className="ican-table-header">
                             <tr>
                                 <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">PO #</th>
                                 <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Supplier</th>
@@ -197,7 +197,7 @@ const Purchasing: React.FC = () => {
                             <select
                                 value={newPoData.supplierId}
                                 onChange={(e) => setNewPoData({ ...newPoData, supplierId: e.target.value })}
-                                className="can-select mt-1"
+                                className="ican-select mt-1"
                             >
                                 {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
                             </select>
@@ -209,7 +209,7 @@ const Purchasing: React.FC = () => {
                                 id="dueDate"
                                 value={newPoData.dueDate}
                                 onChange={(e) => setNewPoData({ ...newPoData, dueDate: e.target.value })}
-                                className="can-input mt-1"
+                                className="ican-input mt-1"
                             />
                         </div>
                     </div>
@@ -222,13 +222,13 @@ const Purchasing: React.FC = () => {
                                     <select
                                         value={item.itemId || ''}
                                         onChange={(e) => handleItemChange(index, 'itemId', e.target.value)}
-                                        className="can-select"
+                                        className="ican-select"
                                     >
                                         <option value="" disabled>Select item</option>
                                         {inventory.map(inv => <option key={inv.id} value={inv.id}>{inv.name}</option>)}
                                     </select>
-                                    <input type="number" placeholder="Qty" value={item.quantity} min="1" onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="can-input" />
-                                    <input type="number" placeholder="Cost" value={item.cost} min="0" step="0.01" onChange={(e) => handleItemChange(index, 'cost', e.target.value)} className="can-input" />
+                                    <input type="number" placeholder="Qty" value={item.quantity} min="1" onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="ican-input" />
+                                    <input type="number" placeholder="Cost" value={item.cost} min="0" step="0.01" onChange={(e) => handleItemChange(index, 'cost', e.target.value)} className="ican-input" />
                                     <button onClick={() => handleRemoveItem(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)] sm:justify-self-center"><Trash2 size={18} /></button>
                                 </div>
                             ))}
@@ -239,8 +239,8 @@ const Purchasing: React.FC = () => {
                         Total: {formatCurrency(newPoTotal)}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseFormModal} className="can-btn can-btn-secondary">Cancel</button>
-                        <button onClick={handleSubmitNewPO} className="can-btn can-btn-primary">Create Order</button>
+                        <button onClick={handleCloseFormModal} className="ican-btn ican-btn-secondary">Cancel</button>
+                        <button onClick={handleSubmitNewPO} className="ican-btn ican-btn-primary">Create Order</button>
                     </div>
                 </div>
             </Modal>
@@ -264,7 +264,7 @@ const Purchasing: React.FC = () => {
                             Total: {formatCurrency(selectedOrder.totalCost)}
                         </div>
                          <div className="flex justify-end pt-4">
-                            <button onClick={() => setIsDetailsModalOpen(false)} className="can-btn can-btn-secondary">
+                            <button onClick={() => setIsDetailsModalOpen(false)} className="ican-btn ican-btn-secondary">
                                 Close
                             </button>
                         </div>
@@ -279,7 +279,7 @@ const Purchasing: React.FC = () => {
                 title="Confirm Action"
                 message={`Are you sure you want to mark this order as ${confirmationAction?.status}? ${confirmationAction?.status === 'Completed' ? 'This will update your inventory stock levels.' : ''}`}
                 confirmText="Yes, Confirm"
-                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'can-btn bg-green-600 text-white hover:bg-green-700' : confirmationAction?.status === 'Cancelled' ? 'can-btn can-btn-danger' : 'can-btn can-btn-primary' }
+                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'ican-btn bg-green-600 text-white hover:bg-green-700' : confirmationAction?.status === 'Cancelled' ? 'ican-btn ican-btn-danger' : 'ican-btn ican-btn-primary' }
             />
         </>
     );

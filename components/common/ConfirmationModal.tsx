@@ -22,7 +22,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   message,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
-  confirmButtonClass = 'can-btn can-btn-danger',
+  confirmButtonClass = 'ican-btn ican-btn-danger',
 }) => {
   if (!isOpen) return null;
 
@@ -48,7 +48,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         </button>
         {cancelText && <button
           type="button"
-          className="can-btn can-btn-secondary mt-3 w-full sm:mt-0 sm:w-auto"
+          className="ican-btn ican-btn-secondary mt-3 w-full sm:mt-0 sm:w-auto"
           onClick={onClose}
         >
           {cancelText}

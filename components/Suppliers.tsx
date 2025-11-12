@@ -140,7 +140,7 @@ const Suppliers: React.FC = () => {
                     <h2 className="text-xl font-bold">Supplier Directory</h2>
                     <div className="flex items-center space-x-2">
                         <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
-                        <button onClick={() => handleOpenModal()} className="can-btn can-btn-primary">
+                        <button onClick={() => handleOpenModal()} className="ican-btn ican-btn-primary">
                             <PlusCircle size={20} className="mr-2" />
                             Add Supplier
                         </button>
@@ -211,27 +211,27 @@ const Suppliers: React.FC = () => {
                 <div className="space-y-4">
                      <div>
                         <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text-muted)]">Supplier Name</label>
-                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`can-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`ican-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
                         {errors.name && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.name}</p>}
                     </div>
                     <div>
                         <label htmlFor="contactPerson" className="block text-sm font-medium text-[var(--color-text-muted)]">Contact Person</label>
-                        <input type="text" name="contactPerson" id="contactPerson" value={formData.contactPerson} onChange={handleChange} className={`can-input mt-1 ${errors.contactPerson ? 'border-[var(--color-danger)]' : ''}`} />
+                        <input type="text" name="contactPerson" id="contactPerson" value={formData.contactPerson} onChange={handleChange} className={`ican-input mt-1 ${errors.contactPerson ? 'border-[var(--color-danger)]' : ''}`} />
                         {errors.contactPerson && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.contactPerson}</p>}
                     </div>
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text-muted)]">Email Address</label>
-                        <input type="email" name="email" id="email" value={formData.email} onChange={handleChange} className={`can-input mt-1 ${errors.email ? 'border-[var(--color-danger)]' : ''}`} />
+                        <input type="email" name="email" id="email" value={formData.email} onChange={handleChange} className={`ican-input mt-1 ${errors.email ? 'border-[var(--color-danger)]' : ''}`} />
                         {errors.email && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.email}</p>}
                     </div>
                      <div>
                         <label htmlFor="phone" className="block text-sm font-medium text-[var(--color-text-muted)]">Phone Number</label>
-                        <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} className={`can-input mt-1 ${errors.phone ? 'border-[var(--color-danger)]' : ''}`} />
+                        <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} className={`ican-input mt-1 ${errors.phone ? 'border-[var(--color-danger)]' : ''}`} />
                         {errors.phone && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.phone}</p>}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseModal} className="can-btn can-btn-secondary">Cancel</button>
-                        <button onClick={handleSubmit} className="can-btn can-btn-primary">Save Supplier</button>
+                        <button onClick={handleCloseModal} className="ican-btn ican-btn-secondary">Cancel</button>
+                        <button onClick={handleSubmit} className="ican-btn ican-btn-primary">Save Supplier</button>
                     </div>
                 </div>
             </Modal>

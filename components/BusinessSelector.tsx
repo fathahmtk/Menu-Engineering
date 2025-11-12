@@ -93,19 +93,19 @@ const BusinessSelector: React.FC = () => {
                                 value={newBusinessName}
                                 onChange={(e) => setNewBusinessName(e.target.value)}
                                 placeholder="New business name"
-                                className="can-input flex-grow"
+                                className="ican-input flex-grow"
                             />
                             <button 
                                 onClick={handleAddBusiness}
                                 disabled={!newBusinessName.trim()}
-                                className={`can-btn can-btn-primary ${!newBusinessName.trim() ? 'can-btn-disabled' : ''}`}
+                                className={`ican-btn ican-btn-primary ${!newBusinessName.trim() ? 'ican-btn-disabled' : ''}`}
                             >
                                 Add
                             </button>
                          </div>
                     </div>
                      <div className="flex justify-end pt-4">
-                        <button onClick={() => setIsModalOpen(false)} className="can-btn can-btn-secondary">
+                        <button onClick={() => setIsModalOpen(false)} className="ican-btn ican-btn-secondary">
                             Close
                         </button>
                     </div>

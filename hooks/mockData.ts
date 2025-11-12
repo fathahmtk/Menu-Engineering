@@ -4,7 +4,7 @@ const MOCK_BUSINESS_ID = 'b1';
 
 // Updated Business Name
 export const mockBusinesses: Business[] = [
-    { id: MOCK_BUSINESS_ID, name: 'CAN Group - Qatar Division', userId: 'mock-user-id' }
+    { id: MOCK_BUSINESS_ID, name: 'iCAN Group - Qatar Division', userId: 'mock-user-id' }
 ];
 
 // Qatar-based Suppliers for a frozen food production company

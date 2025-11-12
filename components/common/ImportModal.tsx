@@ -139,8 +139,8 @@ const ImportModal = <T extends {}>({
               {parsedData.length > 10 && <div className="p-2 text-center text-sm text-[var(--color-text-muted)]">...and {parsedData.length - 10} more.</div>}
             </div>
             <div className="flex justify-end space-x-2 pt-4">
-              <button onClick={handleClose} className="can-btn can-btn-secondary">Cancel</button>
-              <button onClick={handleImportClick} disabled={parsedData.length === 0} className={`can-btn can-btn-primary ${parsedData.length === 0 ? 'can-btn-disabled' : ''}`}>Import Data</button>
+              <button onClick={handleClose} className="ican-btn ican-btn-secondary">Cancel</button>
+              <button onClick={handleImportClick} disabled={parsedData.length === 0} className={`ican-btn ican-btn-primary ${parsedData.length === 0 ? 'ican-btn-disabled' : ''}`}>Import Data</button>
             </div>
           </div>
         );
@@ -157,7 +157,7 @@ const ImportModal = <T extends {}>({
               </p>
             )}
             <div className="pt-4">
-              <button onClick={handleClose} className="can-btn can-btn-primary px-6">Done</button>
+              <button onClick={handleClose} className="ican-btn ican-btn-primary px-6">Done</button>
             </div>
           </div>
         );

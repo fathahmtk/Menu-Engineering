@@ -24,7 +24,7 @@ const ActionsDropdown: React.FC<ActionsDropdownProps> = ({ onExport, onImport })
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="can-btn can-btn-secondary px-3"
+        className="ican-btn ican-btn-secondary px-3"
         aria-haspopup="true"
         aria-expanded={isOpen}
       >

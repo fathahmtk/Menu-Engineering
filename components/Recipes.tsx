@@ -126,7 +126,7 @@ const RecipeFormModal: React.FC<{
                     <label className="block text-sm font-medium text-[var(--color-text-muted)]">Use a Template (Optional)</label>
                     <select
                         onChange={(e) => handleTemplateSelect(e.target.value)}
-                        className="can-select mt-1"
+                        className="ican-select mt-1"
                         defaultValue=""
                     >
                         <option value="">Start from scratch</option>
@@ -136,7 +136,7 @@ const RecipeFormModal: React.FC<{
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Recipe Name</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} className={`can-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
+                        <input type="text" value={name} onChange={e => setName(e.target.value)} className={`ican-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
                         {errors.name && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.name}</p>}
                     </div>
                     <div>
@@ -146,7 +146,7 @@ const RecipeFormModal: React.FC<{
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
                             placeholder="e.g., Main Course"
-                            className={`can-input mt-1 ${errors.category ? 'border-[var(--color-danger)]' : ''}`}
+                            className={`ican-input mt-1 ${errors.category ? 'border-[var(--color-danger)]' : ''}`}
                             list="recipe-categories"
                         />
                         <datalist id="recipe-categories">
@@ -158,12 +158,12 @@ const RecipeFormModal: React.FC<{
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Servings</label>
-                        <input type="number" min="1" value={servings} onChange={e => setServings(parseInt(e.target.value) || 1)} className={`can-input mt-1 ${errors.servings ? 'border-[var(--color-danger)]' : ''}`} />
+                        <input type="number" min="1" value={servings} onChange={e => setServings(parseInt(e.target.value) || 1)} className={`ican-input mt-1 ${errors.servings ? 'border-[var(--color-danger)]' : ''}`} />
                         {errors.servings && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.servings}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Target Sale Price/Serving</label>
-                        <input type="number" min="0" step="0.01" value={targetSalePricePerServing} onChange={e => setTargetSalePrice(parseFloat(e.target.value) || 0)} className="can-input mt-1" />
+                        <input type="number" min="0" step="0.01" value={targetSalePricePerServing} onChange={e => setTargetSalePrice(parseFloat(e.target.value) || 0)} className="ican-input mt-1" />
                     </div>
                 </div>
                 <div>
@@ -172,11 +172,11 @@ const RecipeFormModal: React.FC<{
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                        {ingredients.map((ing, index) => (
                            <div key={index} className="grid grid-cols-[1fr,100px,80px,auto] gap-2 items-center">
-                               <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="can-select">
+                               <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select">
                                    {inventory.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
                                </select>
-                               <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="can-input" />
-                               <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="can-select">
+                               <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="ican-input" />
+                               <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="ican-select">
                                    {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                                </select>
                                <button onClick={() => handleRemoveIngredient(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)]"><X size={18} /></button>
@@ -206,11 +206,11 @@ const RecipeFormModal: React.FC<{
 
                 <div>
                     <label className="block text-sm font-medium mt-4 text-[var(--color-text-muted)]">Instructions (one step per line)</label>
-                    <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={5} className="can-input mt-1"></textarea>
+                    <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={5} className="ican-input mt-1"></textarea>
                 </div>
                 <div className="flex justify-end space-x-2 pt-4">
-                    <button onClick={handleClose} className="can-btn can-btn-secondary">Cancel</button>
-                    <button onClick={handleSave} className="can-btn can-btn-primary">Save Recipe</button>
+                    <button onClick={handleClose} className="ican-btn ican-btn-secondary">Cancel</button>
+                    <button onClick={handleSave} className="ican-btn ican-btn-primary">Save Recipe</button>
                 </div>
             </div>
         </Modal>
@@ -257,9 +257,9 @@ const CategoryManagerModal: React.FC<{
                             value={newCategoryName}
                             onChange={(e) => setNewCategoryName(e.target.value)}
                             placeholder="e.g., Desserts"
-                            className="can-input flex-grow"
+                            className="ican-input flex-grow"
                         />
-                        <button onClick={handleAdd} className={`can-btn can-btn-primary ${!newCategoryName.trim() ? 'can-btn-disabled' : ''}`} disabled={!newCategoryName.trim()}>Add</button>
+                        <button onClick={handleAdd} className={`ican-btn ican-btn-primary ${!newCategoryName.trim() ? 'ican-btn-disabled' : ''}`} disabled={!newCategoryName.trim()}>Add</button>
                     </div>
                 </div>
                 <div>
@@ -274,7 +274,7 @@ const CategoryManagerModal: React.FC<{
                                         onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
                                         onBlur={handleUpdate}
                                         onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
-                                        className="can-input p-1 w-full"
+                                        className="ican-input p-1 w-full"
                                         autoFocus
                                     />
                                 ) : (
@@ -333,9 +333,9 @@ const UnitManagerModal: React.FC<{
                             value={newUnitName}
                             onChange={(e) => setNewUnitName(e.target.value)}
                             placeholder="e.g., pinch, bunch"
-                            className="can-input flex-grow"
+                            className="ican-input flex-grow"
                         />
-                        <button onClick={handleAdd} className={`can-btn can-btn-primary ${!newUnitName.trim() ? 'can-btn-disabled' : ''}`} disabled={!newUnitName.trim()}>Add</button>
+                        <button onClick={handleAdd} className={`ican-btn ican-btn-primary ${!newUnitName.trim() ? 'ican-btn-disabled' : ''}`} disabled={!newUnitName.trim()}>Add</button>
                     </div>
                 </div>
                 <div>
@@ -350,7 +350,7 @@ const UnitManagerModal: React.FC<{
                                         onChange={(e) => setEditingUnit({ ...editingUnit, name: e.target.value })}
                                         onBlur={handleUpdate}
                                         onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
-                                        className="can-input p-1 w-full"
+                                        className="ican-input p-1 w-full"
                                         autoFocus
                                     />
                                 ) : (
@@ -732,15 +732,15 @@ const Recipes: React.FC = () => {
                 title="Delete Recipe"
                 message={deleteError ? <span className="text-red-700">{deleteError}</span> : `Are you sure you want to permanently delete "${selectedRecipe.name}"? This action cannot be undone.`}
                 confirmText={deleteError ? 'OK' : 'Delete'}
-                confirmButtonClass={deleteError ? 'can-btn can-btn-primary' : 'can-btn can-btn-danger'}
+                confirmButtonClass={deleteError ? 'ican-btn ican-btn-primary' : 'ican-btn ican-btn-danger'}
                 cancelText={deleteError ? '' : 'Cancel'}
             />
             <Modal isOpen={modalState.type === 'duplicate'} onClose={() => setModalState({ type: null })} title="Duplicate Recipe">
                 <div>
                     <p className="mb-4">Do you want to include the cost history in the new duplicated recipe?</p>
                     <div className="flex justify-end space-x-2">
-                        <button onClick={() => { handleConfirmDuplicate(false); setModalState({ type: null }); }} className="can-btn can-btn-secondary">No, Start Fresh</button>
-                        <button onClick={() => { handleConfirmDuplicate(true); setModalState({ type: null }); }} className="can-btn can-btn-primary">Yes, Include History</button>
+                        <button onClick={() => { handleConfirmDuplicate(false); setModalState({ type: null }); }} className="ican-btn ican-btn-secondary">No, Start Fresh</button>
+                        <button onClick={() => { handleConfirmDuplicate(true); setModalState({ type: null }); }} className="ican-btn ican-btn-primary">Yes, Include History</button>
                     </div>
                 </div>
             </Modal>
@@ -753,10 +753,10 @@ const Recipes: React.FC = () => {
                     setModalState({ type: null });
                 }}>
                     <label htmlFor="templateName" className="block text-sm font-medium text-[var(--color-text-muted)]">Template Name</label>
-                    <input type="text" name="templateName" id="templateName" defaultValue={`${selectedRecipe.name} Base`} className="can-input mt-1" required />
+                    <input type="text" name="templateName" id="templateName" defaultValue={`${selectedRecipe.name} Base`} className="ican-input mt-1" required />
                     <div className="flex justify-end space-x-2 pt-4 mt-2">
-                        <button type="button" onClick={() => setModalState({ type: null })} className="can-btn can-btn-secondary">Cancel</button>
-                        <button type="submit" className="can-btn can-btn-primary">Save Template</button>
+                        <button type="button" onClick={() => setModalState({ type: null })} className="ican-btn ican-btn-secondary">Cancel</button>
+                        <button type="submit" className="ican-btn ican-btn-primary">Save Template</button>
                     </div>
                 </form>
             </Modal>
@@ -781,7 +781,7 @@ const Recipes: React.FC = () => {
                                 placeholder="Search recipes..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="can-input pl-10"
+                                className="ican-input pl-10"
                                 aria-label="Search recipes by name"
                             />
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={20} />
@@ -791,7 +791,7 @@ const Recipes: React.FC = () => {
                                 id="category-filter"
                                 value={filterCategory}
                                 onChange={e => setFilterCategory(e.target.value)}
-                                className="can-select"
+                                className="ican-select"
                                 aria-label="Filter by category"
                             >
                                 <option value="all">All Categories</option>
@@ -955,17 +955,17 @@ const Recipes: React.FC = () => {
                                             <div key={`${ing.itemId}-${index}`} className={`p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0 transition-colors ${isHighCost ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''}`}>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Ingredient</label>
-                                                    <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="can-select text-sm">
+                                                    <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select text-sm">
                                                         {inventory.map(invItem => <option key={invItem.id} value={invItem.id}>{invItem.name}</option>)}
                                                     </select>
                                                 </div>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Quantity</label>
-                                                    <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="can-input text-sm" />
+                                                    <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="ican-input text-sm" />
                                                 </div>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Unit</label>
-                                                    <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="can-select text-sm">
+                                                    <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="ican-select text-sm">
                                                         {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                                                     </select>
                                                 </div>
@@ -1058,7 +1058,7 @@ const Recipes: React.FC = () => {
                             <FileText size={48} className="mb-4 text-[var(--color-border)]" />
                             <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">No Recipe Selected</h3>
                             <p className="max-w-xs mt-1">Select a recipe from the list to view its details, or create a new one to get started.</p>
-                             <button onClick={() => setIsNewRecipeModalOpen(true)} className="mt-4 can-btn can-btn-primary">
+                             <button onClick={() => setIsNewRecipeModalOpen(true)} className="mt-4 ican-btn ican-btn-primary">
                                 <PlusCircle size={20} className="mr-2" />
                                 Create Recipe
                             </button>

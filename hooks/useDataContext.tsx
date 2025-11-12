@@ -282,8 +282,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let totalRevenue = 0;
     let totalCost = 0;
 
-    const inventoryMap = new Map(inventory.map(i => [i.id, {...i}]));
-    const menuItemsMap = new Map(menuItems.map(m => [m.id, {...m}]));
+// FIX: Explicitly type Maps to ensure correct type inference for menuItem and invItem.
+    const inventoryMap = new Map<string, InventoryItem>(inventory.map(i => [i.id, {...i}]));
+    const menuItemsMap = new Map<string, MenuItem>(menuItems.map(m => [m.id, {...m}]));
 
     for (const item of items) {
       const menuItem = menuItemsMap.get(item.menuItemId);

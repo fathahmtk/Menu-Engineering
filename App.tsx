@@ -92,13 +92,13 @@ const OnboardingScreen: React.FC = () => {
                         onChange={(e) => setNewBusinessName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleCreateFirstBusiness()}
                         placeholder="e.g., iCAN - Qatar Division"
-                        className="can-input text-center"
+                        className="ican-input text-center"
                         aria-label="New business name"
                     />
                     <button 
                         onClick={handleCreateFirstBusiness}
                         disabled={!newBusinessName.trim()}
-                        className={`can-btn can-btn-primary py-2.5 ${!newBusinessName.trim() ? 'can-btn-disabled' : ''}`}
+                        className={`ican-btn ican-btn-primary py-2.5 ${!newBusinessName.trim() ? 'ican-btn-disabled' : ''}`}
                     >
                         Create Division
                     </button>

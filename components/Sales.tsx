@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -157,7 +158,7 @@ const Sales: React.FC = () => {
                 <Card className="lg:col-span-2">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">Recent Transactions</h3>
-                         <button onClick={openModal} className="can-btn can-btn-primary text-sm py-1.5 px-3">
+                         <button onClick={openModal} className="ican-btn ican-btn-primary text-sm py-1.5 px-3">
                             <PlusCircle size={16} className="mr-2" />
                             Record Sale
                         </button>
@@ -197,7 +198,7 @@ const Sales: React.FC = () => {
                             <select
                                 value={item.menuItemId}
                                 onChange={e => handleItemChange(item.id, 'menuItemId', e.target.value)}
-                                className="can-select"
+                                className="ican-select"
                                 disabled={menuItems.length === 0}
                             >
                                 {menuItems.length > 0 ? (
@@ -211,7 +212,7 @@ const Sales: React.FC = () => {
                                 value={item.quantity}
                                 min="1"
                                 onChange={e => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                                className="can-input"
+                                className="ican-input"
                                 placeholder="Qty"
                             />
                             <button
@@ -230,8 +231,8 @@ const Sales: React.FC = () => {
                         Total: {formatCurrency(modalSaleTotal)}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={() => setIsModalOpen(false)} className="can-btn can-btn-secondary">Cancel</button>
-                        <button onClick={handleRecordSale} className="can-btn can-btn-primary">Record Sale</button>
+                        <button onClick={() => setIsModalOpen(false)} className="ican-btn ican-btn-secondary">Cancel</button>
+                        <button onClick={handleRecordSale} className="ican-btn ican-btn-primary">Record Sale</button>
                     </div>
                 </div>
             </Modal>
