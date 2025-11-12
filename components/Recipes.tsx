@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -223,22 +224,22 @@ const CategoryManagerModal: React.FC<{
     const [newCategoryName, setNewCategoryName] = useState('');
     const [editingCategory, setEditingCategory] = useState<{ id: string, name: string} | null>(null);
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
         if (newCategoryName.trim()) {
-            addCategory(newCategoryName.trim());
+            await addCategory(newCategoryName.trim());
             setNewCategoryName('');
         }
     };
 
-    const handleUpdate = () => {
+    const handleUpdate = async () => {
         if (editingCategory && editingCategory.name.trim()) {
-            updateCategory(editingCategory.id, editingCategory.name.trim());
+            await updateCategory(editingCategory.id, editingCategory.name.trim());
             setEditingCategory(null);
         }
     };
     
-    const handleDelete = (id: string) => {
-        const result = deleteCategory(id);
+    const handleDelete = async (id: string) => {
+        const result = await deleteCategory(id);
         if(!result.success) {
             alert(result.message);
         }
@@ -299,22 +300,22 @@ const UnitManagerModal: React.FC<{
     const [newUnitName, setNewUnitName] = useState('');
     const [editingUnit, setEditingUnit] = useState<IngredientUnit | null>(null);
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
         if (newUnitName.trim()) {
-            addUnit(newUnitName.trim());
+            await addUnit(newUnitName.trim());
             setNewUnitName('');
         }
     };
 
-    const handleUpdate = () => {
+    const handleUpdate = async () => {
         if (editingUnit && editingUnit.name.trim()) {
-            updateUnit(editingUnit.id, editingUnit.name.trim());
+            await updateUnit(editingUnit.id, editingUnit.name.trim());
             setEditingUnit(null);
         }
     };
     
-    const handleDelete = (id: string) => {
-        const result = deleteUnit(id);
+    const handleDelete = async (id: string) => {
+        const result = await deleteUnit(id);
         if(!result.success) {
             alert(result.message);
         }
@@ -465,9 +466,9 @@ const Recipes: React.FC = () => {
         setDraggedIndex(null);
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (!selectedRecipe) return;
-        const result = deleteRecipe(selectedRecipe.id);
+        const result = await deleteRecipe(selectedRecipe.id);
         if (result.success) {
              const newSelected = recipes.length > 1 ? recipes.filter(r => r.id !== selectedRecipe.id)[0] : null;
              setSelectedRecipe(newSelected);
@@ -476,9 +477,9 @@ const Recipes: React.FC = () => {
         }
     };
 
-    const handleConfirmDuplicate = (includeHistory: boolean) => {
+    const handleConfirmDuplicate = async (includeHistory: boolean) => {
         if (!selectedRecipe) return;
-        const newRecipe = duplicateRecipe(selectedRecipe.id, includeHistory);
+        const newRecipe = await duplicateRecipe(selectedRecipe.id, includeHistory);
         if (newRecipe) {
             setSelectedRecipe(newRecipe);
         }
@@ -672,7 +673,7 @@ const Recipes: React.FC = () => {
     };
 
     const handleImport = (data: Omit<Recipe, 'id' | 'businessId'>[]) => {
-        return Promise.resolve(bulkAddRecipes(data));
+        return bulkAddRecipes(data);
     };
 
 

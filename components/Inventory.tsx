@@ -119,8 +119,9 @@ const Inventory: React.FC = () => {
         else setSelectedItems(new Set());
     };
 
-    const handleConfirmBulkDelete = () => {
-        const result = bulkDeleteInventoryItems(Array.from(selectedItems));
+    const handleConfirmBulkDelete = async () => {
+        // FIX: Await the promise returned by bulkDeleteInventoryItems before setting state.
+        const result = await bulkDeleteInventoryItems(Array.from(selectedItems));
         setDeletionResult(result);
         setSelectedItems(new Set());
         setIsConfirmDeleteOpen(false);

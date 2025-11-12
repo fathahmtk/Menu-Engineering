@@ -1,10 +1,10 @@
 
-
 import type { Dispatch, SetStateAction } from 'react';
 
 export interface Business {
   id: string;
   name: string;
+  userId: string;
 }
 
 export interface Supplier {
@@ -113,11 +113,12 @@ export interface Sale {
 
 
 export interface DataContextType {
+  loading: boolean;
   // Business Management
   businesses: Business[];
   activeBusinessId: string | null;
   setActiveBusinessId: (id: string) => void;
-  addBusiness: (name: string) => void;
+  addBusiness: (name: string) => Promise<void>;
   
   // Scoped Data (filtered by activeBusinessId)
   suppliers: Supplier[];
@@ -131,49 +132,44 @@ export interface DataContextType {
   sales: Sale[];
   
   // CRUD Operations
-  addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => void;
-  updateSupplier: (supplier: Supplier) => void;
-  deleteSupplier: (id: string) => { success: boolean; message?: string };
-  bulkAddSuppliers: (newSuppliers: Omit<Supplier, 'id' | 'businessId'>[]) => { successCount: number; duplicateCount: number };
+  addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => Promise<void>;
+  updateSupplier: (supplier: Supplier) => Promise<void>;
+  deleteSupplier: (id: string) => Promise<{ success: boolean; message?: string }>;
+  bulkAddSuppliers: (newSuppliers: Omit<Supplier, 'id' | 'businessId'>[]) => Promise<{ successCount: number; duplicateCount: number }>;
 
-  
-  // Fix: Use imported Dispatch and SetStateAction types.
-  setInventory: Dispatch<SetStateAction<InventoryItem[]>>;
-  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'businessId'>) => InventoryItem;
-  updateInventoryItem: (item: InventoryItem) => void;
-  deleteInventoryItem: (id: string) => void;
-  bulkUpdateInventoryItems: (itemIds: string[], update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice' | 'supplierId'>>) => void;
-  bulkDeleteInventoryItems: (itemIds: string[]) => { deletedCount: number; failedItems: string[] };
-  bulkAddInventoryItems: (newItems: Omit<InventoryItem, 'id' | 'businessId'>[]) => { successCount: number; duplicateCount: number };
+  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'businessId'>) => Promise<InventoryItem | null>;
+  updateInventoryItem: (item: InventoryItem) => Promise<void>;
+  deleteInventoryItem: (id: string) => Promise<void>;
+  bulkUpdateInventoryItems: (itemIds: string[], update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice' | 'supplierId'>>) => Promise<void>;
+  bulkDeleteInventoryItems: (itemIds: string[]) => Promise<{ deletedCount: number; failedItems: string[] }>;
+  bulkAddInventoryItems: (newItems: Omit<InventoryItem, 'id' | 'businessId'>[]) => Promise<{ successCount: number; duplicateCount: number }>;
 
-
-  addRecipe: (recipe: Omit<Recipe, 'id' | 'businessId'>) => void;
-  updateRecipe: (recipe: Recipe) => void;
-  deleteRecipe: (id: string) => { success: boolean; message?: string };
-  recordRecipeCostHistory: (recipeId: string) => void;
-  duplicateRecipe: (id: string, includeHistory: boolean) => Recipe | undefined;
+  addRecipe: (recipe: Omit<Recipe, 'id' | 'businessId'>) => Promise<void>;
+  updateRecipe: (recipe: Recipe) => Promise<void>;
+  deleteRecipe: (id: string) => Promise<{ success: boolean; message?: string }>;
+  recordRecipeCostHistory: (recipeId: string) => Promise<void>;
+  duplicateRecipe: (id: string, includeHistory: boolean) => Promise<Recipe | undefined>;
   uploadRecipeImage: (recipeId: string, file: File) => Promise<void>;
   removeRecipeImage: (recipeId: string) => Promise<void>;
-  bulkAddRecipes: (newRecipes: Omit<Recipe, 'id' | 'businessId'>[]) => { successCount: number; duplicateCount: number };
+  bulkAddRecipes: (newRecipes: Omit<Recipe, 'id' | 'businessId'>[]) => Promise<{ successCount: number; duplicateCount: number }>;
 
+  addMenuItem: (item: Omit<MenuItem, 'id' | 'businessId'>) => Promise<void>;
+  updateMenuItem: (item: MenuItem) => Promise<void>;
+  deleteMenuItem: (id: string) => Promise<void>;
 
-  addMenuItem: (item: Omit<MenuItem, 'id' | 'businessId'>) => void;
-  updateMenuItem: (item: MenuItem) => void;
-  deleteMenuItem: (id: string) => void;
+  addCategory: (name: string) => Promise<void>;
+  updateCategory: (id: string, name: string) => Promise<void>;
+  deleteCategory: (id: string) => Promise<{ success: boolean; message?: string }>;
 
-  addCategory: (name: string) => void;
-  updateCategory: (id: string, name: string) => void;
-  deleteCategory: (id: string) => { success: boolean; message?: string };
+  addUnit: (name: string) => Promise<void>;
+  updateUnit: (id: string, name: string) => Promise<void>;
+  deleteUnit: (id: string) => Promise<{ success: boolean; message?: string }>;
 
-  addUnit: (name: string) => void;
-  updateUnit: (id: string, name: string) => void;
-  deleteUnit: (id: string) => { success: boolean; message?: string };
+  addRecipeTemplate: (template: Omit<RecipeTemplate, 'id' | 'businessId'>) => Promise<void>;
 
-  addRecipeTemplate: (template: Omit<RecipeTemplate, 'id' | 'businessId'>) => void;
-
-  addPurchaseOrder: (po: Omit<PurchaseOrder, 'id' | 'businessId' | 'status' | 'orderDate' | 'totalCost'>) => void;
-  updatePurchaseOrderStatus: (id: string, status: PurchaseOrder['status']) => void;
-  addSale: (items: { menuItemId: string; quantity: number }[]) => void;
+  addPurchaseOrder: (po: Omit<PurchaseOrder, 'id' | 'businessId' | 'status' | 'orderDate' | 'totalCost'>) => Promise<void>;
+  updatePurchaseOrderStatus: (id: string, status: PurchaseOrder['status']) => Promise<void>;
+  addSale: (items: { menuItemId: string; quantity: number }[]) => Promise<void>;
 
   // Helper functions
   getInventoryItemById: (id: string) => InventoryItem | undefined;

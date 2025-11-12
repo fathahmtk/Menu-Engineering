@@ -1,6 +1,8 @@
 
 import React from 'react';
-import { LayoutDashboard, ShoppingCart, BookOpen, Truck, Utensils, BarChart2, ChefHat, X, ClipboardList, Receipt } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, BookOpen, Truck, Utensils, BarChart2, ChefHat, X, ClipboardList, Receipt, LogOut } from 'lucide-react';
+import { useAuth } from '../hooks/useAuthContext';
+
 
 type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'sales' | 'reports';
 
@@ -32,6 +34,8 @@ const NavItem: React.FC<{
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, setIsOpen }) => {
+  const { signOut } = useAuth();
+  
   const navItems: { id: View; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'inventory', label: 'Inventory', icon: <ShoppingCart size={20} /> },
@@ -63,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
                 <X size={24} />
             </button>
         </div>
-        <nav>
+        <nav className="flex-1">
           <ul>
             {navItems.map((item) => (
               <NavItem
@@ -76,6 +80,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
             ))}
           </ul>
         </nav>
+        
+        <div className="mt-auto">
+             <button
+                onClick={signOut}
+                className="w-full flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors text-slate-400 hover:bg-slate-800"
+              >
+                <LogOut size={20} />
+                <span className="ml-4 font-medium">Logout</span>
+              </button>
+        </div>
+
       </aside>
     </>
   );

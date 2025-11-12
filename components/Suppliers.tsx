@@ -66,9 +66,10 @@ const Suppliers: React.FC = () => {
         handleCloseModal();
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (window.confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
-            const result = deleteSupplier(id);
+            // FIX: Await the promise to get the result object before accessing its properties.
+            const result = await deleteSupplier(id);
             if (!result.success) {
                 alert(result.message);
             }
