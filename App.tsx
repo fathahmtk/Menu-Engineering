@@ -71,7 +71,7 @@ const AppContent: React.FC = () => {
         };
 
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex items-center justify-center min-h-screen bg-background p-4">
                 <Card className="text-center w-full max-w-md mx-auto">
                     <ChefHat className="text-primary mx-auto" size={48} />
                     <h1 className="text-3xl font-bold mt-4 text-foreground">Welcome to F&B Costing Pro</h1>
@@ -82,13 +82,13 @@ const AppContent: React.FC = () => {
                             value={newBusinessName}
                             onChange={(e) => setNewBusinessName(e.target.value)}
                             placeholder="e.g., Main Restaurant"
-                            className="w-full px-4 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:text-sm"
+                            className="w-full px-4 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:text-sm text-foreground"
                             aria-label="New business name"
                         />
                         <button 
                             onClick={handleCreateFirstBusiness}
                             disabled={!newBusinessName.trim()}
-                            className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-transform hover:scale-105"
+                            className="w-full bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-transform hover:scale-105 disabled:bg-primary/50 disabled:scale-100"
                         >
                             Create Business
                         </button>
@@ -99,7 +99,7 @@ const AppContent: React.FC = () => {
     }
 
     return (
-        <div className="flex min-h-screen text-foreground">
+        <div className="flex min-h-screen text-foreground bg-background">
             <Sidebar 
                 currentView={currentView} 
                 setCurrentView={setCurrentView}
@@ -107,7 +107,7 @@ const AppContent: React.FC = () => {
                 setIsOpen={setIsSidebarOpen}
             />
             <main className="flex-1 flex flex-col h-screen">
-                <header className="bg-card border-b border-border shadow-sm p-2 sm:p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-xl">
+                <header className="bg-card/80 border-b border-border shadow-sm p-2 sm:p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
                     <div className="flex items-center">
                         <button 
                             className="lg:hidden mr-2 sm:mr-4 text-muted-foreground"

@@ -12,31 +12,16 @@
     <style>
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #f8fafc; /* slate-50 */
+        background-color: hsl(222 47% 11%); /* background */
         overflow: hidden;
       }
       @supports (font-variation-settings: normal) {
         body { font-family: 'Inter var', sans-serif; }
       }
-
-      .bg-animation {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-	      background-size: 400% 400%;
-	      animation: gradient 15s ease infinite;
-      }
-
-      @keyframes gradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
-
+      
+      /* Standardized Cursors */
+      :root { cursor: default; }
+      button, a, label, input[type="checkbox"], input[type="radio"], select, .cursor-pointer { cursor: pointer; }
 
       /* Responsive Table Styles */
       @media (max-width: 767px) { /* Corresponds to Tailwind's 'md' breakpoint */
@@ -45,12 +30,11 @@
         }
         .responsive-table tbody tr {
             display: block;
-            border: 1px solid hsl(214.3 31.8% 91.4% / 0.5); /* border-border */
+            border: 1px solid hsl(217 33% 17%); /* border */
             border-radius: 0.75rem; /* rounded-lg */
             margin-bottom: 1rem;
             padding: 0.5rem;
-            background-color: hsl(0 0% 100% / 0.6); /* card */
-            backdrop-filter: blur(10px);
+            background-color: hsl(222 47% 14%); /* card */
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .responsive-table td {
@@ -59,7 +43,7 @@
             align-items: center;
             padding: 0.75rem 0.5rem;
             text-align: right;
-            border-bottom: 1px solid hsl(210 40% 96.1% / 0.5); /* muted */
+            border-bottom: 1px solid hsl(217 33% 17%); /* muted */
         }
         .responsive-table tbody tr:last-child {
             margin-bottom: 0;
@@ -73,7 +57,7 @@
             text-align: left;
             margin-right: 1rem;
             flex-shrink: 0;
-            color: hsl(222.2 84% 4.9%); /* foreground */
+            color: hsl(210 40% 98%); /* foreground */
         }
         /* Special handling for checkbox cell */
         .responsive-table td.checkbox-cell {
@@ -90,34 +74,34 @@
         theme: {
           extend: {
             colors: {
-              border: 'hsl(214.3 31.8% 91.4% / 0.5)',
-              input: 'hsl(214.3 31.8% 91.4%)',
-              ring: 'hsl(255, 85%, 65%)',
-              background: 'hsl(220 40% 98%)',
-              foreground: 'hsl(222.2 84% 4.9%)',
+              border: 'hsl(217 33% 17%)',
+              input: 'hsl(217 33% 17%)',
+              ring: 'hsl(164 92% 54%)',
+              background: 'hsl(222 47% 11%)',
+              foreground: 'hsl(210 40% 98%)',
               primary: {
-                DEFAULT: 'hsl(255, 75%, 55%)',
-                foreground: 'hsl(0 0% 100%)',
+                DEFAULT: 'hsl(164 92% 54%)',
+                foreground: 'hsl(164 80% 10%)',
               },
               secondary: {
-                DEFAULT: 'hsl(210 40% 96.1%)',
-                foreground: 'hsl(222.2 84% 4.9%)',
+                DEFAULT: 'hsl(217 33% 17%)',
+                foreground: 'hsl(210 40% 98%)',
               },
               destructive: {
-                DEFAULT: 'hsl(0 84.2% 60.2%)',
-                foreground: 'hsl(0 0% 100%)',
+                DEFAULT: 'hsl(0 63% 31%)',
+                foreground: 'hsl(210 40% 98%)',
               },
               muted: {
-                DEFAULT: 'hsl(210 40% 96.1%)',
-                foreground: 'hsl(215.4 16.3% 46.9%)',
+                DEFAULT: 'hsl(217 33% 17%)',
+                foreground: 'hsl(215 20% 65%)',
               },
               accent: {
-                DEFAULT: 'hsl(210 40% 96.1% / 0.7)',
-                foreground: 'hsl(222.2 84% 4.9%)',
+                DEFAULT: 'hsl(217 33% 22%)',
+                foreground: 'hsl(210 40% 98%)',
               },
               card: {
-                DEFAULT: 'hsl(0 0% 100% / 0.6)',
-                foreground: 'hsl(222.2 84% 4.9%)',
+                DEFAULT: 'hsl(222 47% 14%)',
+                foreground: 'hsl(210 40% 98%)',
               },
             }
           }
@@ -137,8 +121,7 @@
 }
 </script>
 </head>
-  <body class="text-foreground">
-    <div class="bg-animation"></div>
+  <body class="text-foreground bg-background">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

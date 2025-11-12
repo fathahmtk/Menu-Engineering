@@ -11,9 +11,9 @@ import { PurchaseOrder, PurchaseOrderItem } from '../types';
 
 const StatusBadge: React.FC<{ status: PurchaseOrder['status'] }> = ({ status }) => {
     const config = {
-        Pending: 'bg-amber-100 text-amber-800',
-        Completed: 'bg-emerald-100 text-emerald-800',
-        Cancelled: 'bg-rose-100 text-rose-800',
+        Pending: 'bg-amber-500/10 text-amber-400',
+        Completed: 'bg-primary/10 text-primary',
+        Cancelled: 'bg-destructive/10 text-destructive',
     };
     return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${config[status]}`}>{status}</span>;
 };
@@ -121,14 +121,14 @@ const Purchasing: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Purchase Orders</h2>
-                    <button onClick={handleOpenFormModal} className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                    <button onClick={handleOpenFormModal} className="flex items-center bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
                         <PlusCircle size={20} className="mr-2" />
                         Create PO
                     </button>
                 </div>
                 <div className="overflow-x-auto md:overflow-visible">
                     <table className="w-full text-left responsive-table">
-                        <thead className="bg-muted">
+                        <thead className="bg-muted/50">
                             <tr>
                                 <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">PO #</th>
                                 <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Supplier</th>
@@ -151,8 +151,8 @@ const Purchasing: React.FC = () => {
                                             <button onClick={() => handleViewDetails(order)} className="text-muted-foreground hover:text-foreground" title="View Details"><Eye size={20} /></button>
                                             {order.status === 'Pending' && (
                                                 <>
-                                                    <button onClick={() => handleStatusChange(order.id, 'Completed')} className="text-emerald-500 hover:text-emerald-700" title="Mark as Completed"><CheckCircle size={20} /></button>
-                                                    <button onClick={() => handleStatusChange(order.id, 'Cancelled')} className="text-rose-500 hover:text-rose-700" title="Cancel Order"><XCircle size={20} /></button>
+                                                    <button onClick={() => handleStatusChange(order.id, 'Completed')} className="text-primary hover:text-primary/80" title="Mark as Completed"><CheckCircle size={20} /></button>
+                                                    <button onClick={() => handleStatusChange(order.id, 'Cancelled')} className="text-destructive hover:text-destructive/80" title="Cancel Order"><XCircle size={20} /></button>
                                                 </>
                                             )}
                                         </div>
@@ -208,7 +208,7 @@ const Purchasing: React.FC = () => {
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
                         <button onClick={handleCloseFormModal} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">Cancel</button>
-                        <button onClick={handleSubmitNewPO} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">Create Order</button>
+                        <button onClick={handleSubmitNewPO} className="px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90">Create Order</button>
                     </div>
                 </div>
             </Modal>
@@ -246,7 +246,7 @@ const Purchasing: React.FC = () => {
                 title="Confirm Action"
                 message={`Are you sure you want to mark this order as ${confirmationAction?.status}? ${confirmationAction?.status === 'Completed' ? 'This will update your inventory stock levels.' : ''}`}
                 confirmText="Yes, Confirm"
-                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'bg-emerald-600 hover:bg-emerald-700' : confirmationAction?.status === 'Cancelled' ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90' }
+                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : confirmationAction?.status === 'Cancelled' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : 'bg-primary text-primary-foreground hover:bg-primary/90' }
             />
         </>
     );

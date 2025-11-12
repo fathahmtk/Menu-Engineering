@@ -10,17 +10,17 @@ type Classification = 'Star' | 'Plowhorse' | 'Puzzle' | 'Dog';
 
 const ClassificationBadge: React.FC<{ classification: Classification }> = ({ classification }) => {
     const config = {
-        Star: { icon: <Star size={14} />, color: 'emerald', label: 'Star' },
+        Star: { icon: <Star size={14} />, color: 'primary', label: 'Star' },
         Plowhorse: { icon: <Grip size={14} />, color: 'sky', label: 'Plowhorse' },
         Puzzle: { icon: <Puzzle size={14} />, color: 'amber', label: 'Puzzle' },
-        Dog: { icon: <ThumbsDown size={14} />, color: 'rose', label: 'Dog' },
+        Dog: { icon: <ThumbsDown size={14} />, color: 'destructive', label: 'Dog' },
     };
     const { icon, color, label } = config[classification];
     const colors = {
-        emerald: 'bg-emerald-100 text-emerald-800',
-        sky: 'bg-sky-100 text-sky-800',
-        amber: 'bg-amber-100 text-amber-800',
-        rose: 'bg-rose-100 text-rose-800',
+        primary: 'bg-primary/10 text-primary',
+        sky: 'bg-sky-500/10 text-sky-400',
+        amber: 'bg-amber-500/10 text-amber-400',
+        destructive: 'bg-destructive/10 text-destructive',
     }
 
     return (
@@ -161,13 +161,13 @@ const Menu: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Menu Engineering</h2>
-                    <button onClick={() => handleOpenModal()} className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                    <button onClick={() => handleOpenModal()} className="flex items-center bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
                         <PlusCircle size={20} className="mr-2" />
                         Add Menu Item
                     </button>
                 </div>
                 <table className="w-full text-left responsive-table">
-                    <thead className="bg-muted">
+                    <thead className="bg-muted/50">
                         <tr>
                             <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Menu Item</th>
                             <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Classification</th>
@@ -198,7 +198,7 @@ const Menu: React.FC = () => {
                                                     autoFocus
                                                     min="0"
                                                 />
-                                                <button onClick={() => handleSaveSales(item.id)} className="text-green-600 hover:text-green-800"><Save size={18} /></button>
+                                                <button onClick={() => handleSaveSales(item.id)} className="text-primary hover:text-primary/80"><Save size={18} /></button>
                                                 <button onClick={handleCancelSalesEdit} className="text-muted-foreground hover:text-foreground"><XCircle size={18} /></button>
                                             </div>
                                         ) : (
@@ -213,7 +213,7 @@ const Menu: React.FC = () => {
                                     <td data-label="Sale Price" className="p-4 text-foreground font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
                                     <td data-label="Cost" className="p-4 text-muted-foreground whitespace-nowrap">{formatCurrency(item.costPerServing)}</td>
                                     <td data-label="Profit" className="p-4">
-                                        <span className={`font-bold ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        <span className={`font-bold ${item.profit >= 0 ? 'text-primary' : 'text-destructive'}`}>
                                             {formatCurrency(item.profit)}
                                         </span>
                                     </td>
@@ -260,7 +260,7 @@ const Menu: React.FC = () => {
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
                         <button onClick={handleCloseModal} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">Cancel</button>
-                        <button onClick={handleSubmit} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">Save Item</button>
+                        <button onClick={handleSubmit} className="px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90">Save Item</button>
                     </div>
                 </div>
             </Modal>

@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
         return acc + (item.salePrice - costPerServing);
     }, 0);
 
-    const COLORS = ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
+    const COLORS = ['#2dd4bf', '#64748b', '#94a3b8', '#cbd5e1', '#475569'];
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -61,8 +61,8 @@ const Dashboard: React.FC = () => {
             </Card>
             <Card className="col-span-1">
                 <div className="flex items-center">
-                    <div className="p-3 bg-green-100 rounded-full">
-                        <BookCheck className="text-green-600" />
+                    <div className="p-3 bg-sky-500/10 rounded-full">
+                        <BookCheck className="text-sky-400" />
                     </div>
                     <div className="ml-4">
                         <p className="text-sm text-muted-foreground">Total Recipes</p>
@@ -72,8 +72,8 @@ const Dashboard: React.FC = () => {
             </Card>
             <Card className="col-span-1">
                  <div className="flex items-center">
-                    <div className="p-3 bg-amber-100 rounded-full">
-                        <PieChart className="text-amber-600" />
+                    <div className="p-3 bg-amber-500/10 rounded-full">
+                        <PieChart className="text-amber-400" />
                     </div>
                     <div className="ml-4">
                         <p className="text-sm text-muted-foreground">Avg. Menu Profit</p>
@@ -86,16 +86,21 @@ const Dashboard: React.FC = () => {
                 <h3 className="text-lg font-semibold mb-4 text-foreground">Top 5 Most Profitable Menu Items</h3>
                 <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={menuProfitabilityData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                        <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(5px)', border: '1px solid rgba(200,200,200,0.5)', borderRadius: '0.5rem' }} />
-                        <Legend />
-                        <Bar dataKey="profit" name="Profit" fill="#8884d8">
+                        <XAxis dataKey="name" tick={{ fill: 'hsl(215 20% 65%)', fontSize: 12 }} />
+                        <YAxis tick={{ fill: 'hsl(215 20% 65%)' }} tickFormatter={(value) => formatCurrency(value)} />
+                        <Tooltip
+                          formatter={(value: number) => formatCurrency(value)}
+                          contentStyle={{ backgroundColor: 'hsl(222 47% 14%)', border: '1px solid hsl(217 33% 17%)', borderRadius: '0.5rem' }}
+                          labelStyle={{ color: 'hsl(210 40% 98%)' }}
+                          cursor={{ fill: 'hsl(217 33% 17%)' }}
+                        />
+                        <Legend wrapperStyle={{ color: 'hsl(215 20% 65%)' }} />
+                        <Bar dataKey="profit" name="Profit" fill="hsl(164 92% 54%)">
                             {menuProfitabilityData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Bar>
-                         <Bar dataKey="revenue" name="Revenue" fill="#82ca9d" />
+                         <Bar dataKey="revenue" name="Revenue" fill="hsl(215 28% 30%)" />
                     </BarChart>
                 </ResponsiveContainer>
             </Card>
