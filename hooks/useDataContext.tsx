@@ -213,7 +213,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { data, error } = await supabase.from('inventory').update(update).in('id', itemIds).select();
     if (error) throw error;
     if (data) {
-        const updatedIds = new Set(data.map(d => d.id));
         setInventory(prev => prev.map(item => {
             const updatedItem = data.find(d => d.id === item.id);
             return updatedItem ? updatedItem : item;
@@ -367,6 +366,94 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
+  const addSale = async (items: { menuItemId: string; quantity: number }[]) => {
+    if (!activeBusinessId) return;
+
+    const saleItems: SaleItem[] = [];
+    let totalRevenue = 0;
+    let totalCost = 0;
+
+    const inventoryUpdates: { id: string; newQuantity: number }[] = [];
+    const menuItemUpdates: { id: string; newSalesCount: number }[] = [];
+    const inventoryMap = new Map(inventory.map(i => [i.id, i]));
+    const menuItemsMap = new Map(menuItems.map(m => [m.id, m]));
+
+    for (const item of items) {
+      const menuItem = menuItemsMap.get(item.menuItemId);
+      if (!menuItem) {
+        console.warn(`Menu item with id ${item.menuItemId} not found.`);
+        continue;
+      }
+
+      const recipe = recipes.find(r => r.id === menuItem.recipeId);
+      const costPerServing = recipe ? calculateRecipeCost(recipe) / (recipe.servings || 1) : 0;
+
+      saleItems.push({
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+        salePrice: menuItem.salePrice,
+        cost: costPerServing,
+      });
+
+      totalRevenue += menuItem.salePrice * item.quantity;
+      totalCost += costPerServing * item.quantity;
+
+      if (recipe) {
+        for (const ingredient of recipe.ingredients) {
+          const invItem = inventoryMap.get(ingredient.itemId);
+          if (invItem) {
+            const conversionFactor = getConversionFactor(ingredient.unit, invItem.unit) || 1;
+            const quantityToDecrement = ingredient.quantity * item.quantity * conversionFactor;
+            
+            const existingUpdate = inventoryUpdates.find(u => u.id === invItem.id);
+            if (existingUpdate) {
+                existingUpdate.newQuantity -= quantityToDecrement;
+            } else {
+                inventoryUpdates.push({ id: invItem.id, newQuantity: invItem.quantity - quantityToDecrement });
+            }
+          }
+        }
+      }
+
+      const existingMenuUpdate = menuItemUpdates.find(u => u.id === menuItem.id);
+      if (existingMenuUpdate) {
+        existingMenuUpdate.newSalesCount += item.quantity;
+      } else {
+        menuItemUpdates.push({ id: menuItem.id, newSalesCount: menuItem.salesCount + item.quantity });
+      }
+    }
+    
+    const totalProfit = totalRevenue - totalCost;
+    const newSale: Omit<Sale, 'id' | 'businessId'> & { businessId: string } = {
+      items: saleItems,
+      saleDate: new Date().toISOString(),
+      totalRevenue,
+      totalCost,
+      totalProfit,
+      businessId: activeBusinessId,
+    };
+    
+    const { data: saleData, error: saleError } = await supabase.from('sales').insert(newSale).select().single();
+    if (saleError) throw saleError;
+    
+    const inventoryUpdatePromises = inventoryUpdates.map(update =>
+      supabase.from('inventory').update({ quantity: update.newQuantity }).eq('id', update.id)
+    );
+    const menuItemUpdatePromises = menuItemUpdates.map(update =>
+      supabase.from('menuItems').update({ salesCount: update.newSalesCount }).eq('id', update.id)
+    );
+
+    await Promise.all([...inventoryUpdatePromises, ...menuItemUpdatePromises]);
+
+    if (saleData) setSales(prev => [...prev, saleData]);
+    
+    const { data: refreshedInventory } = await supabase.from('inventory').select('*').eq('businessId', activeBusinessId);
+    if (refreshedInventory) setInventory(refreshedInventory);
+
+    const { data: refreshedMenuItems } = await supabase.from('menuItems').select('*').eq('businessId', activeBusinessId);
+    if (refreshedMenuItems) setMenuItems(refreshedMenuItems);
+  };
+
 
   // Stubs for other functions
   const placeholder = async () => { console.warn("Function not implemented"); return { success: false } as any; };
@@ -439,7 +526,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     addPurchaseOrder,
     updatePurchaseOrderStatus,
-    addSale: placeholder,
+    addSale,
 
     getInventoryItemById,
     getRecipeById,

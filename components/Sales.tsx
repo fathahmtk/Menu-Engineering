@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -17,7 +14,7 @@ type SaleItemForm = {
 };
 
 const Sales: React.FC = () => {
-    const { sales, menuItems, addSale, getRecipeById, calculateRecipeCost } = useData();
+    const { sales, menuItems, addSale } = useData();
     const { formatCurrency } = useCurrency();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,7 +35,7 @@ const Sales: React.FC = () => {
         const salesByDate: { [key: string]: { revenue: number, profit: number } } = {};
         
         sales.forEach(sale => {
-            const date = new Date(sale.saleDate).toLocaleDateString('en-CA'); // Use YYYY-MM-DD for sorting
+            const date = new Date(sale.saleDate).toLocaleDateString('en-CA'); // YYYY-MM-DD for sorting
             if (!salesByDate[date]) {
                 salesByDate[date] = { revenue: 0, profit: 0 };
             }
@@ -47,8 +44,12 @@ const Sales: React.FC = () => {
         });
 
         return Object.keys(salesByDate)
-            .map(date => ({ date: new Date(date).toLocaleDateString('en-US', {month: 'short', day: 'numeric'}), revenue: salesByDate[date].revenue, profit: salesByDate[date].profit }))
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+            .map(date => ({ 
+                date: new Date(date).toLocaleDateString('en-US', {month: 'short', day: 'numeric'}), 
+                revenue: salesByDate[date].revenue, 
+                profit: salesByDate[date].profit 
+            }));
 
     }, [sales]);
     
@@ -161,6 +162,7 @@ const Sales: React.FC = () => {
                         </button>
                     </div>
                     <div className="overflow-y-auto max-h-[280px]">
+                        {sortedSales.length > 0 ? (
                         <ul className="space-y-3">
                             {sortedSales.slice(0, 10).map(sale => {
                                 const mainItem = menuItems.find(mi => mi.id === sale.items[0].menuItemId);
@@ -178,6 +180,11 @@ const Sales: React.FC = () => {
                                 )
                             })}
                         </ul>
+                        ) : (
+                             <div className="text-center py-10 text-muted-foreground">
+                                <p>No sales recorded yet.</p>
+                            </div>
+                        )}
                     </div>
                 </Card>
             </div>
@@ -190,8 +197,13 @@ const Sales: React.FC = () => {
                                 value={item.menuItemId}
                                 onChange={e => handleItemChange(item.id, 'menuItemId', e.target.value)}
                                 className="w-full border rounded-md p-2 bg-background border-input focus:ring-1 focus:ring-ring"
+                                disabled={menuItems.length === 0}
                             >
-                                {menuItems.map(mi => <option key={mi.id} value={mi.id}>{mi.name}</option>)}
+                                {menuItems.length > 0 ? (
+                                    menuItems.map(mi => <option key={mi.id} value={mi.id}>{mi.name}</option>)
+                                ) : (
+                                    <option>No menu items available</option>
+                                )}
                             </select>
                             <input
                                 type="number"
