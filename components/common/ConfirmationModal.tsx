@@ -22,15 +22,15 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   message,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
-  confirmButtonClass = 'bg-[var(--color-destructive)] hover:opacity-80',
+  confirmButtonClass = 'can-btn can-btn-danger',
 }) => {
   if (!isOpen) return null;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <div className="flex items-start">
-        <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-[var(--color-destructive)]/10 sm:mx-0 sm:h-10 sm:w-10">
-          <AlertTriangle className="h-6 w-6 text-[var(--color-destructive)]" aria-hidden="true" />
+        <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+          <AlertTriangle className="h-6 w-6 text-[var(--color-danger)]" aria-hidden="true" />
         </div>
         <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
           <div className="mt-2">
@@ -41,14 +41,14 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
         <button
           type="button"
-          className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm ${confirmButtonClass}`}
+          className={confirmButtonClass}
           onClick={() => { onConfirm(); onClose(); }}
         >
           {confirmText}
         </button>
         {cancelText && <button
           type="button"
-          className="mt-3 w-full inline-flex justify-center rounded-md border border-[var(--color-border)] shadow-sm px-4 py-2 bg-transparent text-base font-medium text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary)] sm:mt-0 sm:w-auto sm:text-sm"
+          className="can-btn can-btn-secondary mt-3 w-full sm:mt-0 sm:w-auto"
           onClick={onClose}
         >
           {cancelText}

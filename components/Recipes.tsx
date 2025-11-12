@@ -126,7 +126,7 @@ const RecipeFormModal: React.FC<{
                     <label className="block text-sm font-medium text-[var(--color-text-muted)]">Use a Template (Optional)</label>
                     <select
                         onChange={(e) => handleTemplateSelect(e.target.value)}
-                        className="luxury-select mt-1 block w-full"
+                        className="can-select mt-1"
                         defaultValue=""
                     >
                         <option value="">Start from scratch</option>
@@ -136,8 +136,8 @@ const RecipeFormModal: React.FC<{
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Recipe Name</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} className={`luxury-input w-full mt-1 ${errors.name ? 'border-[var(--color-destructive)]' : ''}`} />
-                        {errors.name && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.name}</p>}
+                        <input type="text" value={name} onChange={e => setName(e.target.value)} className={`can-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
+                        {errors.name && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.name}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Category</label>
@@ -146,47 +146,47 @@ const RecipeFormModal: React.FC<{
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
                             placeholder="e.g., Main Course"
-                            className={`luxury-input w-full mt-1 ${errors.category ? 'border-[var(--color-destructive)]' : ''}`}
+                            className={`can-input mt-1 ${errors.category ? 'border-[var(--color-danger)]' : ''}`}
                             list="recipe-categories"
                         />
                         <datalist id="recipe-categories">
                             {categories.map((cat) => <option key={cat.id} value={cat.name} />)}
                         </datalist>
-                        {errors.category && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.category}</p>}
+                        {errors.category && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.category}</p>}
                     </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Servings</label>
-                        <input type="number" min="1" value={servings} onChange={e => setServings(parseInt(e.target.value) || 1)} className={`luxury-input w-full mt-1 ${errors.servings ? 'border-[var(--color-destructive)]' : ''}`} />
-                        {errors.servings && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.servings}</p>}
+                        <input type="number" min="1" value={servings} onChange={e => setServings(parseInt(e.target.value) || 1)} className={`can-input mt-1 ${errors.servings ? 'border-[var(--color-danger)]' : ''}`} />
+                        {errors.servings && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.servings}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Target Sale Price/Serving</label>
-                        <input type="number" min="0" step="0.01" value={targetSalePricePerServing} onChange={e => setTargetSalePrice(parseFloat(e.target.value) || 0)} className="luxury-input w-full mt-1" />
+                        <input type="number" min="0" step="0.01" value={targetSalePricePerServing} onChange={e => setTargetSalePrice(parseFloat(e.target.value) || 0)} className="can-input mt-1" />
                     </div>
                 </div>
                 <div>
                     <h4 className="text-sm font-medium mb-2 text-[var(--color-text-muted)]">Ingredients</h4>
-                    {errors.ingredients && <p className="text-[var(--color-destructive)] text-xs mb-2">{errors.ingredients}</p>}
+                    {errors.ingredients && <p className="text-[var(--color-danger)] text-xs mb-2">{errors.ingredients}</p>}
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                        {ingredients.map((ing, index) => (
                            <div key={index} className="grid grid-cols-[1fr,100px,80px,auto] gap-2 items-center">
-                               <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="luxury-select w-full">
+                               <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="can-select">
                                    {inventory.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
                                </select>
-                               <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="luxury-input w-full" />
-                               <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="luxury-select w-full">
+                               <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="can-input" />
+                               <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="can-select">
                                    {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                                </select>
-                               <button onClick={() => handleRemoveIngredient(index)} className="text-[var(--color-destructive)]/80 hover:text-[var(--color-destructive)]"><X size={18} /></button>
+                               <button onClick={() => handleRemoveIngredient(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)]"><X size={18} /></button>
                            </div>
                        ))}
                     </div>
-                    <button onClick={handleAddIngredient} className="text-sm text-[var(--color-primary)] mt-2 flex items-center"><PlusCircle size={16} className="mr-1"/> Add Ingredient</button>
+                    <button onClick={handleAddIngredient} className="text-sm text-[var(--color-primary)] mt-2 flex items-center font-semibold"><PlusCircle size={16} className="mr-1"/> Add Ingredient</button>
                 </div>
 
-                <div className="bg-[var(--color-secondary)] p-3 rounded-lg text-sm mt-4 border border-[var(--color-border)]">
+                <div className="bg-[var(--color-input)] p-3 rounded-lg text-sm mt-4 border border-[var(--color-border)]">
                     <div className="flex justify-between items-center">
                         <span className="text-[var(--color-text-muted)]">Calculated Total Cost:</span>
                         <span className="font-semibold">{formatCurrency(recipeCost)}</span>
@@ -197,7 +197,7 @@ const RecipeFormModal: React.FC<{
                     </div>
                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-[var(--color-border)]">
                          <div className="text-[var(--color-text-muted)]">
-                            <span className="font-medium">Suggested Sale Price</span>
+                            <span className="font-medium text-[var(--color-text-secondary)]">Suggested Sale Price</span>
                             <p className="text-xs">Based on a 30% food cost target.</p>
                         </div>
                         <span className="font-bold text-lg text-[var(--color-primary)]">{formatCurrency(suggestedPrice)}</span>
@@ -206,11 +206,11 @@ const RecipeFormModal: React.FC<{
 
                 <div>
                     <label className="block text-sm font-medium mt-4 text-[var(--color-text-muted)]">Instructions (one step per line)</label>
-                    <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={5} className="luxury-input w-full mt-1"></textarea>
+                    <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={5} className="can-input mt-1"></textarea>
                 </div>
                 <div className="flex justify-end space-x-2 pt-4">
-                    <button onClick={handleClose} className="luxury-btn luxury-btn-secondary">Cancel</button>
-                    <button onClick={handleSave} className="luxury-btn luxury-btn-primary">Save Recipe</button>
+                    <button onClick={handleClose} className="can-btn can-btn-secondary">Cancel</button>
+                    <button onClick={handleSave} className="can-btn can-btn-primary">Save Recipe</button>
                 </div>
             </div>
         </Modal>
@@ -257,14 +257,14 @@ const CategoryManagerModal: React.FC<{
                             value={newCategoryName}
                             onChange={(e) => setNewCategoryName(e.target.value)}
                             placeholder="e.g., Desserts"
-                            className="luxury-input flex-grow"
+                            className="can-input flex-grow"
                         />
-                        <button onClick={handleAdd} className="luxury-btn luxury-btn-primary disabled:opacity-50" disabled={!newCategoryName.trim()}>Add</button>
+                        <button onClick={handleAdd} className={`can-btn can-btn-primary ${!newCategoryName.trim() ? 'can-btn-disabled' : ''}`} disabled={!newCategoryName.trim()}>Add</button>
                     </div>
                 </div>
                 <div>
                     <h3 className="text-md font-semibold mb-2 text-[var(--color-text-muted)]">Existing Categories</h3>
-                    <ul className="space-y-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-secondary)]">
+                    <ul className="space-y-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-input)]">
                         {categories.map(cat => (
                             <li key={cat.id} className="flex items-center justify-between p-2 hover:bg-[var(--color-border)] rounded">
                                 {editingCategory?.id === cat.id ? (
@@ -274,15 +274,15 @@ const CategoryManagerModal: React.FC<{
                                         onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
                                         onBlur={handleUpdate}
                                         onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
-                                        className="luxury-input p-1 w-full"
+                                        className="can-input p-1 w-full"
                                         autoFocus
                                     />
                                 ) : (
                                     <span>{cat.name}</span>
                                 )}
                                 <div className="space-x-2">
-                                     <button onClick={() => setEditingCategory(cat)} className="text-[var(--color-primary)] hover:opacity-80"><Edit3 size={16} /></button>
-                                     <button onClick={() => handleDelete(cat.id)} className="text-[var(--color-destructive)] hover:opacity-80"><Trash2 size={16} /></button>
+                                     <button onClick={() => setEditingCategory(cat)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit3 size={16} /></button>
+                                     <button onClick={() => handleDelete(cat.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={16} /></button>
                                 </div>
                             </li>
                         ))}
@@ -333,14 +333,14 @@ const UnitManagerModal: React.FC<{
                             value={newUnitName}
                             onChange={(e) => setNewUnitName(e.target.value)}
                             placeholder="e.g., pinch, bunch"
-                            className="luxury-input flex-grow"
+                            className="can-input flex-grow"
                         />
-                        <button onClick={handleAdd} className="luxury-btn luxury-btn-primary disabled:opacity-50" disabled={!newUnitName.trim()}>Add</button>
+                        <button onClick={handleAdd} className={`can-btn can-btn-primary ${!newUnitName.trim() ? 'can-btn-disabled' : ''}`} disabled={!newUnitName.trim()}>Add</button>
                     </div>
                 </div>
                 <div>
                     <h3 className="text-md font-semibold mb-2 text-[var(--color-text-muted)]">Custom Units</h3>
-                    <ul className="space-y-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-secondary)]">
+                    <ul className="space-y-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-input)]">
                         {ingredientUnits.map(unit => (
                             <li key={unit.id} className="flex items-center justify-between p-2 hover:bg-[var(--color-border)] rounded">
                                 {editingUnit?.id === unit.id ? (
@@ -350,15 +350,15 @@ const UnitManagerModal: React.FC<{
                                         onChange={(e) => setEditingUnit({ ...editingUnit, name: e.target.value })}
                                         onBlur={handleUpdate}
                                         onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
-                                        className="luxury-input p-1 w-full"
+                                        className="can-input p-1 w-full"
                                         autoFocus
                                     />
                                 ) : (
                                     <span>{unit.name}</span>
                                 )}
                                 <div className="space-x-2">
-                                     <button onClick={() => setEditingUnit(unit)} className="text-[var(--color-primary)] hover:opacity-80"><Edit3 size={16} /></button>
-                                     <button onClick={() => handleDelete(unit.id)} className="text-[var(--color-destructive)] hover:opacity-80"><Trash2 size={16} /></button>
+                                     <button onClick={() => setEditingUnit(unit)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit3 size={16} /></button>
+                                     <button onClick={() => handleDelete(unit.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={16} /></button>
                                 </div>
                             </li>
                         ))}
@@ -711,15 +711,15 @@ const Recipes: React.FC = () => {
                 title="Delete Recipe"
                 message={deleteError ? <span className="text-red-700">{deleteError}</span> : `Are you sure you want to permanently delete "${selectedRecipe.name}"? This action cannot be undone.`}
                 confirmText={deleteError ? 'OK' : 'Delete'}
-                confirmButtonClass={deleteError ? 'luxury-btn luxury-btn-primary' : 'luxury-btn bg-[var(--color-destructive)] text-white hover:bg-opacity-80'}
+                confirmButtonClass={deleteError ? 'can-btn can-btn-primary' : 'can-btn can-btn-danger'}
                 cancelText={deleteError ? '' : 'Cancel'}
             />
             <Modal isOpen={modalState.type === 'duplicate'} onClose={() => setModalState({ type: null })} title="Duplicate Recipe">
                 <div>
                     <p className="mb-4">Do you want to include the cost history in the new duplicated recipe?</p>
                     <div className="flex justify-end space-x-2">
-                        <button onClick={() => { handleConfirmDuplicate(false); setModalState({ type: null }); }} className="luxury-btn luxury-btn-secondary">No, Start Fresh</button>
-                        <button onClick={() => { handleConfirmDuplicate(true); setModalState({ type: null }); }} className="luxury-btn luxury-btn-primary">Yes, Include History</button>
+                        <button onClick={() => { handleConfirmDuplicate(false); setModalState({ type: null }); }} className="can-btn can-btn-secondary">No, Start Fresh</button>
+                        <button onClick={() => { handleConfirmDuplicate(true); setModalState({ type: null }); }} className="can-btn can-btn-primary">Yes, Include History</button>
                     </div>
                 </div>
             </Modal>
@@ -732,10 +732,10 @@ const Recipes: React.FC = () => {
                     setModalState({ type: null });
                 }}>
                     <label htmlFor="templateName" className="block text-sm font-medium text-[var(--color-text-muted)]">Template Name</label>
-                    <input type="text" name="templateName" id="templateName" defaultValue={`${selectedRecipe.name} Base`} className="luxury-input mt-1 block w-full" required />
+                    <input type="text" name="templateName" id="templateName" defaultValue={`${selectedRecipe.name} Base`} className="can-input mt-1" required />
                     <div className="flex justify-end space-x-2 pt-4 mt-2">
-                        <button type="button" onClick={() => setModalState({ type: null })} className="luxury-btn luxury-btn-secondary">Cancel</button>
-                        <button type="submit" className="luxury-btn luxury-btn-primary">Save Template</button>
+                        <button type="button" onClick={() => setModalState({ type: null })} className="can-btn can-btn-secondary">Cancel</button>
+                        <button type="submit" className="can-btn can-btn-primary">Save Template</button>
                     </div>
                 </form>
             </Modal>
@@ -760,7 +760,7 @@ const Recipes: React.FC = () => {
                                 placeholder="Search recipes..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="luxury-input w-full pl-10"
+                                className="can-input pl-10"
                                 aria-label="Search recipes by name"
                             />
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={20} />
@@ -770,16 +770,16 @@ const Recipes: React.FC = () => {
                                 id="category-filter"
                                 value={filterCategory}
                                 onChange={e => setFilterCategory(e.target.value)}
-                                className="luxury-select block w-full"
+                                className="can-select"
                                 aria-label="Filter by category"
                             >
                                 <option value="all">All Categories</option>
                                 {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
                             </select>
-                            <button onClick={() => setModalState({ type: 'manageCategories' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-secondary)]" title="Manage Categories">
+                            <button onClick={() => setModalState({ type: 'manageCategories' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-input)]" title="Manage Categories">
                                <ListChecks size={20} className="text-[var(--color-text-muted)]"/>
                             </button>
-                             <button onClick={() => setModalState({ type: 'manageUnits' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-secondary)]" title="Manage Units">
+                             <button onClick={() => setModalState({ type: 'manageUnits' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-input)]" title="Manage Units">
                                <Weight size={20} className="text-[var(--color-text-muted)]"/>
                             </button>
                         </div>
@@ -788,7 +788,7 @@ const Recipes: React.FC = () => {
                         {filteredRecipes.map(recipe => (
                             <li
                                 key={recipe.id}
-                                className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedRecipe?.id === recipe.id ? 'bg-[var(--color-primary)]/10' : 'hover:bg-[var(--color-secondary)]'}`}
+                                className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedRecipe?.id === recipe.id ? 'bg-[var(--color-primary-light)]' : 'hover:bg-[var(--color-input)]'}`}
                                 onClick={() => { setSelectedRecipe(recipe); setIsHistoryVisible(false); }}
                             >
                                 <div className="font-semibold">{recipe.name}</div>
@@ -813,19 +813,19 @@ const Recipes: React.FC = () => {
                             <div className="flex justify-between items-start mb-4">
                                  <h2 className="text-2xl font-bold">{selectedRecipe.name}</h2>
                                  <div className="flex items-center space-x-2">
-                                    <button onClick={() => setModalState({ type: 'saveTemplate'})} className="p-2 rounded-full hover:bg-[var(--color-secondary)]" title="Save as Template">
-                                        <FileText size={20} className="text-[var(--color-primary)]" />
+                                    <button onClick={() => setModalState({ type: 'saveTemplate'})} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Save as Template">
+                                        <FileText size={20} className="text-[var(--color-text-muted)]" />
                                     </button>
-                                    <button onClick={() => setModalState({ type: 'duplicate'})} className="p-2 rounded-full hover:bg-[var(--color-secondary)]" title="Duplicate Recipe">
-                                        <Copy size={20} className="text-[var(--color-primary)]" />
+                                    <button onClick={() => setModalState({ type: 'duplicate'})} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Duplicate Recipe">
+                                        <Copy size={20} className="text-[var(--color-text-muted)]" />
                                     </button>
-                                    <button onClick={() => setModalState({ type: 'delete'})} className="p-2 rounded-full hover:bg-[var(--color-secondary)]" title="Delete Recipe">
-                                        <Trash2 size={20} className="text-[var(--color-destructive)]" />
+                                    <button onClick={() => setModalState({ type: 'delete'})} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Delete Recipe">
+                                        <Trash2 size={20} className="text-[var(--color-text-muted)]" />
                                     </button>
                                  </div>
                             </div>
 
-                            <div className="relative group w-full h-48 bg-[var(--color-secondary)] rounded-lg mb-4 flex items-center justify-center overflow-hidden border border-dashed border-[var(--color-border)]">
+                            <div className="relative group w-full h-48 bg-[var(--color-input)] rounded-lg mb-4 flex items-center justify-center overflow-hidden border border-dashed border-[var(--color-border)]">
                                 {isUploading ? (
                                     <div className="flex flex-col items-center text-[var(--color-primary)]">
                                         <Loader2 size={32} className="animate-spin"/>
@@ -856,11 +856,11 @@ const Recipes: React.FC = () => {
 
 
                             {suggestedSalePrice > 0 && (
-                                <div className="bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 p-4 rounded-lg mb-6 flex items-center">
+                                <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)]/20 p-4 rounded-lg mb-6 flex items-center">
                                     <Lightbulb className="text-[var(--color-primary)] mr-4 flex-shrink-0" size={24} />
                                     <div>
                                         <p className="font-semibold text-[var(--color-primary)]">Suggested Sale Price: {formatCurrency(suggestedSalePrice)}</p>
-                                        <p className="text-sm text-[var(--color-text-muted)]">This suggestion is based on a 30% food cost target, a common industry benchmark for profitability.</p>
+                                        <p className="text-sm text-[var(--color-text-secondary)]">This suggestion is based on a 30% food cost target, a common industry benchmark for profitability.</p>
                                     </div>
                                 </div>
                             )}
@@ -868,7 +868,7 @@ const Recipes: React.FC = () => {
                             <div className="mt-6">
                                 <button
                                     onClick={() => setIsHistoryVisible(!isHistoryVisible)}
-                                    className="flex items-center justify-between w-full p-3 bg-[var(--color-secondary)] hover:bg-[var(--color-border)] rounded-lg border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                                    className="flex items-center justify-between w-full p-3 bg-[var(--color-input)] hover:bg-[var(--color-border)] rounded-lg border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                                     aria-expanded={isHistoryVisible}
                                 >
                                     <div className="flex items-center">
@@ -910,12 +910,12 @@ const Recipes: React.FC = () => {
 
                              <div className="flex justify-between items-center mt-6 mb-2">
                                  <h3 className="text-lg font-semibold">Ingredients</h3>
-                                 <button onClick={handleAddIngredientToRecipe} className="flex items-center text-sm text-[var(--color-primary)] hover:opacity-80">
+                                 <button onClick={handleAddIngredientToRecipe} className="flex items-center text-sm text-[var(--color-primary)] hover:opacity-80 font-semibold">
                                     <Plus size={16} className="mr-1" /> Add Ingredient
                                 </button>
                             </div>
                             <div className="border border-[var(--color-border)] rounded-lg">
-                                <div className="hidden md:grid md:grid-cols-[1fr,100px,120px,100px,40px] gap-x-2 px-3 py-2 text-sm bg-[var(--color-secondary)] text-[var(--color-text-muted)] font-semibold">
+                                <div className="hidden md:grid md:grid-cols-[1fr,100px,120px,100px,40px] gap-x-2 px-3 py-2 text-sm bg-[var(--color-input)] text-[var(--color-text-muted)] font-semibold">
                                     <span>Ingredient</span>
                                     <span>Quantity</span>
                                     <span>Unit</span>
@@ -929,20 +929,20 @@ const Recipes: React.FC = () => {
                                         const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
                                         
                                         return (
-                                            <div key={`${ing.itemId}-${index}`} className="p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-secondary)] space-y-2 md:space-y-0">
+                                            <div key={`${ing.itemId}-${index}`} className="p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0">
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Ingredient</label>
-                                                    <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="luxury-select w-full text-sm">
+                                                    <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="can-select text-sm">
                                                         {inventory.map(invItem => <option key={invItem.id} value={invItem.id}>{invItem.name}</option>)}
                                                     </select>
                                                 </div>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Quantity</label>
-                                                    <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="luxury-input w-full text-sm" />
+                                                    <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="can-input text-sm" />
                                                 </div>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Unit</label>
-                                                    <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="luxury-select w-full text-sm">
+                                                    <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="can-select text-sm">
                                                         {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                                                     </select>
                                                 </div>
@@ -955,10 +955,10 @@ const Recipes: React.FC = () => {
                                                                 {formatCurrency(item.unitCost)} / {item.unit}
                                                             </span>
                                                         </div>
-                                                    ) : <span className="text-[var(--color-destructive)] text-xs">Item not found</span>}
+                                                    ) : <span className="text-[var(--color-danger)] text-xs">Item not found</span>}
                                                 </div>
                                                 <div className="flex justify-end md:justify-center">
-                                                    <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-[var(--color-destructive)]/70 hover:text-[var(--color-destructive)]"><XCircle size={18} /></button>
+                                                    <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-[var(--color-text-muted)]/70 hover:text-[var(--color-danger)]"><XCircle size={18} /></button>
                                                 </div>
                                             </div>
                                         );
@@ -969,7 +969,7 @@ const Recipes: React.FC = () => {
                                         <span className="text-right text-lg">Total Recipe Cost:</span>
                                         <span className="text-right text-lg">{formatCurrency(selectedRecipeCost)}</span>
                                     </div>
-                                    <div className="flex justify-between items-center p-3 bg-[var(--color-primary)]/5">
+                                    <div className="flex justify-between items-center p-3 bg-[var(--color-primary-light)]">
                                         <span className="text-right text-[var(--color-primary)] text-lg">Cost per Serving:</span>
                                         <span className="text-right text-[var(--color-primary)] text-lg">{formatCurrency(selectedCostPerServing)}</span>
                                     </div>
@@ -977,7 +977,7 @@ const Recipes: React.FC = () => {
                             </div>
                             <div className="flex justify-between items-center mt-6 mb-2">
                                  <h3 className="text-lg font-semibold">Instructions</h3>
-                                 <button onClick={handleAddInstruction} className="flex items-center text-sm text-[var(--color-primary)] hover:opacity-80">
+                                 <button onClick={handleAddInstruction} className="flex items-center text-sm text-[var(--color-primary)] hover:opacity-80 font-semibold">
                                     <Plus size={16} className="mr-1" /> Add Step
                                 </button>
                             </div>
@@ -985,7 +985,7 @@ const Recipes: React.FC = () => {
                                {selectedRecipe.instructions.map((instruction, index) => (
                                    <li 
                                        key={index} 
-                                       className={`flex items-start group p-2 rounded-md transition-shadow ${draggedIndex === index ? 'shadow-lg bg-[var(--color-primary)]/10' : ''}`}
+                                       className={`flex items-start group p-2 rounded-md transition-shadow ${draggedIndex === index ? 'shadow-lg bg-[var(--color-primary-light)]' : ''}`}
                                        draggable
                                        onDragStart={() => { dragItem.current = index; setDraggedIndex(index); }}
                                        onDragEnter={() => dragOverItem.current = index}
@@ -998,9 +998,9 @@ const Recipes: React.FC = () => {
                                             value={instruction}
                                             onChange={(e) => handleInstructionChange(index, e.target.value)}
                                             rows={Math.max(1, Math.ceil(instruction.length / 50))}
-                                            className="flex-grow p-1 border border-transparent hover:border-[var(--color-border)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] rounded-md transition-colors w-full text-[var(--color-text-muted)] bg-transparent resize-none"
+                                            className="flex-grow p-1 border border-transparent hover:border-[var(--color-border)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] rounded-md transition-colors w-full text-[var(--color-text-secondary)] bg-transparent resize-none"
                                        />
-                                       <button onClick={() => handleRemoveInstruction(index)} className="ml-2 text-[var(--color-destructive)]/60 hover:text-[var(--color-destructive)] opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+                                       <button onClick={() => handleRemoveInstruction(index)} className="ml-2 text-[var(--color-text-muted)]/60 hover:text-[var(--color-danger)] opacity-0 group-hover:opacity-100 transition-opacity mt-1">
                                            <XCircle size={18} />
                                        </button>
                                    </li>
@@ -1012,7 +1012,7 @@ const Recipes: React.FC = () => {
                             <FileText size={48} className="mb-4 text-[var(--color-border)]" />
                             <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">No Recipe Selected</h3>
                             <p className="max-w-xs mt-1">Select a recipe from the list to view its details, or create a new one to get started.</p>
-                             <button onClick={() => setIsNewRecipeModalOpen(true)} className="mt-4 luxury-btn luxury-btn-primary">
+                             <button onClick={() => setIsNewRecipeModalOpen(true)} className="mt-4 can-btn can-btn-primary">
                                 <PlusCircle size={20} className="mr-2" />
                                 Create Recipe
                             </button>

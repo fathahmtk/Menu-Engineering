@@ -99,12 +99,12 @@ const ImportModal = <T extends {}>({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`mt-4 border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${dragOver ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10' : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/50'}`}
+              className={`mt-4 border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${dragOver ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]' : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/50'}`}
             >
               <input type="file" id="csv-upload" accept=".csv" className="hidden" onChange={(e) => handleFileChange(e.target.files ? e.target.files[0] : null)} />
               <label htmlFor="csv-upload" className="cursor-pointer w-full flex flex-col items-center">
                 <Upload size={32} className="mx-auto text-[var(--color-text-muted)]" />
-                <p className="mt-2 text-sm text-white">
+                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
                   <span className="font-semibold text-[var(--color-primary)]">Click to upload</span> or drag and drop
                 </p>
                 <p className="text-xs text-[var(--color-text-muted)]">CSV file</p>
@@ -118,7 +118,7 @@ const ImportModal = <T extends {}>({
       case 'preview':
         return (
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-black/20 p-2 rounded-lg">
+            <div className="flex justify-between items-center bg-[var(--color-input)] p-2 rounded-lg">
               <div className="flex items-center">
                 <FileText size={18} className="mr-2 text-[var(--color-text-muted)]" />
                 <p className="text-sm font-medium">{file?.name}</p>
@@ -126,9 +126,9 @@ const ImportModal = <T extends {}>({
               <button onClick={resetState} className="text-sm font-semibold text-[var(--color-primary)] hover:underline">Choose another file</button>
             </div>
             {parseErrors.length > 0 && (
-              <div className="bg-[var(--color-destructive)]/10 border border-[var(--color-destructive)]/20 p-3 rounded-lg">
-                <h4 className="font-semibold text-[var(--color-destructive)] flex items-center"><AlertTriangle size={16} className="mr-2" /> Found {parseErrors.length} potential issues:</h4>
-                <ul className="list-disc list-inside text-sm text-[var(--color-destructive)]/90 mt-1 max-h-24 overflow-y-auto">
+              <div className="bg-red-100 border border-red-200 p-3 rounded-lg">
+                <h4 className="font-semibold text-[var(--color-danger)] flex items-center"><AlertTriangle size={16} className="mr-2" /> Found {parseErrors.length} potential issues:</h4>
+                <ul className="list-disc list-inside text-sm text-red-800/90 mt-1 max-h-24 overflow-y-auto">
                   {parseErrors.map((err, i) => <li key={i}>{err}</li>)}
                 </ul>
               </div>
@@ -139,25 +139,25 @@ const ImportModal = <T extends {}>({
               {parsedData.length > 10 && <div className="p-2 text-center text-sm text-[var(--color-text-muted)]">...and {parsedData.length - 10} more.</div>}
             </div>
             <div className="flex justify-end space-x-2 pt-4">
-              <button onClick={handleClose} className="luxury-btn luxury-btn-secondary">Cancel</button>
-              <button onClick={handleImportClick} disabled={parsedData.length === 0} className="luxury-btn luxury-btn-primary disabled:opacity-50">Import Data</button>
+              <button onClick={handleClose} className="can-btn can-btn-secondary">Cancel</button>
+              <button onClick={handleImportClick} disabled={parsedData.length === 0} className={`can-btn can-btn-primary ${parsedData.length === 0 ? 'can-btn-disabled' : ''}`}>Import Data</button>
             </div>
           </div>
         );
       case 'complete':
         return (
           <div className="text-center space-y-4 py-4">
-            <CheckCircle size={48} className="mx-auto text-emerald-500" />
+            <CheckCircle size={48} className="mx-auto text-[var(--color-success)]" />
             <h3 className="text-xl font-bold">Import Complete</h3>
-            <p><span className="font-semibold text-emerald-400">{importResult?.successCount || 0}</span> records were successfully imported.</p>
+            <p><span className="font-semibold text-[var(--color-success)]">{importResult?.successCount || 0}</span> records were successfully imported.</p>
             {importResult && importResult.duplicateCount > 0 && (
               <p className="text-[var(--color-text-muted)] text-sm flex items-center justify-center">
-                <XCircle size={14} className="mr-2 text-amber-500" />
-                <span className="font-semibold text-amber-400">{importResult.duplicateCount}</span> duplicates were skipped.
+                <XCircle size={14} className="mr-2 text-[var(--color-warning)]" />
+                <span className="font-semibold text-[var(--color-warning)]">{importResult.duplicateCount}</span> duplicates were skipped.
               </p>
             )}
             <div className="pt-4">
-              <button onClick={handleClose} className="luxury-btn luxury-btn-primary px-6">Done</button>
+              <button onClick={handleClose} className="can-btn can-btn-primary px-6">Done</button>
             </div>
           </div>
         );

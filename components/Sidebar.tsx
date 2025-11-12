@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, ShoppingCart, BookOpen, Truck, Utensils, BarChart2, ChefHat, X, ClipboardList, Receipt, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, BookOpen, Truck, Utensils, BarChart2, X, ClipboardList, Receipt, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuthContext';
 
 
@@ -13,6 +13,19 @@ interface SidebarProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 
+const CanGroupLogo = () => (
+    <div className="flex items-center gap-3">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" fill="var(--color-primary)"/>
+            <path d="M15.5 8.5C14.67 7.33 13.33 6.5 12 6.5C10.67 6.5 9.33 7.33 8.5 8.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M15.5 15.5C14.67 16.67 13.33 17.5 12 17.5C10.67 17.5 9.33 16.67 8.5 15.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M8.5 15.5C7.33 14.67 6.5 13.33 6.5 12C6.5 10.67 7.33 9.33 8.5 8.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M15.5 8.5C16.67 9.33 17.5 10.67 17.5 12C17.5 13.33 16.67 14.67 15.5 15.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">CAN Group</h1>
+    </div>
+);
+
 const NavItem: React.FC<{
   icon: React.ReactNode;
   label: string;
@@ -20,16 +33,15 @@ const NavItem: React.FC<{
   onClick: () => void;
 }> = ({ icon, label, isActive, onClick }) => (
   <li
-    className={`flex items-center p-3 my-1 cursor-pointer rounded-lg transition-all duration-200 relative ${
+    className={`flex items-center p-3 my-1 cursor-pointer rounded-lg transition-all duration-200 ${
       isActive
-        ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-lg'
-        : 'text-[var(--color-text-muted)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-primary)]'
+        ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-sm'
+        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-input)] hover:text-[var(--color-text-primary)]'
     }`}
     onClick={onClick}
   >
-    {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-3/4 w-1 bg-[var(--color-primary-foreground)] rounded-r-full"></div>}
     {icon}
-    <span className="ml-4 font-medium">{label}</span>
+    <span className="ml-4 font-semibold">{label}</span>
   </li>
 );
 
@@ -57,12 +69,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
   return (
     <>
       <div className={`fixed lg:static inset-0 bg-black bg-opacity-60 z-30 transition-opacity lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsOpen(false)}></div>
-      <aside className={`bg-[var(--color-card)] w-64 min-h-screen p-4 flex flex-col fixed lg:static z-40 transform transition-transform duration-300 shadow-2xl ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 border-r border-[var(--color-border)]`}>
+      <aside className={`bg-[var(--color-sidebar)] w-64 min-h-screen p-4 flex flex-col fixed lg:static z-40 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 border-r border-[var(--color-border)] shadow-lg`}>
         <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center">
-                 <ChefHat className="text-[var(--color-primary)]" size={32} />
-                 <h1 className="text-2xl font-bold ml-2 text-[var(--color-text-primary)]">F&B Pro</h1>
-            </div>
+            <CanGroupLogo />
             <button onClick={() => setIsOpen(false)} className="lg:hidden text-[var(--color-text-muted)]">
                 <X size={24} />
             </button>
@@ -84,10 +93,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
         <div className="mt-auto">
              <button
                 onClick={signOut}
-                className="w-full flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors text-[var(--color-text-muted)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-primary)]"
+                className="w-full flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors text-[var(--color-text-secondary)] hover:bg-[var(--color-input)] hover:text-[var(--color-text-primary)]"
               >
                 <LogOut size={20} />
-                <span className="ml-4 font-medium">Logout</span>
+                <span className="ml-4 font-semibold">Logout</span>
               </button>
         </div>
 

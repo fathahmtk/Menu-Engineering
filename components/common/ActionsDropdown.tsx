@@ -24,12 +24,11 @@ const ActionsDropdown: React.FC<ActionsDropdownProps> = ({ onExport, onImport })
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center text-[var(--color-text-muted)] px-3 py-2 rounded-lg hover:bg-white/10 transition-colors border border-[var(--color-border)]"
+        className="can-btn can-btn-secondary px-3"
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
         <MoreVertical size={20} />
-        <span className="ml-2 font-semibold text-sm">Actions</span>
       </button>
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 origin-top-right bg-[var(--color-card)] rounded-xl shadow-lg ring-1 ring-[var(--color-border)] z-50">
@@ -37,7 +36,7 @@ const ActionsDropdown: React.FC<ActionsDropdownProps> = ({ onExport, onImport })
             <a
               href="#"
               onClick={(e) => { e.preventDefault(); onImport(); setIsOpen(false); }}
-              className="flex items-center px-4 py-2 text-sm text-white hover:bg-white/5"
+              className="flex items-center px-4 py-2 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-input)]"
             >
               <Upload size={16} className="mr-3" />
               Import CSV
@@ -45,7 +44,7 @@ const ActionsDropdown: React.FC<ActionsDropdownProps> = ({ onExport, onImport })
             <a
               href="#"
               onClick={(e) => { e.preventDefault(); onExport(); setIsOpen(false); }}
-              className="flex items-center px-4 py-2 text-sm text-white hover:bg-white/5"
+              className="flex items-center px-4 py-2 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-input)]"
             >
               <Download size={16} className="mr-3" />
               Export CSV

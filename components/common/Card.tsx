@@ -8,7 +8,7 @@ interface CardProps {
 
 const Card: React.FC<CardProps> = ({ children, className = '' }) => {
   return (
-    <div className={`luxury-card p-4 md:p-6 ${className}`} style={{ animation: 'slideUp 0.5s ease-out' }}>
+    <div className={`can-card p-4 md:p-6 ${className}`} style={{ animation: 'slideUp 0.5s ease-out forwards' }}>
       {children}
     </div>
   );

@@ -100,7 +100,7 @@ const Sales: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <Card>
                     <div className="flex items-center">
-                        <div className="p-3 bg-[var(--color-primary)]/10 rounded-full"><TrendingUp className="text-[var(--color-primary)]" /></div>
+                        <div className="p-3 bg-[var(--color-primary-light)] rounded-full"><TrendingUp className="text-[var(--color-primary)]" /></div>
                         <div className="ml-4">
                             <p className="text-sm text-[var(--color-text-muted)]">Total Revenue</p>
                             <p className="text-2xl font-bold">{formatCurrency(salesMetrics.totalRevenue)}</p>
@@ -109,7 +109,7 @@ const Sales: React.FC = () => {
                 </Card>
                 <Card>
                     <div className="flex items-center">
-                        <div className="p-3 bg-green-500/10 rounded-full"><DollarSign className="text-green-400" /></div>
+                        <div className="p-3 bg-green-100 rounded-full"><DollarSign className="text-green-500" /></div>
                         <div className="ml-4">
                             <p className="text-sm text-[var(--color-text-muted)]">Total Profit</p>
                             <p className="text-2xl font-bold">{formatCurrency(salesMetrics.totalProfit)}</p>
@@ -118,7 +118,7 @@ const Sales: React.FC = () => {
                 </Card>
                 <Card>
                     <div className="flex items-center">
-                        <div className="p-3 bg-amber-500/10 rounded-full"><Receipt className="text-amber-400" /></div>
+                        <div className="p-3 bg-yellow-100 rounded-full"><Receipt className="text-yellow-500" /></div>
                         <div className="ml-4">
                             <p className="text-sm text-[var(--color-text-muted)]">Total Transactions</p>
                             <p className="text-2xl font-bold">{salesMetrics.totalSalesCount}</p>
@@ -127,7 +127,7 @@ const Sales: React.FC = () => {
                 </Card>
                  <Card>
                     <div className="flex items-center">
-                        <div className="p-3 bg-sky-500/10 rounded-full"><BarChart className="text-sky-400" /></div>
+                        <div className="p-3 bg-sky-100 rounded-full"><BarChart className="text-sky-500" /></div>
                         <div className="ml-4">
                             <p className="text-sm text-[var(--color-text-muted)]">Avg. Sale Value</p>
                             <p className="text-2xl font-bold">{formatCurrency(salesMetrics.averageSaleValue)}</p>
@@ -145,19 +145,19 @@ const Sales: React.FC = () => {
                             <YAxis tick={{ fill: 'var(--color-text-muted)' }} tickFormatter={(value) => formatCurrency(value)} />
                             <Tooltip
                                 formatter={(value: number) => formatCurrency(value)}
-                                contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
-                                labelStyle={{ color: 'var(--color-text-primary)' }}
+                                contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', color: 'var(--color-text-primary)', boxShadow: 'var(--shadow-md)' }}
+                                labelStyle={{ color: 'var(--color-text-primary)', fontWeight: '600' }}
                             />
                             <Legend wrapperStyle={{ color: 'var(--color-text-muted)' }} />
                             <Line type="monotone" dataKey="revenue" stroke="var(--color-primary)" name="Revenue" strokeWidth={2} />
-                            <Line type="monotone" dataKey="profit" stroke="#4CAF50" name="Profit" strokeWidth={2} />
+                            <Line type="monotone" dataKey="profit" stroke="var(--color-success)" name="Profit" strokeWidth={2} />
                         </LineChart>
                     </ResponsiveContainer>
                 </Card>
                 <Card className="lg:col-span-2">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">Recent Transactions</h3>
-                         <button onClick={openModal} className="luxury-btn luxury-btn-primary text-sm py-1.5 px-3">
+                         <button onClick={openModal} className="can-btn can-btn-primary text-sm py-1.5 px-3">
                             <PlusCircle size={16} className="mr-2" />
                             Record Sale
                         </button>
@@ -168,14 +168,14 @@ const Sales: React.FC = () => {
                             {sortedSales.slice(0, 10).map(sale => {
                                 const mainItem = menuItems.find(mi => mi.id === sale.items[0].menuItemId);
                                 return (
-                                    <li key={sale.id} className="flex justify-between items-center p-2 rounded-md hover:bg-white/5">
+                                    <li key={sale.id} className="flex justify-between items-center p-2 rounded-md hover:bg-[var(--color-input)]">
                                         <div>
-                                            <p className="font-medium text-white">{mainItem?.name || 'Unknown Item'} {sale.items.length > 1 ? ` & ${sale.items.length - 1} more` : ''}</p>
+                                            <p className="font-medium text-[var(--color-text-primary)]">{mainItem?.name || 'Unknown Item'} {sale.items.length > 1 ? ` & ${sale.items.length - 1} more` : ''}</p>
                                             <p className="text-xs text-[var(--color-text-muted)]">{new Date(sale.saleDate).toLocaleString()}</p>
                                         </div>
                                         <div className="text-right">
                                             <p className="font-semibold">{formatCurrency(sale.totalRevenue)}</p>
-                                            <p className="text-xs text-green-400">Profit: {formatCurrency(sale.totalProfit)}</p>
+                                            <p className="text-xs text-[var(--color-success)]">Profit: {formatCurrency(sale.totalProfit)}</p>
                                         </div>
                                     </li>
                                 )
@@ -197,7 +197,7 @@ const Sales: React.FC = () => {
                             <select
                                 value={item.menuItemId}
                                 onChange={e => handleItemChange(item.id, 'menuItemId', e.target.value)}
-                                className="luxury-select w-full"
+                                className="can-select"
                                 disabled={menuItems.length === 0}
                             >
                                 {menuItems.length > 0 ? (
@@ -211,27 +211,27 @@ const Sales: React.FC = () => {
                                 value={item.quantity}
                                 min="1"
                                 onChange={e => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                                className="luxury-input w-full"
+                                className="can-input"
                                 placeholder="Qty"
                             />
                             <button
                                 onClick={() => removeSaleItem(item.id)}
                                 disabled={saleItems.length <= 1}
-                                className="text-[var(--color-destructive)]/80 hover:text-[var(--color-destructive)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed sm:justify-self-center"
+                                className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed sm:justify-self-center"
                             >
                                 <Trash2 size={18} />
                             </button>
                         </div>
                     ))}
-                    <button onClick={addSaleItem} className="text-sm text-[var(--color-primary)] flex items-center">
+                    <button onClick={addSaleItem} className="text-sm text-[var(--color-primary)] flex items-center font-semibold">
                         <PlusCircle size={16} className="mr-1" /> Add another item
                     </button>
                     <div className="text-right font-bold text-lg pt-4 border-t border-[var(--color-border)]">
                         Total: {formatCurrency(modalSaleTotal)}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={() => setIsModalOpen(false)} className="luxury-btn luxury-btn-secondary">Cancel</button>
-                        <button onClick={handleRecordSale} className="luxury-btn luxury-btn-primary">Record Sale</button>
+                        <button onClick={() => setIsModalOpen(false)} className="can-btn can-btn-secondary">Cancel</button>
+                        <button onClick={handleRecordSale} className="can-btn can-btn-primary">Record Sale</button>
                     </div>
                 </div>
             </Modal>

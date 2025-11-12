@@ -13,9 +13,9 @@ import { PurchaseOrder, PurchaseOrderItem } from '../types';
 
 const StatusBadge: React.FC<{ status: PurchaseOrder['status'] }> = ({ status }) => {
     const config = {
-        Pending: 'bg-amber-500/10 text-amber-600',
-        Completed: 'bg-teal-500/10 text-teal-600',
-        Cancelled: 'bg-red-500/10 text-red-600',
+        Pending: 'bg-yellow-100 text-yellow-700',
+        Completed: 'bg-green-100 text-green-700',
+        Cancelled: 'bg-red-100 text-red-700',
     };
     return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${config[status]}`}>{status}</span>;
 };
@@ -131,14 +131,14 @@ const Purchasing: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Purchase Orders</h2>
-                    <button onClick={handleOpenFormModal} className="luxury-btn luxury-btn-primary">
+                    <button onClick={handleOpenFormModal} className="can-btn can-btn-primary">
                         <PlusCircle size={20} className="mr-2" />
                         Create PO
                     </button>
                 </div>
                 <div className="overflow-x-auto md:overflow-visible">
                     <table className="w-full text-left responsive-table">
-                        <thead className="bg-[var(--color-secondary)]">
+                        <thead className="can-table-header">
                             <tr>
                                 <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">PO #</th>
                                 <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Supplier</th>
@@ -156,11 +156,11 @@ const Purchasing: React.FC = () => {
                                 const isOverdue = order.status === 'Pending' && order.dueDate && new Date(order.dueDate) < today;
 
                                 return (
-                                <tr key={order.id} className={`border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-secondary)] ${isOverdue ? 'bg-[var(--color-destructive)]/5' : ''}`}>
+                                <tr key={order.id} className={`border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input)] ${isOverdue ? 'bg-red-50' : ''}`}>
                                     <td data-label="PO #" className="p-4 font-medium text-[var(--color-primary)] whitespace-nowrap">#{order.id.slice(-6).toUpperCase()}</td>
                                     <td data-label="Supplier" className="p-4 text-[var(--color-text-primary)] whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
                                     <td data-label="Order Date" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
-                                    <td data-label="Due Date" className={`p-4 text-[var(--color-text-muted)] whitespace-nowrap ${isOverdue ? 'font-bold text-[var(--color-destructive)]' : ''}`}>
+                                    <td data-label="Due Date" className={`p-4 text-[var(--color-text-muted)] whitespace-nowrap ${isOverdue ? 'font-bold text-[var(--color-danger)]' : ''}`}>
                                         {order.dueDate ? new Date(order.dueDate).toLocaleDateString() : 'N/A'}
                                     </td>
                                     <td data-label="Total" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(order.totalCost)}</td>
@@ -171,7 +171,7 @@ const Purchasing: React.FC = () => {
                                             {order.status === 'Pending' && (
                                                 <>
                                                     <button onClick={() => handleStatusChange(order.id, 'Completed')} className="text-green-500 hover:opacity-80" title="Mark as Completed"><CheckCircle size={20} /></button>
-                                                    <button onClick={() => handleStatusChange(order.id, 'Cancelled')} className="text-[var(--color-destructive)] hover:opacity-80" title="Cancel Order"><XCircle size={20} /></button>
+                                                    <button onClick={() => handleStatusChange(order.id, 'Cancelled')} className="text-[var(--color-danger)] hover:opacity-80" title="Cancel Order"><XCircle size={20} /></button>
                                                 </>
                                             )}
                                         </div>
@@ -197,7 +197,7 @@ const Purchasing: React.FC = () => {
                             <select
                                 value={newPoData.supplierId}
                                 onChange={(e) => setNewPoData({ ...newPoData, supplierId: e.target.value })}
-                                className="luxury-select w-full mt-1"
+                                className="can-select mt-1"
                             >
                                 {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
                             </select>
@@ -209,7 +209,7 @@ const Purchasing: React.FC = () => {
                                 id="dueDate"
                                 value={newPoData.dueDate}
                                 onChange={(e) => setNewPoData({ ...newPoData, dueDate: e.target.value })}
-                                className="luxury-input w-full mt-1"
+                                className="can-input mt-1"
                             />
                         </div>
                     </div>
@@ -222,25 +222,25 @@ const Purchasing: React.FC = () => {
                                     <select
                                         value={item.itemId || ''}
                                         onChange={(e) => handleItemChange(index, 'itemId', e.target.value)}
-                                        className="luxury-select w-full"
+                                        className="can-select"
                                     >
                                         <option value="" disabled>Select item</option>
                                         {inventory.map(inv => <option key={inv.id} value={inv.id}>{inv.name}</option>)}
                                     </select>
-                                    <input type="number" placeholder="Qty" value={item.quantity} min="1" onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="luxury-input w-full" />
-                                    <input type="number" placeholder="Cost" value={item.cost} min="0" step="0.01" onChange={(e) => handleItemChange(index, 'cost', e.target.value)} className="luxury-input w-full" />
-                                    <button onClick={() => handleRemoveItem(index)} className="text-[var(--color-destructive)]/80 hover:text-[var(--color-destructive)] sm:justify-self-center"><Trash2 size={18} /></button>
+                                    <input type="number" placeholder="Qty" value={item.quantity} min="1" onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="can-input" />
+                                    <input type="number" placeholder="Cost" value={item.cost} min="0" step="0.01" onChange={(e) => handleItemChange(index, 'cost', e.target.value)} className="can-input" />
+                                    <button onClick={() => handleRemoveItem(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)] sm:justify-self-center"><Trash2 size={18} /></button>
                                 </div>
                             ))}
                         </div>
-                        <button onClick={handleAddItem} className="text-sm text-[var(--color-primary)] mt-2 flex items-center"><Plus size={16} className="mr-1"/> Add Item</button>
+                        <button onClick={handleAddItem} className="text-sm text-[var(--color-primary)] mt-2 flex items-center font-semibold"><Plus size={16} className="mr-1"/> Add Item</button>
                     </div>
                     <div className="text-right font-bold text-lg pt-4 border-t border-[var(--color-border)]">
                         Total: {formatCurrency(newPoTotal)}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseFormModal} className="luxury-btn luxury-btn-secondary">Cancel</button>
-                        <button onClick={handleSubmitNewPO} className="luxury-btn luxury-btn-primary">Create Order</button>
+                        <button onClick={handleCloseFormModal} className="can-btn can-btn-secondary">Cancel</button>
+                        <button onClick={handleSubmitNewPO} className="can-btn can-btn-primary">Create Order</button>
                     </div>
                 </div>
             </Modal>
@@ -264,7 +264,7 @@ const Purchasing: React.FC = () => {
                             Total: {formatCurrency(selectedOrder.totalCost)}
                         </div>
                          <div className="flex justify-end pt-4">
-                            <button onClick={() => setIsDetailsModalOpen(false)} className="luxury-btn luxury-btn-secondary">
+                            <button onClick={() => setIsDetailsModalOpen(false)} className="can-btn can-btn-secondary">
                                 Close
                             </button>
                         </div>
@@ -279,7 +279,7 @@ const Purchasing: React.FC = () => {
                 title="Confirm Action"
                 message={`Are you sure you want to mark this order as ${confirmationAction?.status}? ${confirmationAction?.status === 'Completed' ? 'This will update your inventory stock levels.' : ''}`}
                 confirmText="Yes, Confirm"
-                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'bg-green-600 hover:bg-green-700' : confirmationAction?.status === 'Cancelled' ? 'bg-[var(--color-destructive)] hover:opacity-80' : 'bg-[var(--color-primary)] hover:opacity-80' }
+                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'can-btn bg-green-600 text-white hover:bg-green-700' : confirmationAction?.status === 'Cancelled' ? 'can-btn can-btn-danger' : 'can-btn can-btn-primary' }
             />
         </>
     );

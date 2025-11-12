@@ -37,7 +37,7 @@ const BusinessSelector: React.FC = () => {
                 <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
-                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-black/5 transition-colors"
+                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-[var(--color-input)] transition-colors"
                     aria-haspopup="true"
                     aria-expanded={isDropdownOpen}
                 >
@@ -55,7 +55,7 @@ const BusinessSelector: React.FC = () => {
                                     href="#"
                                     onClick={(e) => { e.preventDefault(); handleSelectBusiness(business.id); }}
                                     className={`block px-4 py-2 text-sm ${
-                                        activeBusinessId === business.id ? 'font-bold text-[var(--color-primary)] bg-[var(--color-secondary)]' : 'text-[var(--color-text-primary)] hover:bg-[var(--color-secondary)]'
+                                        activeBusinessId === business.id ? 'font-bold text-[var(--color-primary)] bg-[var(--color-primary-light)]' : 'text-[var(--color-text-primary)] hover:bg-[var(--color-input)]'
                                     }`}
                                 >
                                     {business.name}
@@ -65,7 +65,7 @@ const BusinessSelector: React.FC = () => {
                             <a
                                 href="#"
                                 onClick={(e) => { e.preventDefault(); setIsModalOpen(true); setIsDropdownOpen(false); }}
-                                className="block px-4 py-2 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-secondary)] flex items-center"
+                                className="block px-4 py-2 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-input)] flex items-center"
                             >
                                 <PlusCircle size={16} className="mr-2" />
                                 Manage Businesses
@@ -79,7 +79,7 @@ const BusinessSelector: React.FC = () => {
                 <div className="space-y-4">
                     <div>
                         <h3 className="text-md font-semibold text-[var(--color-text-muted)] mb-2">Existing Businesses</h3>
-                        <ul className="space-y-2 max-h-40 overflow-y-auto pr-2 border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-secondary)]">
+                        <ul className="space-y-2 max-h-40 overflow-y-auto pr-2 border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-input)]">
                             {businesses.map(business => (
                                 <li key={business.id} className="text-[var(--color-text-primary)] px-2 py-1">{business.name}</li>
                             ))}
@@ -93,19 +93,19 @@ const BusinessSelector: React.FC = () => {
                                 value={newBusinessName}
                                 onChange={(e) => setNewBusinessName(e.target.value)}
                                 placeholder="New business name"
-                                className="luxury-input flex-grow"
+                                className="can-input flex-grow"
                             />
                             <button 
                                 onClick={handleAddBusiness}
                                 disabled={!newBusinessName.trim()}
-                                className="luxury-btn luxury-btn-primary disabled:opacity-50"
+                                className={`can-btn can-btn-primary ${!newBusinessName.trim() ? 'can-btn-disabled' : ''}`}
                             >
                                 Add
                             </button>
                          </div>
                     </div>
                      <div className="flex justify-end pt-4">
-                        <button onClick={() => setIsModalOpen(false)} className="luxury-btn luxury-btn-secondary">
+                        <button onClick={() => setIsModalOpen(false)} className="can-btn can-btn-secondary">
                             Close
                         </button>
                     </div>

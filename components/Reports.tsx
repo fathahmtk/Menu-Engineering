@@ -36,7 +36,7 @@ const Reports: React.FC = () => {
     }).sort((a, b) => b.profit - a.profit);
     
 
-    const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#64748B', '#0EA5E9'];
+    const COLORS = ['#1E40AF', '#16A34A', '#F59E0B', '#6D28D9', '#DC2626', '#475569', '#0EA5E9'];
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -62,7 +62,7 @@ const Reports: React.FC = () => {
                         </Pie>
                         <Tooltip 
                             formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                             contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', color: 'var(--color-text-primary)', boxShadow: 'var(--shadow-md)' }}
                             labelStyle={{ color: 'var(--color-text-primary)' }}
                         />
                         <Legend wrapperStyle={{ color: 'var(--color-text-muted)', fontSize: '14px' }}/>
@@ -77,7 +77,7 @@ const Reports: React.FC = () => {
                         <YAxis type="category" dataKey="name" width={120} tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}/>
                         <Tooltip
                             formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                            contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', color: 'var(--color-text-primary)', boxShadow: 'var(--shadow-md)' }}
                             labelStyle={{ color: 'var(--color-text-primary)' }}
                             cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
                         />

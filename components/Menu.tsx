@@ -17,10 +17,10 @@ const ClassificationBadge: React.FC<{ classification: Classification }> = ({ cla
     };
     const { icon, label } = config[classification];
     const colorClasses = {
-        Star: 'bg-teal-500/10 text-teal-600',
-        Plowhorse: 'bg-sky-500/10 text-sky-600',
-        Puzzle: 'bg-amber-500/10 text-amber-600',
-        Dog: 'bg-red-500/10 text-red-600',
+        Star: 'bg-green-100 text-green-700',
+        Plowhorse: 'bg-blue-100 text-blue-700',
+        Puzzle: 'bg-yellow-100 text-yellow-700',
+        Dog: 'bg-red-100 text-red-700',
     };
 
     return (
@@ -161,13 +161,13 @@ const Menu: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Menu Engineering</h2>
-                    <button onClick={() => handleOpenModal()} className="luxury-btn luxury-btn-primary">
+                    <button onClick={() => handleOpenModal()} className="can-btn can-btn-primary">
                         <PlusCircle size={20} className="mr-2" />
                         Add Menu Item
                     </button>
                 </div>
                 <table className="w-full text-left responsive-table">
-                    <thead className="bg-[var(--color-secondary)]">
+                    <thead className="can-table-header">
                         <tr>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Menu Item</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Classification</th>
@@ -184,7 +184,7 @@ const Menu: React.FC = () => {
                             const classification = getClassification(item.profit, item.salesCount);
                             const isEditing = editingItemId === item.id;
                             return (
-                                <tr key={item.id} className="border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-secondary)] group">
+                                <tr key={item.id} className="border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input)] group">
                                     <td data-label="Menu Item" className="p-4 font-medium whitespace-nowrap">{item.name}</td>
                                     <td data-label="Classification" className="p-4"><ClassificationBadge classification={classification} /></td>
                                     <td data-label="Sales Count" className="p-4">
@@ -194,7 +194,7 @@ const Menu: React.FC = () => {
                                                     type="number"
                                                     value={editedSales}
                                                     onChange={(e) => setEditedSales(parseInt(e.target.value) || 0)}
-                                                    className="luxury-input w-20 py-1"
+                                                    className="can-input w-20 py-1"
                                                     autoFocus
                                                     min="0"
                                                 />
@@ -204,7 +204,7 @@ const Menu: React.FC = () => {
                                         ) : (
                                              <div className="flex items-center space-x-2 text-[var(--color-text-muted)]">
                                                 <span>{item.salesCount}</span>
-                                                <button onClick={() => handleEditSales(item)} className="text-[var(--color-primary)] hover:opacity-80 opacity-0 group-hover:opacity-100" aria-label="Edit sales count">
+                                                <button onClick={() => handleEditSales(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] opacity-0 group-hover:opacity-100" aria-label="Edit sales count">
                                                     <Edit size={16} />
                                                 </button>
                                              </div>
@@ -213,15 +213,15 @@ const Menu: React.FC = () => {
                                     <td data-label="Sale Price" className="p-4 text-[var(--color-text-primary)] font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
                                     <td data-label="Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(item.costPerServing)}</td>
                                     <td data-label="Profit" className="p-4">
-                                        <span className={`font-bold ${item.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        <span className={`font-bold ${item.profit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
                                             {formatCurrency(item.profit)}
                                         </span>
                                     </td>
                                     <td data-label="Food Cost %" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.foodCostPercentage.toFixed(1)}%</td>
                                     <td data-label="Actions" className="p-4">
                                         <div className="flex items-center space-x-3">
-                                            <button onClick={() => handleOpenModal(item)} className="text-[var(--color-primary)] hover:opacity-80"><Edit size={20} /></button>
-                                            <button onClick={() => handleDelete(item.id)} className="text-[var(--color-destructive)] hover:opacity-80"><Trash2 size={20} /></button>
+                                            <button onClick={() => handleOpenModal(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit size={20} /></button>
+                                            <button onClick={() => handleDelete(item.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={20} /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -235,32 +235,32 @@ const Menu: React.FC = () => {
                 <div className="space-y-4">
                     <div>
                         <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text-muted)]">Menu Item Name</label>
-                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.name ? 'border-[var(--color-destructive)]' : ''}`} />
-                        {errors.name && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.name}</p>}
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`can-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
+                        {errors.name && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.name}</p>}
                     </div>
                      <div>
                         <label htmlFor="recipeId" className="block text-sm font-medium text-[var(--color-text-muted)]">Recipe</label>
-                        <select name="recipeId" id="recipeId" value={formData.recipeId} onChange={handleChange} className={`luxury-select mt-1 block w-full ${errors.recipeId ? 'border-[var(--color-destructive)]' : ''}`}>
+                        <select name="recipeId" id="recipeId" value={formData.recipeId} onChange={handleChange} className={`can-select mt-1 ${errors.recipeId ? 'border-[var(--color-danger)]' : ''}`}>
                             <option value="" disabled>Select a recipe</option>
                             {recipes.map(rec => <option key={rec.id} value={rec.id}>{rec.name}</option>)}
                         </select>
-                        {errors.recipeId && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.recipeId}</p>}
+                        {errors.recipeId && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.recipeId}</p>}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="salePrice" className="block text-sm font-medium text-[var(--color-text-muted)]">Sale Price</label>
-                            <input type="number" name="salePrice" id="salePrice" value={formData.salePrice} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.salePrice ? 'border-[var(--color-destructive)]' : ''}`} min="0" step="0.01" />
-                            {errors.salePrice && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.salePrice}</p>}
+                            <input type="number" name="salePrice" id="salePrice" value={formData.salePrice} onChange={handleChange} className={`can-input mt-1 ${errors.salePrice ? 'border-[var(--color-danger)]' : ''}`} min="0" step="0.01" />
+                            {errors.salePrice && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.salePrice}</p>}
                         </div>
                          <div>
                             <label htmlFor="salesCount" className="block text-sm font-medium text-[var(--color-text-muted)]">Sales Count</label>
-                            <input type="number" name="salesCount" id="salesCount" value={formData.salesCount} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.salesCount ? 'border-[var(--color-destructive)]' : ''}`} min="0" />
-                            {errors.salesCount && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.salesCount}</p>}
+                            <input type="number" name="salesCount" id="salesCount" value={formData.salesCount} onChange={handleChange} className={`can-input mt-1 ${errors.salesCount ? 'border-[var(--color-danger)]' : ''}`} min="0" />
+                            {errors.salesCount && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.salesCount}</p>}
                         </div>
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseModal} className="luxury-btn luxury-btn-secondary">Cancel</button>
-                        <button onClick={handleSubmit} className="luxury-btn luxury-btn-primary">Save Item</button>
+                        <button onClick={handleCloseModal} className="can-btn can-btn-secondary">Cancel</button>
+                        <button onClick={handleSubmit} className="can-btn can-btn-primary">Save Item</button>
                     </div>
                 </div>
             </Modal>

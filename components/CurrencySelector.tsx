@@ -10,7 +10,7 @@ const CurrencySelector: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="text-sm text-[var(--color-text-muted)] animate-pulse">...</div>;
+    return <div className="w-20 h-8 bg-[var(--color-input)] rounded-md animate-pulse"></div>;
   }
   
   if(Object.keys(supportedCurrencies).length <= 1) return null;
@@ -23,7 +23,7 @@ const CurrencySelector: React.FC = () => {
             name="currency"
             value={currency}
             onChange={handleCurrencyChange}
-            className="block w-full pl-2 pr-8 py-1 text-base border-0 focus:outline-none focus:ring-0 sm:text-sm rounded-md bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            className="block w-full pl-2 pr-8 py-1 text-base border-0 focus:outline-none focus:ring-0 sm:text-sm rounded-md bg-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium"
             aria-label="Select currency"
         >
             {supportedCurrencies.map((code) => (

@@ -2,31 +2,48 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍲%3C/text%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%231E40AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z'/%3E%3Cpath d='M15.5 8.5c-.83-1.17-2.17-2-3.5-2s-2.67.83-3.5 2'/%3E%3Cpath d='M15.5 15.5c-.83 1.17-2.17 2-3.5 2s-2.67-.83-3.5-2'/%3E%3Cpath d='M8.5 15.5c-1.17-.83-2-2.17-2-3.5s.83-2.67 2-3.5'/%3E%3Cpath d='M15.5 8.5c1.17.83 2 2.17 2 3.5s-.83 2.67-2 3.5'/%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>F&B Costing Pro | Culinary Business Intelligence</title>
+    <title>CAN Group | F&B Business Intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       :root {
-        --color-background: hsl(210, 40%, 98%);
-        --color-card: hsl(0, 0%, 100%);
-        --color-border: hsl(210, 25%, 90%);
-        --color-primary: hsl(221, 83%, 53%);
-        --color-primary-hover: hsl(221, 83%, 58%);
-        --color-primary-foreground: hsl(0, 0%, 100%);
-        --color-secondary: hsl(210, 30%, 96%);
-        --color-text-primary: hsl(220, 15%, 20%);
-        --color-text-muted: hsl(220, 10%, 45%);
-        --color-destructive: hsl(0, 84%, 60%);
-        --font-sans: 'Inter', sans-serif;
+        --font-sans: 'Poppins', sans-serif;
+        
+        /* Color Palette */
+        --color-background: #F8F9FA; /* Off-white */
+        --color-sidebar: #FFFFFF;
+        --color-card: #FFFFFF;
+        --color-primary: #1E40AF; /* Corporate Blue */
+        --color-primary-hover: #1D4ED8;
+        --color-primary-light: #DBEAFE;
+        --color-primary-foreground: #FFFFFF;
+        
+        --color-text-primary: #111827; /* Dark Gray */
+        --color-text-secondary: #4B5563;
+        --color-text-muted: #6B7280;
+        
+        --color-border: #E5E7EB;
+        --color-input: #F3F4F6;
+        --color-ring: #A5B4FC;
+        
+        --color-success: #16A34A;
+        --color-warning: #F59E0B;
+        --color-danger: #DC2626;
+
+        /* Sizing & Radius */
+        --radius: 0.75rem;
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
       }
 
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+      /* Base Styles */
       body {
         font-family: var(--font-sans);
         background-color: var(--color-background);
@@ -37,26 +54,29 @@
       }
       
       /* Custom Scrollbar */
-      ::-webkit-scrollbar { width: 8px; }
-      ::-webkit-scrollbar-track { background: var(--color-secondary); }
-      ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background: hsl(210, 25%, 80%); }
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #D1D5DB; }
 
-      /* Standardized Cursors */
+      /* Cursor */
       :root { cursor: default; }
       button, a, label, input[type="checkbox"], input[type="radio"], select, .cursor-pointer { cursor: pointer; }
 
-      /* Base Component Styles */
-      .luxury-card {
+      /* === Component System === */
+      .can-card {
         background-color: var(--color-card);
         border: 1px solid var(--color-border);
-        border-radius: 0.75rem;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-        transition: all 0.3s ease;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        transition: box-shadow 0.2s ease-in-out;
+      }
+      .can-card:hover {
+        box-shadow: var(--shadow-md);
       }
 
-      .luxury-btn {
-        padding: 0.5rem 1rem;
+      .can-btn {
+        padding: 0.6rem 1.25rem;
         border-radius: 0.5rem;
         font-weight: 600;
         transition: all 0.2s ease;
@@ -64,37 +84,59 @@
         align-items: center;
         justify-content: center;
         border: 1px solid transparent;
+        user-select: none;
       }
-      .luxury-btn-primary {
+      .can-btn:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+      }
+      .can-btn-primary {
         background-color: var(--color-primary);
         color: var(--color-primary-foreground);
       }
-      .luxury-btn-primary:hover {
+      .can-btn-primary:hover {
         background-color: var(--color-primary-hover);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
       }
-       .luxury-btn-secondary {
+      .can-btn-secondary {
         background-color: transparent;
-        color: var(--color-text-muted);
+        color: var(--color-text-secondary);
         border-color: var(--color-border);
       }
-       .luxury-btn-secondary:hover {
-        background-color: var(--color-secondary);
+      .can-btn-secondary:hover {
+        background-color: var(--color-input);
         color: var(--color-text-primary);
       }
-      .luxury-input, .luxury-select {
-        background-color: var(--color-card);
+      .can-btn-danger {
+        background-color: var(--color-danger);
+        color: #FFFFFF;
+      }
+       .can-btn-danger:hover {
+        opacity: 0.9;
+      }
+      .can-btn-disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      .can-input, .can-select {
+        background-color: var(--color-background);
         border: 1px solid var(--color-border);
         border-radius: 0.5rem;
-        padding: 0.5rem 0.75rem;
+        padding: 0.6rem 0.85rem;
         color: var(--color-text-primary);
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        width: 100%;
       }
-      .luxury-input:focus, .luxury-select:focus {
+      .can-input:focus, .can-select:focus {
         outline: none;
         border-color: var(--color-primary);
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+      }
+      
+      .can-table-header {
+        background-color: #F9FAFB;
       }
 
       /* Responsive Table Styles */
@@ -103,11 +145,11 @@
         .responsive-table tbody tr {
           display: block;
           border: 1px solid var(--color-border);
-          border-radius: 0.75rem;
+          border-radius: var(--radius);
           margin-bottom: 1rem;
           padding: 0.5rem;
           background-color: var(--color-card);
-          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+          box-shadow: var(--shadow);
         }
         .responsive-table td {
           display: flex;
@@ -125,8 +167,6 @@
           margin-right: 1rem;
           color: var(--color-text-primary);
         }
-        .responsive-table td.checkbox-cell { justify-content: flex-start; }
-        .responsive-table td.checkbox-cell::before { display: none; }
       }
     </style>
   <script type="importmap">
@@ -141,7 +181,7 @@
 }
 </script>
 </head>
-  <body class="text-foreground bg-background">
+  <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

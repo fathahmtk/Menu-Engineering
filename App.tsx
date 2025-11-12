@@ -5,9 +5,8 @@ import { DataProvider } from './hooks/useDataContext';
 import { CurrencyProvider } from './hooks/useCurrencyContext';
 import CurrencySelector from './components/CurrencySelector';
 import BusinessSelector from './components/BusinessSelector';
-import { Menu as MenuIcon, ChefHat, LoaderCircle, CheckCircle } from 'lucide-react';
+import { Menu as MenuIcon, CheckCircle, LoaderCircle } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
-import Card from './components/common/Card';
 import { AuthProvider, useAuth } from './hooks/useAuthContext';
 
 
@@ -46,11 +45,11 @@ const viewTitles: Record<View, string> = {
     reports: 'Reports & Insights',
 };
 
-const GlobalLoading: React.FC<{ message?: string }> = ({ message = 'Loading App...' }) => (
+const GlobalLoading: React.FC<{ message?: string }> = ({ message = 'Loading Application...' }) => (
     <div className="w-screen h-screen flex items-center justify-center bg-[var(--color-background)]">
         <div className="flex flex-col items-center text-[var(--color-primary)]">
             <LoaderCircle size={48} className="animate-spin"/>
-            <p className="mt-4 text-lg font-semibold">{message}</p>
+            <p className="mt-4 text-lg font-semibold text-[var(--color-text-secondary)]">{message}</p>
         </div>
     </div>
 );
@@ -65,54 +64,50 @@ const OnboardingScreen: React.FC = () => {
             setNewBusinessName('');
         }
     };
+    
+    const CanGroupLogo = () => (
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" fill="var(--color-primary)"/>
+          <path d="M15.5 8.5C14.67 7.33 13.33 6.5 12 6.5C10.67 6.5 9.33 7.33 8.5 8.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M15.5 15.5C14.67 16.67 13.33 17.5 12 17.5C10.67 17.5 9.33 16.67 8.5 15.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M8.5 15.5C7.33 14.67 6.5 13.33 6.5 12C6.5 10.67 7.33 9.33 8.5 8.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M15.5 8.5C16.67 9.33 17.5 10.67 17.5 12C17.5 13.33 16.67 14.67 15.5 15.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    );
 
     return (
         <div 
-            className="relative flex items-center justify-center min-h-screen bg-cover bg-center p-4"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1974&auto=format&fit=crop')" }}
+            className="flex items-center justify-center min-h-screen bg-cover bg-center p-4 bg-[var(--color-background)]"
         >
-            <div className="absolute inset-0 bg-white/50 z-0"></div>
-            <div className="text-center w-full max-w-lg mx-auto z-10 p-8 rounded-2xl shadow-2xl border border-black/10"
-                 style={{ background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
-            >
-                <ChefHat className="text-[var(--color-primary)] mx-auto" size={48} />
-                <h1 className="text-4xl font-bold mt-4 text-[var(--color-text-primary)]">Welcome to F&B Costing Pro</h1>
-                <p className="text-[var(--color-text-muted)] mt-4 mb-2 max-w-md mx-auto">
-                    Take control of your kitchen's profitability. Our tools help you manage inventory, perfect recipe costs, and analyze sales with ease.
+            <div className="text-center w-full max-w-lg mx-auto z-10 p-8 sm:p-12 rounded-2xl shadow-2xl border border-black/5 bg-[var(--color-card)]" style={{ animation: 'slideUp 0.5s ease-out' }}>
+                <CanGroupLogo />
+                <h1 className="text-3xl sm:text-4xl font-bold mt-4 text-[var(--color-text-primary)]">Welcome to CAN Group</h1>
+                <h2 className="text-xl font-medium text-[var(--color-primary)]">F&B Business Intelligence Platform</h2>
+                <p className="text-[var(--color-text-secondary)] mt-4 mb-8 max-w-md mx-auto">
+                    Centralize your operations. Manage inventory, recipes, and sales for all your business divisions in one powerful platform.
                 </p>
-                <div className="text-left bg-black/5 p-4 rounded-lg my-6 border border-black/10">
-                    <h2 className="font-semibold text-lg mb-2 text-[var(--color-text-primary)]">Key Features:</h2>
-                    <ul className="space-y-2 text-[var(--color-text-muted)]">
-                        <li className="flex items-start"><CheckCircle className="text-[var(--color-primary)] w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Inventory Control:</b> Track stock levels and supplier costs in real-time.</span></li>
-                        <li className="flex items-start"><CheckCircle className="text-[var(--color-primary)] w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Recipe Costing:</b> Calculate costs per serving and set profitable menu prices.</span></li>
-                        <li className="flex items-start"><CheckCircle className="text-[var(--color-primary)] w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Sales Analytics:</b> Gain insights into item performance and profitability.</span></li>
-                    </ul>
-                </div>
-                 <p className="text-[var(--color-text-muted)] mt-2 mb-6">To get started, please create your first business.</p>
+
+                <p className="text-[var(--color-text-muted)] text-sm mt-2 mb-4">To get started, please create your first business division.</p>
                 <div className="flex flex-col space-y-3">
                      <input
                         type="text"
                         value={newBusinessName}
                         onChange={(e) => setNewBusinessName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleCreateFirstBusiness()}
-                        placeholder="e.g., The Golden Spoon Bistro"
-                        className="luxury-input w-full px-4 py-2"
+                        placeholder="e.g., CAN Group - Qatar Division"
+                        className="can-input text-center"
                         aria-label="New business name"
                     />
                     <button 
                         onClick={handleCreateFirstBusiness}
                         disabled={!newBusinessName.trim()}
-                        className="luxury-btn luxury-btn-primary w-full py-2.5 disabled:opacity-50 disabled:transform-none disabled:shadow-none"
+                        className={`can-btn can-btn-primary py-2.5 ${!newBusinessName.trim() ? 'can-btn-disabled' : ''}`}
                     >
-                        Create Business
+                        Create Division
                     </button>
                 </div>
-                <footer className="mt-8 text-center text-xs text-[var(--color-text-muted)]">
-                    <p>Developed by <strong>Noor Digital Solution - Abdul Fathah</strong></p>
-                    <p>
-                        <a href="mailto:abdulfathahntk@gmail.com" className="hover:underline">abdulfathahntk@gmail.com</a> | 
-                        <a href="tel:+97431618735" className="hover:underline"> +974 31618735</a>
-                    </p>
+                 <footer className="mt-12 text-center text-xs text-[var(--color-text-muted)]">
+                    <p>&copy; {new Date().getFullYear()} CAN Food & Beverage Group. All Rights Reserved.</p>
                 </footer>
             </div>
         </div>
@@ -142,7 +137,7 @@ const AppContent: React.FC = () => {
                 setIsOpen={setIsSidebarOpen}
             />
             <main className="flex-1 flex flex-col h-screen">
-                <header className="bg-[var(--color-card)]/80 border-b border-[var(--color-border)] p-2 sm:p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
+                <header className="bg-[var(--color-card)]/80 border-b border-[var(--color-border)] p-3 sm:p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
                     <div className="flex items-center">
                         <button 
                             className="lg:hidden mr-2 sm:mr-4 text-[var(--color-text-muted)]"
@@ -158,7 +153,7 @@ const AppContent: React.FC = () => {
                         <CurrencySelector />
                     </div>
                 </header>
-                <div className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
                     <Suspense fallback={<GlobalLoading message="Loading Content..." />}>
                         <CurrentViewComponent />
                     </Suspense>

@@ -140,7 +140,7 @@ const Suppliers: React.FC = () => {
                     <h2 className="text-xl font-bold">Supplier Directory</h2>
                     <div className="flex items-center space-x-2">
                         <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
-                        <button onClick={() => handleOpenModal()} className="luxury-btn luxury-btn-primary">
+                        <button onClick={() => handleOpenModal()} className="can-btn can-btn-primary">
                             <PlusCircle size={20} className="mr-2" />
                             Add Supplier
                         </button>
@@ -149,7 +149,7 @@ const Suppliers: React.FC = () => {
                 {suppliers.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {suppliers.map(supplier => (
-                            <div key={supplier.id} className="bg-[var(--color-secondary)] p-4 rounded-lg border border-[var(--color-border)] flex flex-col justify-between hover:border-[var(--color-primary)]/50 transition-colors">
+                            <div key={supplier.id} className="bg-[var(--color-background)] p-4 rounded-lg border border-[var(--color-border)] flex flex-col justify-between hover:border-[var(--color-primary)]/50 transition-colors">
                                 <div>
                                     <h3 className="font-bold text-lg text-[var(--color-primary)]">{supplier.name}</h3>
                                     <p className="text-[var(--color-text-primary)] font-medium">{supplier.contactPerson}</p>
@@ -165,10 +165,10 @@ const Suppliers: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="flex justify-end items-center space-x-3 mt-4">
-                                    <button onClick={() => handleOpenModal(supplier)} className="text-[var(--color-primary)] hover:opacity-80" aria-label={`Edit ${supplier.name}`}>
+                                    <button onClick={() => handleOpenModal(supplier)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]" aria-label={`Edit ${supplier.name}`}>
                                         <Edit size={20}/>
                                     </button>
-                                     <button onClick={() => handleDeleteClick(supplier)} className="text-[var(--color-destructive)] hover:opacity-80" aria-label={`Delete ${supplier.name}`}>
+                                     <button onClick={() => handleDeleteClick(supplier)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]" aria-label={`Delete ${supplier.name}`}>
                                         <Trash2 size={20}/>
                                     </button>
                                 </div>
@@ -211,27 +211,27 @@ const Suppliers: React.FC = () => {
                 <div className="space-y-4">
                      <div>
                         <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text-muted)]">Supplier Name</label>
-                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.name ? 'border-[var(--color-destructive)]' : ''}`} />
-                        {errors.name && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.name}</p>}
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`can-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
+                        {errors.name && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.name}</p>}
                     </div>
                     <div>
                         <label htmlFor="contactPerson" className="block text-sm font-medium text-[var(--color-text-muted)]">Contact Person</label>
-                        <input type="text" name="contactPerson" id="contactPerson" value={formData.contactPerson} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.contactPerson ? 'border-[var(--color-destructive)]' : ''}`} />
-                        {errors.contactPerson && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.contactPerson}</p>}
+                        <input type="text" name="contactPerson" id="contactPerson" value={formData.contactPerson} onChange={handleChange} className={`can-input mt-1 ${errors.contactPerson ? 'border-[var(--color-danger)]' : ''}`} />
+                        {errors.contactPerson && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.contactPerson}</p>}
                     </div>
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text-muted)]">Email Address</label>
-                        <input type="email" name="email" id="email" value={formData.email} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.email ? 'border-[var(--color-destructive)]' : ''}`} />
-                        {errors.email && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.email}</p>}
+                        <input type="email" name="email" id="email" value={formData.email} onChange={handleChange} className={`can-input mt-1 ${errors.email ? 'border-[var(--color-danger)]' : ''}`} />
+                        {errors.email && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.email}</p>}
                     </div>
                      <div>
                         <label htmlFor="phone" className="block text-sm font-medium text-[var(--color-text-muted)]">Phone Number</label>
-                        <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.phone ? 'border-[var(--color-destructive)]' : ''}`} />
-                        {errors.phone && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.phone}</p>}
+                        <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} className={`can-input mt-1 ${errors.phone ? 'border-[var(--color-danger)]' : ''}`} />
+                        {errors.phone && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.phone}</p>}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseModal} className="luxury-btn luxury-btn-secondary">Cancel</button>
-                        <button onClick={handleSubmit} className="luxury-btn luxury-btn-primary">Save Supplier</button>
+                        <button onClick={handleCloseModal} className="can-btn can-btn-secondary">Cancel</button>
+                        <button onClick={handleSubmit} className="can-btn can-btn-primary">Save Supplier</button>
                     </div>
                 </div>
             </Modal>
