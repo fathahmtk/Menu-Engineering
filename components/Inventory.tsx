@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -311,7 +312,7 @@ const Inventory: React.FC = () => {
                                                 <AlertTriangle size={14} className="mr-1" />Low Stock
                                             </span>
                                         ) : (
-                                            <span className="text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs font-semibold">In Stock</span>
+                                            <span className="text-primary bg-primary/10 px-2 py-1 rounded-full text-xs font-semibold">In Stock</span>
                                         )}
                                     </td>
                                     <td data-label="Actions" className="p-4">

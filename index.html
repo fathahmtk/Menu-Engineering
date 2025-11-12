@@ -12,7 +12,7 @@
     <style>
       body {
         font-family: 'Inter', sans-serif;
-        background-color: hsl(222 47% 11%); /* background */
+        background-color: hsl(210 40% 98%); /* background */
         overflow: hidden;
       }
       @supports (font-variation-settings: normal) {
@@ -30,12 +30,12 @@
         }
         .responsive-table tbody tr {
             display: block;
-            border: 1px solid hsl(217 33% 17%); /* border */
+            border: 1px solid hsl(214 32% 91%); /* border */
             border-radius: 0.75rem; /* rounded-lg */
             margin-bottom: 1rem;
             padding: 0.5rem;
-            background-color: hsl(222 47% 14%); /* card */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            background-color: hsl(0 0% 100%); /* card */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
         }
         .responsive-table td {
             display: flex;
@@ -43,7 +43,7 @@
             align-items: center;
             padding: 0.75rem 0.5rem;
             text-align: right;
-            border-bottom: 1px solid hsl(217 33% 17%); /* muted */
+            border-bottom: 1px solid hsl(210 40% 96%); /* muted */
         }
         .responsive-table tbody tr:last-child {
             margin-bottom: 0;
@@ -57,7 +57,7 @@
             text-align: left;
             margin-right: 1rem;
             flex-shrink: 0;
-            color: hsl(210 40% 98%); /* foreground */
+            color: hsl(222 47% 11%); /* foreground */
         }
         /* Special handling for checkbox cell */
         .responsive-table td.checkbox-cell {
@@ -74,34 +74,34 @@
         theme: {
           extend: {
             colors: {
-              border: 'hsl(217 33% 17%)',
-              input: 'hsl(217 33% 17%)',
-              ring: 'hsl(164 92% 54%)',
-              background: 'hsl(222 47% 11%)',
-              foreground: 'hsl(210 40% 98%)',
+              border: 'hsl(214 32% 91%)',
+              input: 'hsl(214 32% 91%)',
+              ring: 'hsl(164 80% 44%)',
+              background: 'hsl(210 40% 98%)',
+              foreground: 'hsl(222 47% 11%)',
               primary: {
-                DEFAULT: 'hsl(164 92% 54%)',
-                foreground: 'hsl(164 80% 10%)',
+                DEFAULT: 'hsl(164 92% 47%)',
+                foreground: 'hsl(0 0% 100%)',
               },
               secondary: {
-                DEFAULT: 'hsl(217 33% 17%)',
-                foreground: 'hsl(210 40% 98%)',
+                DEFAULT: 'hsl(210 40% 96%)',
+                foreground: 'hsl(222 47% 11%)',
               },
               destructive: {
-                DEFAULT: 'hsl(0 63% 31%)',
-                foreground: 'hsl(210 40% 98%)',
+                DEFAULT: 'hsl(0 84% 60%)',
+                foreground: 'hsl(0 0% 100%)',
               },
               muted: {
-                DEFAULT: 'hsl(217 33% 17%)',
-                foreground: 'hsl(215 20% 65%)',
+                DEFAULT: 'hsl(210 40% 96%)',
+                foreground: 'hsl(220 9% 46%)',
               },
               accent: {
-                DEFAULT: 'hsl(217 33% 22%)',
-                foreground: 'hsl(210 40% 98%)',
+                DEFAULT: 'hsl(210 40% 96%)',
+                foreground: 'hsl(222 47% 11%)',
               },
               card: {
-                DEFAULT: 'hsl(222 47% 14%)',
-                foreground: 'hsl(210 40% 98%)',
+                DEFAULT: 'hsl(0 0% 100%)',
+                foreground: 'hsl(222 47% 11%)',
               },
             }
           }

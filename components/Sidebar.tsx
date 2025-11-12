@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
         <div className="flex items-center justify-between mb-8">
             <div className="flex items-center">
                  <ChefHat className="text-primary" size={32} />
-                 <h1 className="text-2xl font-bold ml-2 text-foreground">F&B Pro</h1>
+                 <h1 className="text-2xl font-bold ml-2 text-slate-50">F&B Pro</h1>
             </div>
             <button onClick={() => setIsOpen(false)} className="lg:hidden text-slate-400">
                 <X size={24} />

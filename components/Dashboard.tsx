@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
         return acc + (item.salePrice - costPerServing);
     }, 0);
 
-    const COLORS = ['#2dd4bf', '#64748b', '#94a3b8', '#cbd5e1', '#475569'];
+    const COLORS = ['#14b8a6', '#3b82f6', '#f97316', '#8b5cf6', '#ec4899'];
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -86,21 +86,21 @@ const Dashboard: React.FC = () => {
                 <h3 className="text-lg font-semibold mb-4 text-foreground">Top 5 Most Profitable Menu Items</h3>
                 <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={menuProfitabilityData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                        <XAxis dataKey="name" tick={{ fill: 'hsl(215 20% 65%)', fontSize: 12 }} />
-                        <YAxis tick={{ fill: 'hsl(215 20% 65%)' }} tickFormatter={(value) => formatCurrency(value)} />
+                        <XAxis dataKey="name" tick={{ fill: 'hsl(220 9% 46%)', fontSize: 12 }} />
+                        <YAxis tick={{ fill: 'hsl(220 9% 46%)' }} tickFormatter={(value) => formatCurrency(value)} />
                         <Tooltip
                           formatter={(value: number) => formatCurrency(value)}
-                          contentStyle={{ backgroundColor: 'hsl(222 47% 14%)', border: '1px solid hsl(217 33% 17%)', borderRadius: '0.5rem' }}
-                          labelStyle={{ color: 'hsl(210 40% 98%)' }}
-                          cursor={{ fill: 'hsl(217 33% 17%)' }}
+                          contentStyle={{ backgroundColor: 'hsl(0 0% 100%)', border: '1px solid hsl(214 32% 91%)', borderRadius: '0.5rem' }}
+                          labelStyle={{ color: 'hsl(222 47% 11%)' }}
+                          cursor={{ fill: 'hsl(210 40% 96%)' }}
                         />
-                        <Legend wrapperStyle={{ color: 'hsl(215 20% 65%)' }} />
+                        <Legend wrapperStyle={{ color: 'hsl(220 9% 46%)' }} />
                         <Bar dataKey="profit" name="Profit" fill="hsl(164 92% 54%)">
                             {menuProfitabilityData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Bar>
-                         <Bar dataKey="revenue" name="Revenue" fill="hsl(215 28% 30%)" />
+                         <Bar dataKey="revenue" name="Revenue" fill="hsl(220 13% 69%)" />
                     </BarChart>
                 </ResponsiveContainer>
             </Card>

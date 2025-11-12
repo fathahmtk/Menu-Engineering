@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -115,7 +116,7 @@ const Sales: React.FC = () => {
                 </Card>
                 <Card>
                     <div className="flex items-center">
-                        <div className="p-3 bg-amber-500/10 rounded-full"><Receipt className="text-amber-400" /></div>
+                        <div className="p-3 bg-amber-100 rounded-full"><Receipt className="text-amber-500" /></div>
                         <div className="ml-4">
                             <p className="text-sm text-muted-foreground">Total Transactions</p>
                             <p className="text-2xl font-bold">{salesMetrics.totalSalesCount}</p>
@@ -124,7 +125,7 @@ const Sales: React.FC = () => {
                 </Card>
                  <Card>
                     <div className="flex items-center">
-                        <div className="p-3 bg-sky-500/10 rounded-full"><BarChart className="text-sky-400" /></div>
+                        <div className="p-3 bg-sky-100 rounded-full"><BarChart className="text-sky-500" /></div>
                         <div className="ml-4">
                             <p className="text-sm text-muted-foreground">Avg. Sale Value</p>
                             <p className="text-2xl font-bold">{formatCurrency(salesMetrics.averageSaleValue)}</p>
@@ -138,16 +139,16 @@ const Sales: React.FC = () => {
                     <h3 className="text-lg font-semibold mb-4">Sales Over Time</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={salesChartData}>
-                            <XAxis dataKey="date" tick={{ fill: 'hsl(215 20% 65%)', fontSize: 12 }} />
-                            <YAxis tick={{ fill: 'hsl(215 20% 65%)' }} tickFormatter={(value) => formatCurrency(value)} />
+                            <XAxis dataKey="date" tick={{ fill: 'hsl(220 9% 46%)', fontSize: 12 }} />
+                            <YAxis tick={{ fill: 'hsl(220 9% 46%)' }} tickFormatter={(value) => formatCurrency(value)} />
                             <Tooltip
                               formatter={(value: number) => formatCurrency(value)}
-                              contentStyle={{ backgroundColor: 'hsl(222 47% 14%)', border: '1px solid hsl(217 33% 17%)', borderRadius: '0.5rem' }}
-                              labelStyle={{ color: 'hsl(210 40% 98%)' }}
+                              contentStyle={{ backgroundColor: 'hsl(0 0% 100%)', border: '1px solid hsl(214 32% 91%)', borderRadius: '0.5rem' }}
+                              labelStyle={{ color: 'hsl(222 47% 11%)' }}
                             />
-                            <Legend wrapperStyle={{ color: 'hsl(215 20% 65%)' }} />
-                            <Line type="monotone" dataKey="revenue" stroke="hsl(164 92% 54%)" name="Revenue" strokeWidth={2} />
-                            <Line type="monotone" dataKey="profit" stroke="hsl(215 20% 65%)" name="Profit" strokeWidth={2} />
+                            <Legend wrapperStyle={{ color: 'hsl(220 9% 46%)' }} />
+                            <Line type="monotone" dataKey="revenue" stroke="hsl(164 92% 47%)" name="Revenue" strokeWidth={2} />
+                            <Line type="monotone" dataKey="profit" stroke="hsl(220 13% 69%)" name="Profit" strokeWidth={2} />
                         </LineChart>
                     </ResponsiveContainer>
                 </Card>

@@ -10,21 +10,21 @@ type Classification = 'Star' | 'Plowhorse' | 'Puzzle' | 'Dog';
 
 const ClassificationBadge: React.FC<{ classification: Classification }> = ({ classification }) => {
     const config = {
-        Star: { icon: <Star size={14} />, color: 'primary', label: 'Star' },
-        Plowhorse: { icon: <Grip size={14} />, color: 'sky', label: 'Plowhorse' },
-        Puzzle: { icon: <Puzzle size={14} />, color: 'amber', label: 'Puzzle' },
-        Dog: { icon: <ThumbsDown size={14} />, color: 'destructive', label: 'Dog' },
+        Star: { icon: <Star size={14} />, label: 'Star' },
+        Plowhorse: { icon: <Grip size={14} />, label: 'Plowhorse' },
+        Puzzle: { icon: <Puzzle size={14} />, label: 'Puzzle' },
+        Dog: { icon: <ThumbsDown size={14} />, label: 'Dog' },
     };
-    const { icon, color, label } = config[classification];
-    const colors = {
-        primary: 'bg-primary/10 text-primary',
-        sky: 'bg-sky-500/10 text-sky-400',
-        amber: 'bg-amber-500/10 text-amber-400',
-        destructive: 'bg-destructive/10 text-destructive',
-    }
+    const { icon, label } = config[classification];
+    const colorClasses = {
+        Star: 'bg-teal-100 text-teal-700',
+        Plowhorse: 'bg-sky-100 text-sky-700',
+        Puzzle: 'bg-amber-100 text-amber-700',
+        Dog: 'bg-red-100 text-red-700',
+    };
 
     return (
-        <span className={`flex items-center text-xs font-semibold px-2 py-1 rounded-full ${colors[color]}`}>
+        <span className={`flex items-center text-xs font-semibold px-2 py-1 rounded-full ${colorClasses[classification]}`}>
             {icon}
             <span className="ml-1">{label}</span>
         </span>

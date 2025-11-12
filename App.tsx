@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import { DataProvider } from './hooks/useDataContext';
@@ -75,8 +76,8 @@ const AppContent: React.FC = () => {
                 className="relative flex items-center justify-center min-h-screen bg-cover bg-center p-4"
                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop')" }}
             >
-                <div className="absolute inset-0 bg-black/70 z-0"></div>
-                <Card className="text-center w-full max-w-md mx-auto z-10 bg-card/70 backdrop-blur-sm border-border/50">
+                <div className="absolute inset-0 bg-white/60 z-0"></div>
+                <Card className="text-center w-full max-w-md mx-auto z-10 bg-card/60 backdrop-blur-md border-border/50">
                     <ChefHat className="text-primary mx-auto" size={48} />
                     <h1 className="text-3xl font-bold mt-4 text-foreground">Welcome to F&B Costing Pro</h1>
                     <p className="text-muted-foreground mt-2 mb-6">To get started, please create your first business.</p>
@@ -86,7 +87,7 @@ const AppContent: React.FC = () => {
                             value={newBusinessName}
                             onChange={(e) => setNewBusinessName(e.target.value)}
                             placeholder="e.g., Main Restaurant"
-                            className="w-full px-4 py-2 border border-input bg-background/80 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:text-sm text-foreground placeholder:text-muted-foreground"
+                            className="w-full px-4 py-2 border border-input bg-white/50 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:text-sm text-foreground placeholder:text-muted-foreground"
                             aria-label="New business name"
                         />
                         <button 
