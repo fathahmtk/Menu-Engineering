@@ -1,9 +1,8 @@
-
-
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem, IngredientUnit, DataContextType, PurchaseOrderItem } from '../types';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from './useAuthContext';
+import { AlertTriangle } from 'lucide-react';
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
@@ -18,6 +17,7 @@ export const useData = (): DataContextType => {
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Master data lists, fetched from Supabase
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -33,54 +33,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const [activeBusinessId, setActiveBusinessIdState] = useState<string | null>(null);
 
-  // Data fetching
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      
-      const { data: businessesData, error: businessesError } = await supabase
-        .from('businesses')
-        .select('*')
-        .eq('userId', user.id);
-      
-      if (businessesError) console.error('Error fetching businesses:', businessesError);
-      else setBusinesses(businessesData || []);
-
-      const savedBusinessId = localStorage.getItem('activeBusinessId');
-      const currentBusinessId = (businessesData && businessesData.some(b => b.id === savedBusinessId))
-        ? savedBusinessId
-        : businessesData?.[0]?.id || null;
-      
-      setActiveBusinessIdState(currentBusinessId);
-
-      if (currentBusinessId) {
-        // Fetch all data related to the active business
-        const tables = ['suppliers', 'inventory', 'recipes', 'menuItems', 'categories', 'ingredientUnits', 'recipeTemplates', 'purchaseOrders', 'sales'];
-        const setters = [setSuppliers, setInventory, setRecipes, setMenuItems, setCategories, setIngredientUnits, setRecipeTemplates, setPurchaseOrders, setSales];
-        
-        await Promise.all(tables.map(async (table, index) => {
-          const { data, error } = await supabase
-            .from(table)
-            .select('*')
-            .eq('businessId', currentBusinessId);
-          if (error) console.error(`Error fetching ${table}:`, error);
-          else setters[index](data as any);
-        }));
-      } else {
-        // No business, clear all data
-        [setSuppliers, setInventory, setRecipes, setMenuItems, setCategories, setIngredientUnits, setRecipeTemplates, setPurchaseOrders, setSales].forEach(setter => setter([]));
-      }
-      
-      setLoading(false);
-    };
-
-    fetchData();
-  }, [user]);
-
+  // HOOKS MOVED HERE TO PREVENT CONDITIONAL HOOK CALLS
   const setActiveBusinessId = useCallback((id: string) => {
     localStorage.setItem('activeBusinessId', id);
     window.location.reload(); // Easiest way to refetch all data for the new business
@@ -471,6 +424,109 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const filteredPurchaseOrders = useMemo(() => purchaseOrders.filter(p => p.businessId === activeBusinessId).sort((a,b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()), [purchaseOrders, activeBusinessId]);
   const filteredSales = useMemo(() => sales.filter(s => s.businessId === activeBusinessId), [sales, activeBusinessId]);
 
+
+  // Data fetching
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const { data: businessesData, error: businessesError } = await supabase
+          .from('businesses')
+          .select('*')
+          .eq('userId', user.id);
+        
+        if (businessesError) throw businessesError;
+        
+        setBusinesses(businessesData || []);
+
+        const savedBusinessId = localStorage.getItem('activeBusinessId');
+        const currentBusinessId = (businessesData && businessesData.some(b => b.id === savedBusinessId))
+          ? savedBusinessId
+          : businessesData?.[0]?.id || null;
+        
+        setActiveBusinessIdState(currentBusinessId);
+
+        if (currentBusinessId) {
+          // Fetch all data related to the active business
+          const tables = ['suppliers', 'inventory', 'recipes', 'menuItems', 'categories', 'ingredientUnits', 'recipeTemplates', 'purchaseOrders', 'sales'];
+          const setters = [setSuppliers, setInventory, setRecipes, setMenuItems, setCategories, setIngredientUnits, setRecipeTemplates, setPurchaseOrders, setSales];
+          
+          await Promise.all(tables.map(async (table, index) => {
+            const { data, error } = await supabase
+              .from(table)
+              .select('*')
+              .eq('businessId', currentBusinessId);
+            if (error) throw new Error(`Failed to fetch ${table}: ${error.message}`);
+            setters[index](data as any);
+          }));
+        } else {
+          // No business, clear all data
+          [setSuppliers, setInventory, setRecipes, setMenuItems, setCategories, setIngredientUnits, setRecipeTemplates, setPurchaseOrders, setSales].forEach(setter => setter([]));
+        }
+      } catch (err: unknown) {
+        console.error("Data fetching error:", err);
+        let errorMessage = "An unknown error occurred while loading your data.";
+
+        if (typeof err === 'object' && err !== null) {
+            const potentialError = err as { message?: unknown, details?: unknown, hint?: unknown };
+            if (typeof potentialError.message === 'string') {
+                errorMessage = potentialError.message;
+                if (typeof potentialError.details === 'string') {
+                    errorMessage += `\n\nDetails: ${potentialError.details}`;
+                }
+                if (typeof potentialError.hint === 'string') {
+                    errorMessage += `\nHint: ${potentialError.hint}`;
+                }
+            } else {
+                try {
+                    errorMessage = JSON.stringify(err, null, 2);
+                } catch {
+                     errorMessage = "An un-stringifiable error object was thrown.";
+                }
+            }
+        } else {
+            errorMessage = String(err);
+        }
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  if (error) {
+    return (
+        <div className="w-screen h-screen flex items-center justify-center bg-background p-4">
+            <div className="w-full max-w-lg text-center bg-card p-8 rounded-xl shadow-lg border border-border">
+                <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
+                <h2 className="mt-4 text-2xl font-bold text-foreground">Failed to Load Data</h2>
+                <pre className="mt-2 text-sm text-left text-muted-foreground bg-destructive/10 p-3 rounded-md font-mono overflow-x-auto whitespace-pre-wrap">{error}</pre>
+                <div className="mt-4 text-left text-sm text-muted-foreground space-y-2">
+                    <p>This can happen for a few reasons:</p>
+                    <ul className="list-disc list-inside space-y-1 pl-4">
+                        <li><strong>Network problem:</strong> Check your internet connection.</li>
+                        <li><strong>Configuration issue:</strong> Ensure the Supabase URL and Key are correct.</li>
+                        <li><strong>Permissions error:</strong> Check that your Row Level Security (RLS) policies are correctly configured for the 'businesses' table and other tables. Your user may not have permission to read the data.</li>
+                    </ul>
+                </div>
+                 <button 
+                    onClick={() => window.location.reload()}
+                    className="mt-6 w-full bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        </div>
+    );
+  }
 
   const value: DataContextType = {
     loading,
