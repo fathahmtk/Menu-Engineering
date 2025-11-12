@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -11,9 +12,9 @@ import { PurchaseOrder, PurchaseOrderItem } from '../types';
 
 const StatusBadge: React.FC<{ status: PurchaseOrder['status'] }> = ({ status }) => {
     const config = {
-        Pending: 'bg-amber-500/10 text-amber-400',
-        Completed: 'bg-primary/10 text-primary',
-        Cancelled: 'bg-destructive/10 text-destructive',
+        Pending: 'bg-amber-400/10 text-amber-300',
+        Completed: 'bg-teal-400/10 text-teal-300',
+        Cancelled: 'bg-red-400/10 text-red-300',
     };
     return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${config[status]}`}>{status}</span>;
 };
@@ -129,22 +130,22 @@ const Purchasing: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Purchase Orders</h2>
-                    <button onClick={handleOpenFormModal} className="flex items-center bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                    <button onClick={handleOpenFormModal} className="luxury-btn luxury-btn-primary">
                         <PlusCircle size={20} className="mr-2" />
                         Create PO
                     </button>
                 </div>
                 <div className="overflow-x-auto md:overflow-visible">
                     <table className="w-full text-left responsive-table">
-                        <thead className="bg-muted/50">
+                        <thead className="bg-black/20">
                             <tr>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">PO #</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Supplier</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Order Date</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Due Date</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Total</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Status</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Actions</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">PO #</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Supplier</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Order Date</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Due Date</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Total</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Status</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -154,22 +155,22 @@ const Purchasing: React.FC = () => {
                                 const isOverdue = order.status === 'Pending' && order.dueDate && new Date(order.dueDate) < today;
 
                                 return (
-                                <tr key={order.id} className={`border-b border-border last:border-b-0 hover:bg-accent ${isOverdue ? 'bg-destructive/5' : ''}`}>
-                                    <td data-label="PO #" className="p-4 font-medium text-primary whitespace-nowrap">#{order.id.slice(-6).toUpperCase()}</td>
-                                    <td data-label="Supplier" className="p-4 text-foreground whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
-                                    <td data-label="Order Date" className="p-4 text-muted-foreground whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
-                                    <td data-label="Due Date" className={`p-4 text-muted-foreground whitespace-nowrap ${isOverdue ? 'font-bold text-destructive' : ''}`}>
+                                <tr key={order.id} className={`border-b border-[var(--color-border)] last:border-b-0 hover:bg-white/5 ${isOverdue ? 'bg-[var(--color-destructive)]/5' : ''}`}>
+                                    <td data-label="PO #" className="p-4 font-medium text-[var(--color-primary)] whitespace-nowrap">#{order.id.slice(-6).toUpperCase()}</td>
+                                    <td data-label="Supplier" className="p-4 text-white whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
+                                    <td data-label="Order Date" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
+                                    <td data-label="Due Date" className={`p-4 text-[var(--color-text-muted)] whitespace-nowrap ${isOverdue ? 'font-bold text-[var(--color-destructive)]' : ''}`}>
                                         {order.dueDate ? new Date(order.dueDate).toLocaleDateString() : 'N/A'}
                                     </td>
-                                    <td data-label="Total" className="p-4 text-muted-foreground whitespace-nowrap">{formatCurrency(order.totalCost)}</td>
+                                    <td data-label="Total" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(order.totalCost)}</td>
                                     <td data-label="Status" className="p-4"><StatusBadge status={order.status} /></td>
                                     <td data-label="Actions" className="p-4">
                                         <div className="flex items-center space-x-3">
-                                            <button onClick={() => handleViewDetails(order)} className="text-muted-foreground hover:text-foreground" title="View Details"><Eye size={20} /></button>
+                                            <button onClick={() => handleViewDetails(order)} className="text-[var(--color-text-muted)] hover:text-white" title="View Details"><Eye size={20} /></button>
                                             {order.status === 'Pending' && (
                                                 <>
-                                                    <button onClick={() => handleStatusChange(order.id, 'Completed')} className="text-primary hover:text-primary/80" title="Mark as Completed"><CheckCircle size={20} /></button>
-                                                    <button onClick={() => handleStatusChange(order.id, 'Cancelled')} className="text-destructive hover:text-destructive/80" title="Cancel Order"><XCircle size={20} /></button>
+                                                    <button onClick={() => handleStatusChange(order.id, 'Completed')} className="text-green-400 hover:opacity-80" title="Mark as Completed"><CheckCircle size={20} /></button>
+                                                    <button onClick={() => handleStatusChange(order.id, 'Cancelled')} className="text-[var(--color-destructive)] hover:opacity-80" title="Cancel Order"><XCircle size={20} /></button>
                                                 </>
                                             )}
                                         </div>
@@ -179,8 +180,8 @@ const Purchasing: React.FC = () => {
                         </tbody>
                     </table>
                     {purchaseOrders.length === 0 && (
-                        <div className="text-center py-10 text-muted-foreground">
-                            <Package size={40} className="mx-auto mb-2 text-border"/>
+                        <div className="text-center py-10 text-[var(--color-text-muted)]">
+                            <Package size={40} className="mx-auto mb-2 text-[var(--color-border)]"/>
                             <p>No purchase orders found. Create one to get started.</p>
                         </div>
                     )}
@@ -191,54 +192,54 @@ const Purchasing: React.FC = () => {
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-foreground">Supplier</label>
+                            <label className="block text-sm font-medium text-white/80">Supplier</label>
                             <select
                                 value={newPoData.supplierId}
                                 onChange={(e) => setNewPoData({ ...newPoData, supplierId: e.target.value })}
-                                className="w-full mt-1 border rounded-md p-2 bg-background border-input focus:ring-1 focus:ring-ring"
+                                className="luxury-select w-full mt-1"
                             >
                                 {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="dueDate" className="block text-sm font-medium text-foreground">Due Date</label>
+                            <label htmlFor="dueDate" className="block text-sm font-medium text-white/80">Due Date</label>
                             <input
                                 type="date"
                                 id="dueDate"
                                 value={newPoData.dueDate}
                                 onChange={(e) => setNewPoData({ ...newPoData, dueDate: e.target.value })}
-                                className="w-full mt-1 border rounded-md p-2 bg-background border-input focus:ring-1 focus:ring-ring"
+                                className="luxury-input w-full mt-1"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <h4 className="text-sm font-medium mb-2">Items</h4>
+                        <h4 className="text-sm font-medium mb-2 text-white/80">Items</h4>
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                             {newPoData.items.map((item, index) => (
-                                <div key={index} className="flex flex-col sm:grid sm:grid-cols-[1fr,80px,100px,auto] gap-2 sm:items-center border sm:border-0 rounded-md p-2 sm:p-0">
+                                <div key={index} className="flex flex-col sm:grid sm:grid-cols-[1fr,80px,100px,auto] gap-2 sm:items-center border border-transparent sm:border-0 rounded-md p-2 sm:p-0">
                                     <select
                                         value={item.itemId || ''}
                                         onChange={(e) => handleItemChange(index, 'itemId', e.target.value)}
-                                        className="w-full border rounded-md p-2 bg-background border-input focus:ring-1 focus:ring-ring"
+                                        className="luxury-select w-full"
                                     >
                                         <option value="" disabled>Select item</option>
                                         {inventory.map(inv => <option key={inv.id} value={inv.id}>{inv.name}</option>)}
                                     </select>
-                                    <input type="number" placeholder="Qty" value={item.quantity} min="1" onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="w-full border rounded-md p-2 border-input focus:ring-1 focus:ring-ring" />
-                                    <input type="number" placeholder="Cost" value={item.cost} min="0" step="0.01" onChange={(e) => handleItemChange(index, 'cost', e.target.value)} className="w-full border rounded-md p-2 border-input focus:ring-1 focus:ring-ring" />
-                                    <button onClick={() => handleRemoveItem(index)} className="text-destructive/80 hover:text-destructive sm:justify-self-center"><Trash2 size={18} /></button>
+                                    <input type="number" placeholder="Qty" value={item.quantity} min="1" onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="luxury-input w-full" />
+                                    <input type="number" placeholder="Cost" value={item.cost} min="0" step="0.01" onChange={(e) => handleItemChange(index, 'cost', e.target.value)} className="luxury-input w-full" />
+                                    <button onClick={() => handleRemoveItem(index)} className="text-[var(--color-destructive)]/80 hover:text-[var(--color-destructive)] sm:justify-self-center"><Trash2 size={18} /></button>
                                 </div>
                             ))}
                         </div>
-                        <button onClick={handleAddItem} className="text-sm text-primary mt-2 flex items-center"><Plus size={16} className="mr-1"/> Add Item</button>
+                        <button onClick={handleAddItem} className="text-sm text-[var(--color-primary)] mt-2 flex items-center"><Plus size={16} className="mr-1"/> Add Item</button>
                     </div>
-                    <div className="text-right font-bold text-lg pt-4 border-t border-border">
+                    <div className="text-right font-bold text-lg pt-4 border-t border-[var(--color-border)]">
                         Total: {formatCurrency(newPoTotal)}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseFormModal} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">Cancel</button>
-                        <button onClick={handleSubmitNewPO} className="px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90">Create Order</button>
+                        <button onClick={handleCloseFormModal} className="luxury-btn luxury-btn-secondary">Cancel</button>
+                        <button onClick={handleSubmitNewPO} className="luxury-btn luxury-btn-primary">Create Order</button>
                     </div>
                 </div>
             </Modal>
@@ -251,18 +252,18 @@ const Purchasing: React.FC = () => {
                         {selectedOrder.dueDate && <p><strong>Due Date:</strong> {new Date(selectedOrder.dueDate).toLocaleDateString()}</p>}
                         <p><strong>Status:</strong> <StatusBadge status={selectedOrder.status} /></p>
                         {selectedOrder.completionDate && <p><strong>Completion Date:</strong> {new Date(selectedOrder.completionDate).toLocaleDateString()}</p>}
-                        <h4 className="font-semibold pt-2 border-t border-border">Items</h4>
+                        <h4 className="font-semibold pt-2 border-t border-[var(--color-border)]">Items</h4>
                         <ul className="list-disc list-inside space-y-1">
                             {selectedOrder.items.map(item => {
                                 const invItem = inventory.find(i => i.id === item.itemId);
                                 return <li key={item.itemId}>{item.quantity} x {invItem?.name || 'N/A'} @ {formatCurrency(item.cost)} each</li>
                             })}
                         </ul>
-                         <div className="text-right font-bold text-lg pt-2 border-t border-border">
+                         <div className="text-right font-bold text-lg pt-2 border-t border-[var(--color-border)]">
                             Total: {formatCurrency(selectedOrder.totalCost)}
                         </div>
                          <div className="flex justify-end pt-4">
-                            <button onClick={() => setIsDetailsModalOpen(false)} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">
+                            <button onClick={() => setIsDetailsModalOpen(false)} className="luxury-btn luxury-btn-secondary">
                                 Close
                             </button>
                         </div>
@@ -277,7 +278,7 @@ const Purchasing: React.FC = () => {
                 title="Confirm Action"
                 message={`Are you sure you want to mark this order as ${confirmationAction?.status}? ${confirmationAction?.status === 'Completed' ? 'This will update your inventory stock levels.' : ''}`}
                 confirmText="Yes, Confirm"
-                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : confirmationAction?.status === 'Cancelled' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : 'bg-primary text-primary-foreground hover:bg-primary/90' }
+                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'bg-green-600 hover:bg-green-700' : confirmationAction?.status === 'Cancelled' ? 'bg-[var(--color-destructive)] hover:opacity-80' : 'bg-[var(--color-primary)] hover:opacity-80' }
             />
         </>
     );

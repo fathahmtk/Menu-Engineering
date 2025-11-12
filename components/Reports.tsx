@@ -36,7 +36,7 @@ const Reports: React.FC = () => {
     }).sort((a, b) => b.profit - a.profit);
     
 
-    const COLORS = ['#14b8a6', '#3b82f6', '#f97316', '#8b5cf6', '#ec4899', '#64748b', '#ef4444'];
+    const COLORS = ['#FFC107', '#4CAF50', '#2196F3', '#9C27B0', '#F44336', '#795548', '#00BCD4'];
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -54,7 +54,7 @@ const Reports: React.FC = () => {
                             dataKey="value"
                             nameKey="name"
                             label={({ name, percent }) => `${name} ${(Number(percent || 0) * 100).toFixed(0)}%`}
-                            labelStyle={{ fill: 'hsl(222 47% 11%)', fontSize: 12 }}
+                            labelStyle={{ fill: 'var(--color-text-primary)', fontSize: 12 }}
                         >
                             {pieData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -62,10 +62,10 @@ const Reports: React.FC = () => {
                         </Pie>
                         <Tooltip 
                             formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{ backgroundColor: 'hsl(0 0% 100%)', border: '1px solid hsl(214 32% 91%)', borderRadius: '0.5rem' }}
-                            labelStyle={{ color: 'hsl(222 47% 11%)' }}
+                            contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                            labelStyle={{ color: 'var(--color-text-primary)' }}
                         />
-                        <Legend wrapperStyle={{ color: 'hsl(220 9% 46%)', fontSize: '14px' }}/>
+                        <Legend wrapperStyle={{ color: 'var(--color-text-muted)', fontSize: '14px' }}/>
                     </PieChart>
                 </ResponsiveContainer>
             </Card>
@@ -73,15 +73,15 @@ const Reports: React.FC = () => {
                 <h3 className="text-lg font-semibold mb-4">Menu Item Profitability</h3>
                 <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={barData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                        <XAxis type="number" tick={{ fill: 'hsl(220 9% 46%)' }} tickFormatter={(value) => formatCurrency(value)} />
-                        <YAxis type="category" dataKey="name" width={120} tick={{ fill: 'hsl(220 9% 46%)', fontSize: 12 }}/>
+                        <XAxis type="number" tick={{ fill: 'var(--color-text-muted)' }} tickFormatter={(value) => formatCurrency(value)} />
+                        <YAxis type="category" dataKey="name" width={120} tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}/>
                         <Tooltip
                             formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{ backgroundColor: 'hsl(0 0% 100%)', border: '1px solid hsl(214 32% 91%)', borderRadius: '0.5rem' }}
-                            labelStyle={{ color: 'hsl(222 47% 11%)' }}
-                            cursor={{ fill: 'hsl(210 40% 96%)' }}
+                            contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                            labelStyle={{ color: 'var(--color-text-primary)' }}
+                            cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
                         />
-                        <Legend wrapperStyle={{ color: 'hsl(220 9% 46%)' }} />
+                        <Legend wrapperStyle={{ color: 'var(--color-text-muted)' }} />
                         <Bar dataKey="profit" name="Profit per Serving">
                              {barData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

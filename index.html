@@ -2,112 +2,133 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍲%3C/text%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>F&B Costing Pro</title>
+    <title>F&B Costing Pro | Culinary Business Intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: hsl(210 40% 98%); /* background */
-        overflow: hidden;
+      :root {
+        --color-background: hsl(220, 18%, 8%);
+        --color-card: hsl(220, 18%, 11%);
+        --color-border: hsl(220, 15%, 20%);
+        --color-primary: hsl(45, 100%, 51%); /* Gold accent */
+        --color-primary-hover: hsl(45, 100%, 61%);
+        --color-primary-foreground: hsl(220, 18%, 8%);
+        --color-secondary: hsl(220, 15%, 25%);
+        --color-text-primary: hsl(0, 0%, 98%);
+        --color-text-muted: hsl(220, 10%, 65%);
+        --color-destructive: hsl(0, 72%, 51%);
+        --font-sans: 'Inter', sans-serif;
       }
-      @supports (font-variation-settings: normal) {
-        body { font-family: 'Inter var', sans-serif; }
+
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--color-background);
+        color: var(--color-text-primary);
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
       
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: var(--color-background); }
+      ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--color-secondary); }
+
       /* Standardized Cursors */
       :root { cursor: default; }
       button, a, label, input[type="checkbox"], input[type="radio"], select, .cursor-pointer { cursor: pointer; }
 
+      /* Base Component Styles */
+      .luxury-card {
+        background-color: var(--color-card);
+        border: 1px solid var(--color-border);
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+      }
+
+      .luxury-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid transparent;
+      }
+      .luxury-btn-primary {
+        background-color: var(--color-primary);
+        color: var(--color-primary-foreground);
+      }
+      .luxury-btn-primary:hover {
+        background-color: var(--color-primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(255, 215, 0, 0.2);
+      }
+       .luxury-btn-secondary {
+        background-color: transparent;
+        color: var(--color-text-muted);
+        border-color: var(--color-border);
+      }
+       .luxury-btn-secondary:hover {
+        background-color: var(--color-border);
+        color: var(--color-text-primary);
+      }
+      .luxury-input, .luxury-select {
+        background-color: var(--color-background);
+        border: 1px solid var(--color-border);
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        color: var(--color-text-primary);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .luxury-input:focus, .luxury-select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.3);
+      }
+
       /* Responsive Table Styles */
-      @media (max-width: 767px) { /* Corresponds to Tailwind's 'md' breakpoint */
-        .responsive-table thead {
-            display: none;
-        }
+      @media (max-width: 767px) {
+        .responsive-table thead { display: none; }
         .responsive-table tbody tr {
-            display: block;
-            border: 1px solid hsl(214 32% 91%); /* border */
-            border-radius: 0.75rem; /* rounded-lg */
-            margin-bottom: 1rem;
-            padding: 0.5rem;
-            background-color: hsl(0 0% 100%); /* card */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+          display: block;
+          border: 1px solid var(--color-border);
+          border-radius: 0.75rem;
+          margin-bottom: 1rem;
+          padding: 0.5rem;
+          background-color: var(--color-card);
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
         .responsive-table td {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 0.5rem;
-            text-align: right;
-            border-bottom: 1px solid hsl(210 40% 96%); /* muted */
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem 0.5rem;
+          text-align: right;
+          border-bottom: 1px solid var(--color-border);
         }
-        .responsive-table tbody tr:last-child {
-            margin-bottom: 0;
-        }
-        .responsive-table td:last-child {
-            border-bottom: 0;
-        }
+        .responsive-table td:last-child { border-bottom: 0; }
         .responsive-table td::before {
-            content: attr(data-label);
-            font-weight: 600;
-            text-align: left;
-            margin-right: 1rem;
-            flex-shrink: 0;
-            color: hsl(222 47% 11%); /* foreground */
+          content: attr(data-label);
+          font-weight: 600;
+          text-align: left;
+          margin-right: 1rem;
+          color: var(--color-text-primary);
         }
-        /* Special handling for checkbox cell */
-        .responsive-table td.checkbox-cell {
-            padding: 0.75rem 0.5rem;
-            justify-content: flex-start;
-        }
-        .responsive-table td.checkbox-cell::before {
-            display: none;
-        }
+        .responsive-table td.checkbox-cell { justify-content: flex-start; }
+        .responsive-table td.checkbox-cell::before { display: none; }
       }
     </style>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              border: 'hsl(214 32% 91%)',
-              input: 'hsl(214 32% 91%)',
-              ring: 'hsl(164 80% 44%)',
-              background: 'hsl(210 40% 98%)',
-              foreground: 'hsl(222 47% 11%)',
-              primary: {
-                DEFAULT: 'hsl(164 92% 47%)',
-                foreground: 'hsl(0 0% 100%)',
-              },
-              secondary: {
-                DEFAULT: 'hsl(210 40% 96%)',
-                foreground: 'hsl(222 47% 11%)',
-              },
-              destructive: {
-                DEFAULT: 'hsl(0 84% 60%)',
-                foreground: 'hsl(0 0% 100%)',
-              },
-              muted: {
-                DEFAULT: 'hsl(210 40% 96%)',
-                foreground: 'hsl(220 9% 46%)',
-              },
-              accent: {
-                DEFAULT: 'hsl(210 40% 96%)',
-                foreground: 'hsl(222 47% 11%)',
-              },
-              card: {
-                DEFAULT: 'hsl(0 0% 100%)',
-                foreground: 'hsl(222 47% 11%)',
-              },
-            }
-          }
-        }
-      }
-    </script>
   <script type="importmap">
 {
   "imports": {
@@ -115,8 +136,7 @@
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.3.0",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.81.1"
+    "recharts": "https://aistudiocdn.com/recharts@^3.3.0"
   }
 }
 </script>

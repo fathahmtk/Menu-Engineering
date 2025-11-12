@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState } from 'react';
 import { useData } from '../hooks/useDataContext';
 import { Building, ChevronDown, PlusCircle } from 'lucide-react';
@@ -36,35 +37,35 @@ const BusinessSelector: React.FC = () => {
                 <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
-                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-accent"
+                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition-colors"
                     aria-haspopup="true"
                     aria-expanded={isDropdownOpen}
                 >
-                    <Building size={20} className="text-primary" />
-                    <span className="font-semibold text-foreground hidden sm:inline">{activeBusiness.name}</span>
-                    <ChevronDown size={16} className="text-muted-foreground" />
+                    <Building size={20} className="text-[var(--color-primary)]" />
+                    <span className="font-semibold text-white hidden sm:inline">{activeBusiness.name}</span>
+                    <ChevronDown size={16} className="text-[var(--color-text-muted)]" />
                 </button>
                 {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 sm:w-56 origin-top-right bg-card rounded-xl shadow-lg ring-1 ring-border z-50">
+                    <div className="absolute right-0 mt-2 w-48 sm:w-56 origin-top-right bg-[var(--color-card)] rounded-xl shadow-lg ring-1 ring-[var(--color-border)] z-50">
                         <div className="py-1">
-                            <div className="px-4 py-2 text-xs text-muted-foreground uppercase">Switch Business</div>
+                            <div className="px-4 py-2 text-xs text-[var(--color-text-muted)] uppercase">Switch Business</div>
                             {businesses.map(business => (
                                 <a
                                     key={business.id}
                                     href="#"
                                     onClick={(e) => { e.preventDefault(); handleSelectBusiness(business.id); }}
                                     className={`block px-4 py-2 text-sm ${
-                                        activeBusinessId === business.id ? 'font-bold text-primary bg-accent' : 'text-foreground hover:bg-accent'
+                                        activeBusinessId === business.id ? 'font-bold text-[var(--color-primary)] bg-white/5' : 'text-white hover:bg-white/5'
                                     }`}
                                 >
                                     {business.name}
                                 </a>
                             ))}
-                            <div className="border-t border-border my-1"></div>
+                            <div className="border-t border-[var(--color-border)] my-1"></div>
                             <a
                                 href="#"
                                 onClick={(e) => { e.preventDefault(); setIsModalOpen(true); setIsDropdownOpen(false); }}
-                                className="block px-4 py-2 text-sm text-foreground hover:bg-accent flex items-center"
+                                className="block px-4 py-2 text-sm text-white hover:bg-white/5 flex items-center"
                             >
                                 <PlusCircle size={16} className="mr-2" />
                                 Manage Businesses
@@ -77,34 +78,34 @@ const BusinessSelector: React.FC = () => {
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Manage Businesses">
                 <div className="space-y-4">
                     <div>
-                        <h3 className="text-md font-semibold text-foreground mb-2">Existing Businesses</h3>
-                        <ul className="space-y-2 max-h-40 overflow-y-auto pr-2 border rounded-md p-2 bg-muted">
+                        <h3 className="text-md font-semibold text-white/80 mb-2">Existing Businesses</h3>
+                        <ul className="space-y-2 max-h-40 overflow-y-auto pr-2 border border-[var(--color-border)] rounded-md p-2 bg-black/20">
                             {businesses.map(business => (
-                                <li key={business.id} className="text-muted-foreground px-2 py-1">{business.name}</li>
+                                <li key={business.id} className="text-[var(--color-text-muted)] px-2 py-1">{business.name}</li>
                             ))}
                         </ul>
                     </div>
                     <div>
-                         <h3 className="text-md font-semibold text-foreground mb-2">Add New Business</h3>
+                         <h3 className="text-md font-semibold text-white/80 mb-2">Add New Business</h3>
                          <div className="flex space-x-2">
                              <input
                                 type="text"
                                 value={newBusinessName}
                                 onChange={(e) => setNewBusinessName(e.target.value)}
                                 placeholder="New business name"
-                                className="flex-grow px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm"
+                                className="luxury-input flex-grow"
                             />
                             <button 
                                 onClick={handleAddBusiness}
                                 disabled={!newBusinessName.trim()}
-                                className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:bg-primary/50"
+                                className="luxury-btn luxury-btn-primary disabled:opacity-50"
                             >
                                 Add
                             </button>
                          </div>
                     </div>
                      <div className="flex justify-end pt-4">
-                        <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">
+                        <button onClick={() => setIsModalOpen(false)} className="luxury-btn luxury-btn-secondary">
                             Close
                         </button>
                     </div>

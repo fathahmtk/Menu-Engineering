@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
-const API_URL = 'https://api.exchangerate-api.com/v4/latest/QAR';
+const API_URL = 'https://open.er-api.com/v6/latest/USD';
 const SUPPORTED_CURRENCIES = ['QAR', 'USD', 'EUR', 'GBP', 'INR'];
 
 interface Rates {
@@ -22,7 +22,7 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [currency, setCurrencyState] = useState<string>(() => {
     return localStorage.getItem('appCurrency') || 'QAR';
   });
-  const [rates, setRates] = useState<Rates>({ QAR: 1 });
+  const [rates, setRates] = useState<Rates>({ USD: 1 });
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -33,18 +33,20 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
           throw new Error('Failed to fetch exchange rates');
         }
         const data = await response.json();
-        const filteredRates = Object.keys(data.rates)
-          .filter(key => SUPPORTED_CURRENCIES.includes(key))
-          .reduce((obj, key) => {
-            obj[key] = data.rates[key];
-            return obj;
-          }, {} as Rates);
-        
-        setRates(filteredRates);
+        if (data.result === 'success') {
+            const filteredRates = Object.keys(data.rates)
+              .filter(key => SUPPORTED_CURRENCIES.includes(key))
+              .reduce((obj, key) => {
+                obj[key] = data.rates[key];
+                return obj;
+              }, {} as Rates);
+            setRates(filteredRates);
+        } else {
+             throw new Error('API returned an error');
+        }
       } catch (error) {
         console.error("Error fetching exchange rates:", error);
-        // Fallback to default QAR if API fails
-        setRates({ QAR: 1 }); 
+        setRates({ USD: 1, QAR: 3.64, EUR: 0.92, GBP: 0.79, INR: 83.33 }); // Hardcoded fallback
       } finally {
         setIsLoading(false);
       }
@@ -58,8 +60,9 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const formatCurrency = useCallback((value: number) => {
+    const baseValueInUSD = value / (rates['QAR'] || 3.64); // Assuming all data is entered in QAR
     const rate = rates[currency] || 0;
-    const convertedValue = value * rate;
+    const convertedValue = baseValueInUSD * rate;
 
     try {
       return new Intl.NumberFormat(undefined, {

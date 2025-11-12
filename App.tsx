@@ -5,7 +5,6 @@ import { DataProvider } from './hooks/useDataContext';
 import { CurrencyProvider } from './hooks/useCurrencyContext';
 import CurrencySelector from './components/CurrencySelector';
 import BusinessSelector from './components/BusinessSelector';
-// FIX: Import CheckCircle icon.
 import { Menu as MenuIcon, ChefHat, LoaderCircle, CheckCircle } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
 import Card from './components/common/Card';
@@ -48,8 +47,8 @@ const viewTitles: Record<View, string> = {
 };
 
 const GlobalLoading: React.FC<{ message?: string }> = ({ message = 'Loading App...' }) => (
-    <div className="w-screen h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center text-primary">
+    <div className="w-screen h-screen flex items-center justify-center bg-[var(--color-background)]">
+        <div className="flex flex-col items-center text-[var(--color-primary)]">
             <LoaderCircle size={48} className="animate-spin"/>
             <p className="mt-4 text-lg font-semibold">{message}</p>
         </div>
@@ -72,48 +71,50 @@ const OnboardingScreen: React.FC = () => {
             className="relative flex items-center justify-center min-h-screen bg-cover bg-center p-4"
             style={{ backgroundImage: "url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop')" }}
         >
-            <div className="absolute inset-0 bg-white/60 z-0 backdrop-blur-sm"></div>
-            <Card className="text-center w-full max-w-lg mx-auto z-10 bg-card/80 backdrop-blur-lg border-border/50 shadow-2xl">
-                <ChefHat className="text-primary mx-auto" size={48} />
-                <h1 className="text-3xl font-bold mt-4 text-foreground">Welcome to F&B Costing Pro</h1>
-                <p className="text-muted-foreground mt-4 mb-2 max-w-md mx-auto">
+            <div className="absolute inset-0 bg-black/50 z-0"></div>
+            <div className="text-center w-full max-w-lg mx-auto z-10 p-8 rounded-2xl shadow-2xl border border-white/20"
+                 style={{ background: 'rgba(17, 20, 24, 0.7)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
+            >
+                <ChefHat className="text-[var(--color-primary)] mx-auto" size={48} />
+                <h1 className="text-4xl font-bold mt-4 text-white">Welcome to F&B Costing Pro</h1>
+                <p className="text-[var(--color-text-muted)] mt-4 mb-2 max-w-md mx-auto">
                     Take control of your kitchen's profitability. Our tools help you manage inventory, perfect recipe costs, and analyze sales with ease.
                 </p>
-                <div className="text-left bg-background/50 p-4 rounded-lg my-6 border border-border/30">
-                    <h2 className="font-semibold text-lg mb-2 text-foreground">Key Features:</h2>
-                    <ul className="space-y-2 text-muted-foreground">
-                        <li className="flex items-start"><CheckCircle className="text-primary w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Inventory Control:</b> Track stock levels and supplier costs in real-time.</span></li>
-                        <li className="flex items-start"><CheckCircle className="text-primary w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Recipe Costing:</b> Calculate costs per serving and set profitable menu prices.</span></li>
-                        <li className="flex items-start"><CheckCircle className="text-primary w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Sales Analytics:</b> Gain insights into item performance and profitability.</span></li>
+                <div className="text-left bg-white/5 p-4 rounded-lg my-6 border border-white/10">
+                    <h2 className="font-semibold text-lg mb-2 text-white">Key Features:</h2>
+                    <ul className="space-y-2 text-[var(--color-text-muted)]">
+                        <li className="flex items-start"><CheckCircle className="text-[var(--color-primary)] w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Inventory Control:</b> Track stock levels and supplier costs in real-time.</span></li>
+                        <li className="flex items-start"><CheckCircle className="text-[var(--color-primary)] w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Recipe Costing:</b> Calculate costs per serving and set profitable menu prices.</span></li>
+                        <li className="flex items-start"><CheckCircle className="text-[var(--color-primary)] w-5 h-5 mr-2 mt-0.5 flex-shrink-0" /><span><b>Sales Analytics:</b> Gain insights into item performance and profitability.</span></li>
                     </ul>
                 </div>
-                 <p className="text-muted-foreground mt-2 mb-6">To get started, please create your first business.</p>
+                 <p className="text-[var(--color-text-muted)] mt-2 mb-6">To get started, please create your first business.</p>
                 <div className="flex flex-col space-y-3">
                      <input
                         type="text"
                         value={newBusinessName}
                         onChange={(e) => setNewBusinessName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleCreateFirstBusiness()}
-                        placeholder="e.g., Main Restaurant"
-                        className="w-full px-4 py-2 border border-input bg-white/50 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:text-sm text-foreground placeholder:text-muted-foreground"
+                        placeholder="e.g., The Golden Spoon Bistro"
+                        className="luxury-input w-full px-4 py-2"
                         aria-label="New business name"
                     />
                     <button 
                         onClick={handleCreateFirstBusiness}
                         disabled={!newBusinessName.trim()}
-                        className="w-full bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-transform hover:scale-105 disabled:bg-primary/50 disabled:scale-100"
+                        className="luxury-btn luxury-btn-primary w-full py-2.5 disabled:opacity-50 disabled:transform-none disabled:shadow-none"
                     >
                         Create Business
                     </button>
                 </div>
-                <footer className="mt-8 text-center text-xs text-slate-800/60">
+                <footer className="mt-8 text-center text-xs text-white/40">
                     <p>Developed by <strong>Noor Digital Solution - Abdul Fathah</strong></p>
                     <p>
                         <a href="mailto:abdulfathahntk@gmail.com" className="hover:underline">abdulfathahntk@gmail.com</a> | 
                         <a href="tel:+97431618735" className="hover:underline"> +974 31618735</a>
                     </p>
                 </footer>
-            </Card>
+            </div>
         </div>
     );
 };
@@ -133,7 +134,7 @@ const AppContent: React.FC = () => {
     }
 
     return (
-        <div className="flex min-h-screen text-foreground bg-background">
+        <div className="flex min-h-screen text-[var(--color-text-primary)] bg-[var(--color-background)]">
             <Sidebar 
                 currentView={currentView} 
                 setCurrentView={setCurrentView}
@@ -141,23 +142,23 @@ const AppContent: React.FC = () => {
                 setIsOpen={setIsSidebarOpen}
             />
             <main className="flex-1 flex flex-col h-screen">
-                <header className="bg-card/80 border-b border-border shadow-sm p-2 sm:p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
+                <header className="bg-[var(--color-card)]/80 border-b border-[var(--color-border)] p-2 sm:p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
                     <div className="flex items-center">
                         <button 
-                            className="lg:hidden mr-2 sm:mr-4 text-muted-foreground"
+                            className="lg:hidden mr-2 sm:mr-4 text-[var(--color-text-muted)]"
                             onClick={() => setIsSidebarOpen(true)}
                             aria-label="Open sidebar"
                         >
                             <MenuIcon size={24} />
                         </button>
-                        <h2 className="text-xl font-semibold text-foreground hidden sm:block">{viewTitles[currentView]}</h2>
+                        <h2 className="text-xl font-semibold text-[var(--color-text-primary)] hidden sm:block">{viewTitles[currentView]}</h2>
                     </div>
                     <div className="flex items-center space-x-2 sm:space-x-4">
                         <BusinessSelector />
                         <CurrencySelector />
                     </div>
                 </header>
-                <div className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 overflow-y-auto">
+                <div className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
                     <Suspense fallback={<GlobalLoading message="Loading Content..." />}>
                         <CurrentViewComponent />
                     </Suspense>
@@ -174,7 +175,6 @@ const AppContainer: React.FC = () => {
         return <GlobalLoading />;
     }
 
-    // With a mocked auth context, session will always exist, so AuthPage is no longer needed.
     return (
         <DataProvider>
             <CurrencyProvider>

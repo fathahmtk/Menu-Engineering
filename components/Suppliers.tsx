@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -9,10 +10,13 @@ import { PlusCircle, Mail, Phone, Edit, Trash2 } from 'lucide-react';
 import ActionsDropdown from './common/ActionsDropdown';
 import ImportModal from './common/ImportModal';
 import { convertToCSV, downloadCSV } from '../utils/csvHelper';
+import ConfirmationModal from './common/ConfirmationModal';
 
 const Suppliers: React.FC = () => {
     const { suppliers, addSupplier, updateSupplier, deleteSupplier, bulkAddSuppliers } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
     const [currentSupplier, setCurrentSupplier] = useState<Supplier | null>(null);
     const [formData, setFormData] = useState<Omit<Supplier, 'id' | 'businessId'>>({ name: '', contactPerson: '', phone: '', email: '' });
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -66,14 +70,19 @@ const Suppliers: React.FC = () => {
         handleCloseModal();
     };
 
-    const handleDelete = async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
-            // FIX: Await the promise to get the result object before accessing its properties.
-            const result = await deleteSupplier(id);
-            if (!result.success) {
-                alert(result.message);
-            }
+    const handleDeleteClick = (supplier: Supplier) => {
+        setSupplierToDelete(supplier);
+        setIsConfirmOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!supplierToDelete) return;
+        const result = await deleteSupplier(supplierToDelete.id);
+        if (!result.success) {
+            alert(result.message);
         }
+        setIsConfirmOpen(false);
+        setSupplierToDelete(null);
     };
 
     const handleExport = () => {
@@ -130,7 +139,7 @@ const Suppliers: React.FC = () => {
                     <h2 className="text-xl font-bold">Supplier Directory</h2>
                     <div className="flex items-center space-x-2">
                         <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
-                        <button onClick={() => handleOpenModal()} className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                        <button onClick={() => handleOpenModal()} className="luxury-btn luxury-btn-primary">
                             <PlusCircle size={20} className="mr-2" />
                             Add Supplier
                         </button>
@@ -139,26 +148,26 @@ const Suppliers: React.FC = () => {
                 {suppliers.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {suppliers.map(supplier => (
-                            <div key={supplier.id} className="bg-muted p-4 rounded-lg border border-border flex flex-col justify-between">
+                            <div key={supplier.id} className="bg-black/20 p-4 rounded-lg border border-[var(--color-border)] flex flex-col justify-between hover:border-[var(--color-primary)]/50 transition-colors">
                                 <div>
-                                    <h3 className="font-bold text-lg text-primary">{supplier.name}</h3>
-                                    <p className="text-foreground font-medium">{supplier.contactPerson}</p>
+                                    <h3 className="font-bold text-lg text-[var(--color-primary)]">{supplier.name}</h3>
+                                    <p className="text-white font-medium">{supplier.contactPerson}</p>
                                     <div className="mt-4 space-y-2">
-                                        <a href={`tel:${supplier.phone}`} className="flex items-center text-sm text-muted-foreground hover:text-primary">
+                                        <a href={`tel:${supplier.phone}`} className="flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
                                             <Phone size={14} className="mr-2"/>
                                             {supplier.phone}
                                         </a>
-                                        <a href={`mailto:${supplier.email}`} className="flex items-center text-sm text-muted-foreground hover:text-primary">
+                                        <a href={`mailto:${supplier.email}`} className="flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
                                             <Mail size={14} className="mr-2"/>
                                             {supplier.email}
                                         </a>
                                     </div>
                                 </div>
                                 <div className="flex justify-end items-center space-x-3 mt-4">
-                                    <button onClick={() => handleOpenModal(supplier)} className="text-primary hover:text-primary/80" aria-label={`Edit ${supplier.name}`}>
+                                    <button onClick={() => handleOpenModal(supplier)} className="text-[var(--color-primary)] hover:opacity-80" aria-label={`Edit ${supplier.name}`}>
                                         <Edit size={20}/>
                                     </button>
-                                     <button onClick={() => handleDelete(supplier.id)} className="text-destructive hover:text-destructive/80" aria-label={`Delete ${supplier.name}`}>
+                                     <button onClick={() => handleDeleteClick(supplier)} className="text-[var(--color-destructive)] hover:opacity-80" aria-label={`Delete ${supplier.name}`}>
                                         <Trash2 size={20}/>
                                     </button>
                                 </div>
@@ -167,8 +176,8 @@ const Suppliers: React.FC = () => {
                     </div>
                 ) : (
                      <div className="text-center py-10">
-                        <p className="text-muted-foreground">No suppliers found.</p>
-                        <button onClick={() => handleOpenModal()} className="mt-4 text-primary font-semibold hover:underline">Add your first supplier</button>
+                        <p className="text-[var(--color-text-muted)]">No suppliers found.</p>
+                        <button onClick={() => handleOpenModal()} className="mt-4 text-[var(--color-primary)] font-semibold hover:underline">Add your first supplier</button>
                     </div>
                 )}
             </Card>
@@ -184,36 +193,44 @@ const Suppliers: React.FC = () => {
                 renderPreview={(supplier: any, index) => (
                     <div key={index} className="p-2 text-sm">
                         <p className="font-semibold">{supplier.name}</p>
-                        <p className="text-muted-foreground">{supplier.contactPerson} - {supplier.email}</p>
+                        <p className="text-[var(--color-text-muted)]">{supplier.contactPerson} - {supplier.email}</p>
                     </div>
                 )}
+            />
+            
+            <ConfirmationModal
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={confirmDelete}
+                title="Delete Supplier"
+                message={`Are you sure you want to delete "${supplierToDelete?.name}"? This action cannot be undone.`}
             />
 
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={currentSupplier ? 'Edit Supplier' : 'Add New Supplier'}>
                 <div className="space-y-4">
                      <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-foreground">Supplier Name</label>
-                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.name ? 'border-destructive' : 'border-input'}`} />
-                        {errors.name && <p className="text-destructive text-xs mt-1">{errors.name}</p>}
+                        <label htmlFor="name" className="block text-sm font-medium text-white/80">Supplier Name</label>
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.name ? 'border-[var(--color-destructive)]' : ''}`} />
+                        {errors.name && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.name}</p>}
                     </div>
                     <div>
-                        <label htmlFor="contactPerson" className="block text-sm font-medium text-foreground">Contact Person</label>
-                        <input type="text" name="contactPerson" id="contactPerson" value={formData.contactPerson} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.contactPerson ? 'border-destructive' : 'border-input'}`} />
-                        {errors.contactPerson && <p className="text-destructive text-xs mt-1">{errors.contactPerson}</p>}
+                        <label htmlFor="contactPerson" className="block text-sm font-medium text-white/80">Contact Person</label>
+                        <input type="text" name="contactPerson" id="contactPerson" value={formData.contactPerson} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.contactPerson ? 'border-[var(--color-destructive)]' : ''}`} />
+                        {errors.contactPerson && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.contactPerson}</p>}
                     </div>
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-foreground">Email Address</label>
-                        <input type="email" name="email" id="email" value={formData.email} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.email ? 'border-destructive' : 'border-input'}`} />
-                        {errors.email && <p className="text-destructive text-xs mt-1">{errors.email}</p>}
+                        <label htmlFor="email" className="block text-sm font-medium text-white/80">Email Address</label>
+                        <input type="email" name="email" id="email" value={formData.email} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.email ? 'border-[var(--color-destructive)]' : ''}`} />
+                        {errors.email && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.email}</p>}
                     </div>
                      <div>
-                        <label htmlFor="phone" className="block text-sm font-medium text-foreground">Phone Number</label>
-                        <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm ${errors.phone ? 'border-destructive' : 'border-input'}`} />
-                        {errors.phone && <p className="text-destructive text-xs mt-1">{errors.phone}</p>}
+                        <label htmlFor="phone" className="block text-sm font-medium text-white/80">Phone Number</label>
+                        <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} className={`luxury-input mt-1 block w-full ${errors.phone ? 'border-[var(--color-destructive)]' : ''}`} />
+                        {errors.phone && <p className="text-[var(--color-destructive)] text-xs mt-1">{errors.phone}</p>}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseModal} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">Cancel</button>
-                        <button onClick={handleSubmit} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">Save Supplier</button>
+                        <button onClick={handleCloseModal} className="luxury-btn luxury-btn-secondary">Cancel</button>
+                        <button onClick={handleSubmit} className="luxury-btn luxury-btn-primary">Save Supplier</button>
                     </div>
                 </div>
             </Modal>

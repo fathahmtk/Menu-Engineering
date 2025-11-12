@@ -12,8 +12,7 @@
     "lucide-react": "^0.553.0",
     "react-dom": "^19.2.0",
     "react": "^19.2.0",
-    "recharts": "^3.3.0",
-    "@supabase/supabase-js": "^2.81.1"
+    "recharts": "^3.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

@@ -33,29 +33,29 @@ const Dashboard: React.FC = () => {
         return acc + (item.salePrice - costPerServing);
     }, 0);
 
-    const COLORS = ['#14b8a6', '#3b82f6', '#f97316', '#8b5cf6', '#ec4899'];
+    const COLORS = ['#FFC107', '#4CAF50', '#2196F3', '#9C27B0', '#F44336'];
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="col-span-1">
                 <div className="flex items-center">
-                    <div className="p-3 bg-primary/10 rounded-full">
-                        <DollarSign className="text-primary" />
+                    <div className="p-3 bg-[var(--color-primary)]/10 rounded-full">
+                        <DollarSign className="text-[var(--color-primary)]" />
                     </div>
                     <div className="ml-4">
-                        <p className="text-sm text-muted-foreground">Total Inventory Value</p>
-                        <p className="text-2xl font-bold text-foreground">{formatCurrency(totalInventoryValue)}</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">Total Inventory Value</p>
+                        <p className="text-2xl font-bold text-[var(--color-text-primary)]">{formatCurrency(totalInventoryValue)}</p>
                     </div>
                 </div>
             </Card>
             <Card className="col-span-1">
                 <div className="flex items-center">
-                    <div className="p-3 bg-destructive/10 rounded-full">
-                        <AlertTriangle className="text-destructive" />
+                    <div className="p-3 bg-[var(--color-destructive)]/10 rounded-full">
+                        <AlertTriangle className="text-[var(--color-destructive)]" />
                     </div>
                     <div className="ml-4">
-                        <p className="text-sm text-muted-foreground">Low Stock Items</p>
-                        <p className="text-2xl font-bold text-foreground">{lowStockItems}</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">Low Stock Items</p>
+                        <p className="text-2xl font-bold text-[var(--color-text-primary)]">{lowStockItems}</p>
                     </div>
                 </div>
             </Card>
@@ -65,8 +65,8 @@ const Dashboard: React.FC = () => {
                         <BookCheck className="text-sky-400" />
                     </div>
                     <div className="ml-4">
-                        <p className="text-sm text-muted-foreground">Total Recipes</p>
-                        <p className="text-2xl font-bold text-foreground">{recipes.length}</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">Total Recipes</p>
+                        <p className="text-2xl font-bold text-[var(--color-text-primary)]">{recipes.length}</p>
                     </div>
                 </div>
             </Card>
@@ -76,31 +76,31 @@ const Dashboard: React.FC = () => {
                         <PieChart className="text-amber-400" />
                     </div>
                     <div className="ml-4">
-                        <p className="text-sm text-muted-foreground">Avg. Menu Profit</p>
-                        <p className="text-2xl font-bold text-foreground">{formatCurrency(totalMenuProfitability / menuItems.length || 0)}</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">Avg. Menu Profit</p>
+                        <p className="text-2xl font-bold text-[var(--color-text-primary)]">{formatCurrency(totalMenuProfitability / menuItems.length || 0)}</p>
                     </div>
                 </div>
             </Card>
 
             <Card className="col-span-1 md:col-span-2 lg:col-span-4">
-                <h3 className="text-lg font-semibold mb-4 text-foreground">Top 5 Most Profitable Menu Items</h3>
+                <h3 className="text-lg font-semibold mb-4 text-[var(--color-text-primary)]">Top 5 Most Profitable Menu Items</h3>
                 <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={menuProfitabilityData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                        <XAxis dataKey="name" tick={{ fill: 'hsl(220 9% 46%)', fontSize: 12 }} />
-                        <YAxis tick={{ fill: 'hsl(220 9% 46%)' }} tickFormatter={(value) => formatCurrency(value)} />
+                        <XAxis dataKey="name" tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} />
+                        <YAxis tick={{ fill: 'var(--color-text-muted)' }} tickFormatter={(value) => formatCurrency(value)} />
                         <Tooltip
                           formatter={(value: number) => formatCurrency(value)}
-                          contentStyle={{ backgroundColor: 'hsl(0 0% 100%)', border: '1px solid hsl(214 32% 91%)', borderRadius: '0.5rem' }}
-                          labelStyle={{ color: 'hsl(222 47% 11%)' }}
-                          cursor={{ fill: 'hsl(210 40% 96%)' }}
+                          contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', color: 'var(--color-text-primary)' }}
+                          labelStyle={{ color: 'var(--color-text-primary)' }}
+                          cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
                         />
-                        <Legend wrapperStyle={{ color: 'hsl(220 9% 46%)' }} />
-                        <Bar dataKey="profit" name="Profit" fill="hsl(164 92% 54%)">
+                        <Legend wrapperStyle={{ color: 'var(--color-text-muted)' }} />
+                        <Bar dataKey="profit" name="Profit" fill="var(--color-primary)">
                             {menuProfitabilityData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Bar>
-                         <Bar dataKey="revenue" name="Revenue" fill="hsl(220 13% 69%)" />
+                         <Bar dataKey="revenue" name="Revenue" fill="var(--color-secondary)" />
                     </BarChart>
                 </ResponsiveContainer>
             </Card>
