@@ -18,13 +18,14 @@ const NavItem: React.FC<{
   onClick: () => void;
 }> = ({ icon, label, isActive, onClick }) => (
   <li
-    className={`flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors ${
+    className={`flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors relative ${
       isActive
-        ? 'bg-primary text-primary-foreground'
+        ? 'bg-primary/90 text-white shadow-lg'
         : 'text-slate-300 hover:bg-slate-700/50'
     }`}
     onClick={onClick}
   >
+    {isActive && <div className="absolute left-0 top-0 h-full w-1 bg-slate-100 rounded-r-full"></div>}
     {icon}
     <span className="ml-4 font-medium">{label}</span>
   </li>
@@ -52,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
   return (
     <>
       <div className={`fixed lg:static inset-0 bg-black bg-opacity-50 z-30 transition-opacity lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsOpen(false)}></div>
-      <aside className={`bg-slate-900 w-64 min-h-screen p-4 flex flex-col fixed lg:static z-40 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+      <aside className={`bg-slate-800 w-64 min-h-screen p-4 flex flex-col fixed lg:static z-40 transform transition-transform duration-300 shadow-2xl ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         <div className="flex items-center justify-between mb-8">
             <div className="flex items-center">
                  <ChefHat className="text-white" size={32} />

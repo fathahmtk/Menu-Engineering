@@ -8,6 +8,7 @@ import CurrencySelector from './components/CurrencySelector';
 import BusinessSelector from './components/BusinessSelector';
 import { Menu as MenuIcon, ChefHat, LoaderCircle } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
+import Card from './components/common/Card';
 
 // Lazy-load page components for better performance
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -70,8 +71,8 @@ const AppContent: React.FC = () => {
         };
 
         return (
-            <div className="flex items-center justify-center min-h-screen bg-background">
-                <div className="text-center p-8 bg-card rounded-xl shadow-sm border border-border w-full max-w-md mx-auto">
+            <div className="flex items-center justify-center min-h-screen">
+                <Card className="text-center w-full max-w-md mx-auto">
                     <ChefHat className="text-primary mx-auto" size={48} />
                     <h1 className="text-3xl font-bold mt-4 text-foreground">Welcome to F&B Costing Pro</h1>
                     <p className="text-muted-foreground mt-2 mb-6">To get started, please create your first business.</p>
@@ -87,26 +88,26 @@ const AppContent: React.FC = () => {
                         <button 
                             onClick={handleCreateFirstBusiness}
                             disabled={!newBusinessName.trim()}
-                            className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:bg-primary/50"
+                            className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-transform hover:scale-105"
                         >
                             Create Business
                         </button>
                     </div>
-                </div>
+                </Card>
             </div>
         );
     }
 
     return (
-        <div className="flex min-h-screen bg-background text-foreground">
+        <div className="flex min-h-screen text-foreground">
             <Sidebar 
                 currentView={currentView} 
                 setCurrentView={setCurrentView}
                 isOpen={isSidebarOpen}
                 setIsOpen={setIsSidebarOpen}
             />
-            <main className="flex-1 flex flex-col">
-                <header className="bg-card border-b border-border shadow-sm p-2 sm:p-4 flex items-center justify-between sticky top-0 z-20">
+            <main className="flex-1 flex flex-col h-screen">
+                <header className="bg-card border-b border-border shadow-sm p-2 sm:p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-xl">
                     <div className="flex items-center">
                         <button 
                             className="lg:hidden mr-2 sm:mr-4 text-muted-foreground"
@@ -122,7 +123,7 @@ const AppContent: React.FC = () => {
                         <CurrencySelector />
                     </div>
                 </header>
-                <div className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8">
+                <div className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 overflow-y-auto">
                     <Suspense fallback={<LoadingFallback />}>
                         <CurrentViewComponent />
                     </Suspense>

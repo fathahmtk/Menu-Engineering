@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
         return acc + (item.salePrice - costPerServing);
     }, 0);
 
-    const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
+    const COLORS = ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -88,7 +88,7 @@ const Dashboard: React.FC = () => {
                     <BarChart data={menuProfitabilityData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                         <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                         <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                        <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(5px)', border: '1px solid rgba(200,200,200,0.5)', borderRadius: '0.5rem' }} />
                         <Legend />
                         <Bar dataKey="profit" name="Profit" fill="#8884d8">
                             {menuProfitabilityData.map((entry, index) => (

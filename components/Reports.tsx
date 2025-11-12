@@ -36,7 +36,7 @@ const Reports: React.FC = () => {
     }).sort((a, b) => b.profit - a.profit);
     
 
-    const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#6366f1'];
+    const COLORS = ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#6366f1', '#ec4899'];
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -60,7 +60,7 @@ const Reports: React.FC = () => {
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                        <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(5px)', border: '1px solid rgba(200,200,200,0.5)', borderRadius: '0.5rem' }} />
                         <Legend />
                     </PieChart>
                 </ResponsiveContainer>
@@ -71,7 +71,7 @@ const Reports: React.FC = () => {
                     <BarChart data={barData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                         <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} />
                         <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }}/>
-                        <Tooltip formatter={(value: number) => formatCurrency(value)}/>
+                        <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(5px)', border: '1px solid rgba(200,200,200,0.5)', borderRadius: '0.5rem' }}/>
                         <Legend />
                         <Bar dataKey="profit" name="Profit per Serving">
                              {barData.map((entry, index) => (
