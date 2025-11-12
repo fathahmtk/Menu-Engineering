@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -127,8 +126,8 @@ const Purchasing: React.FC = () => {
                         Create PO
                     </button>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                <div className="overflow-x-auto md:overflow-visible">
+                    <table className="w-full text-left responsive-table">
                         <thead className="bg-muted">
                             <tr>
                                 <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">PO #</th>
@@ -142,12 +141,12 @@ const Purchasing: React.FC = () => {
                         <tbody>
                             {purchaseOrders.map(order => (
                                 <tr key={order.id} className="border-b border-border last:border-b-0 hover:bg-accent">
-                                    <td className="p-4 font-medium text-primary whitespace-nowrap">#{order.id.slice(-6).toUpperCase()}</td>
-                                    <td className="p-4 text-foreground whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
-                                    <td className="p-4 text-muted-foreground whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
-                                    <td className="p-4 text-muted-foreground whitespace-nowrap">{formatCurrency(order.totalCost)}</td>
-                                    <td className="p-4"><StatusBadge status={order.status} /></td>
-                                    <td className="p-4">
+                                    <td data-label="PO #" className="p-4 font-medium text-primary whitespace-nowrap">#{order.id.slice(-6).toUpperCase()}</td>
+                                    <td data-label="Supplier" className="p-4 text-foreground whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
+                                    <td data-label="Order Date" className="p-4 text-muted-foreground whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
+                                    <td data-label="Total" className="p-4 text-muted-foreground whitespace-nowrap">{formatCurrency(order.totalCost)}</td>
+                                    <td data-label="Status" className="p-4"><StatusBadge status={order.status} /></td>
+                                    <td data-label="Actions" className="p-4">
                                         <div className="flex items-center space-x-3">
                                             <button onClick={() => handleViewDetails(order)} className="text-muted-foreground hover:text-foreground" title="View Details"><Eye size={20} /></button>
                                             {order.status === 'Pending' && (

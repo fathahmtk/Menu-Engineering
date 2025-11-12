@@ -17,6 +17,50 @@
       @supports (font-variation-settings: normal) {
         body { font-family: 'Inter var', sans-serif; }
       }
+      /* Responsive Table Styles */
+      @media (max-width: 767px) { /* Corresponds to Tailwind's 'md' breakpoint */
+        .responsive-table thead {
+            display: none;
+        }
+        .responsive-table tbody tr {
+            display: block;
+            border: 1px solid hsl(214.3 31.8% 91.4%); /* border-border */
+            border-radius: 0.75rem; /* rounded-lg */
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background-color: hsl(0 0% 100%); /* card */
+        }
+        .responsive-table td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0.5rem;
+            text-align: right;
+            border-bottom: 1px solid hsl(210 40% 96.1%); /* muted */
+        }
+        .responsive-table tbody tr:last-child {
+            margin-bottom: 0;
+        }
+        .responsive-table td:last-child {
+            border-bottom: 0;
+        }
+        .responsive-table td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            text-align: left;
+            margin-right: 1rem;
+            flex-shrink: 0;
+            color: hsl(222.2 84% 4.9%); /* foreground */
+        }
+        /* Special handling for checkbox cell */
+        .responsive-table td.checkbox-cell {
+            padding: 0.75rem 0.5rem;
+            justify-content: flex-start;
+        }
+        .responsive-table td.checkbox-cell::before {
+            display: none;
+        }
+      }
     </style>
     <script>
       tailwind.config = {

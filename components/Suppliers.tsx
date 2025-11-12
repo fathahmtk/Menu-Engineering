@@ -6,13 +6,17 @@ import Modal from './common/Modal';
 import { useData } from '../hooks/useDataContext';
 import { Supplier } from '../types';
 import { PlusCircle, Mail, Phone, Edit, Trash2 } from 'lucide-react';
+import ActionsDropdown from './common/ActionsDropdown';
+import ImportModal from './common/ImportModal';
+import { convertToCSV, downloadCSV } from '../utils/csvHelper';
 
 const Suppliers: React.FC = () => {
-    const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useData();
+    const { suppliers, addSupplier, updateSupplier, deleteSupplier, bulkAddSuppliers } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentSupplier, setCurrentSupplier] = useState<Supplier | null>(null);
     const [formData, setFormData] = useState<Omit<Supplier, 'id' | 'businessId'>>({ name: '', contactPerson: '', phone: '', email: '' });
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     useEffect(() => {
         if (currentSupplier) {
@@ -71,15 +75,65 @@ const Suppliers: React.FC = () => {
         }
     };
 
+    const handleExport = () => {
+        const headers = ['name', 'contactPerson', 'phone', 'email'];
+        const dataToExport = suppliers.map(s => ({
+            name: s.name,
+            contactPerson: s.contactPerson,
+            phone: s.phone,
+            email: s.email,
+        }));
+        const csvString = convertToCSV(dataToExport, headers);
+        downloadCSV(csvString, 'suppliers.csv');
+    };
+
+    const parseSupplierFile = async (fileContent: string): Promise<{ data: Omit<Supplier, 'id' | 'businessId'>[]; errors: string[] }> => {
+        const lines = fileContent.trim().split('\n');
+        if (lines.length < 2) return { data: [], errors: ["CSV file is empty or has only a header."] };
+
+        const headers = lines[0].trim().split(',').map(h => h.replace(/^"|"$/g, '').trim());
+        const requiredHeaders = ['name', 'contactPerson', 'phone', 'email'];
+        const errors: string[] = [];
+        
+        requiredHeaders.forEach(h => {
+            if (!headers.includes(h)) errors.push(`Missing required header: ${h}`);
+        });
+        if (errors.length > 0) return { data: [], errors };
+
+        const data = lines.slice(1).map((line, index) => {
+            const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+            const supplier: any = {};
+            headers.forEach((header, i) => supplier[header] = values[i]);
+            
+            if (!supplier.name) errors.push(`Row ${index + 2}: Supplier name is missing.`);
+            if (!supplier.email || !/\S+@\S+\.\S+/.test(supplier.email)) errors.push(`Row ${index + 2}: Invalid email for ${supplier.name}.`);
+            return {
+                name: supplier.name,
+                contactPerson: supplier.contactPerson,
+                phone: supplier.phone,
+                email: supplier.email,
+            };
+        }).filter(s => s.name);
+        
+        return { data, errors };
+    };
+
+    const handleImport = (data: Omit<Supplier, 'id' | 'businessId'>[]) => {
+        return Promise.resolve(bulkAddSuppliers(data));
+    };
+
     return (
         <>
             <Card>
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-2 justify-between items-start sm:items-center mb-6">
                     <h2 className="text-xl font-bold">Supplier Directory</h2>
-                    <button onClick={() => handleOpenModal()} className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-                        <PlusCircle size={20} className="mr-2" />
-                        Add Supplier
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
+                        <button onClick={() => handleOpenModal()} className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                            <PlusCircle size={20} className="mr-2" />
+                            Add Supplier
+                        </button>
+                    </div>
                 </div>
                 {suppliers.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -117,6 +171,22 @@ const Suppliers: React.FC = () => {
                     </div>
                 )}
             </Card>
+
+            <ImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                title="Import Suppliers"
+                templateUrl="data:text/csv;charset=utf-8,name,contactPerson,phone,email%0AExample%20Supplier,John%20Doe,123-456-7890,john@example.com"
+                templateFilename="suppliers_template.csv"
+                parseFile={parseSupplierFile}
+                onImport={handleImport}
+                renderPreview={(supplier: any, index) => (
+                    <div key={index} className="p-2 text-sm">
+                        <p className="font-semibold">{supplier.name}</p>
+                        <p className="text-muted-foreground">{supplier.contactPerson} - {supplier.email}</p>
+                    </div>
+                )}
+            />
 
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={currentSupplier ? 'Edit Supplier' : 'Add New Supplier'}>
                 <div className="space-y-4">

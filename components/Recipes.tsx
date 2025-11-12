@@ -7,6 +7,9 @@ import { useCurrency } from '../hooks/useCurrencyContext';
 import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Lightbulb, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft } from 'lucide-react';
 import { Recipe, Ingredient, RecipeCategory, RecipeTemplate, IngredientUnit } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import ActionsDropdown from './common/ActionsDropdown';
+import ImportModal from './common/ImportModal';
+import { convertToCSV, downloadCSV } from '../utils/csvHelper';
 
 const DEFAULT_UNITS: string[] = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
 
@@ -367,10 +370,11 @@ const UnitManagerModal: React.FC<{
 
 
 const Recipes: React.FC = () => {
-    const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage } = useData();
+    const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes } = useData();
     const { formatCurrency } = useCurrency();
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [isNewRecipeModalOpen, setIsNewRecipeModalOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [filterCategory, setFilterCategory] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -557,6 +561,120 @@ const Recipes: React.FC = () => {
         }
     };
 
+    const handleExport = () => {
+        const headers = ['recipeName', 'category', 'servings', 'instructions', 'targetSalePricePerServing', 'ingredientName', 'ingredientQuantity', 'ingredientUnit'];
+        
+        const dataToExport: any[] = [];
+        recipes.forEach(recipe => {
+            if (recipe.ingredients.length === 0) {
+                dataToExport.push({
+                    recipeName: recipe.name,
+                    category: recipe.category,
+                    servings: recipe.servings,
+                    instructions: recipe.instructions.join('|'), // Use a separator for multi-line
+                    targetSalePricePerServing: recipe.targetSalePricePerServing || 0,
+                    ingredientName: '',
+                    ingredientQuantity: '',
+                    ingredientUnit: '',
+                });
+            } else {
+                recipe.ingredients.forEach(ing => {
+                    const item = getInventoryItemById(ing.itemId);
+                    dataToExport.push({
+                        recipeName: recipe.name,
+                        category: recipe.category,
+                        servings: recipe.servings,
+                        instructions: recipe.instructions.join('|'),
+                        targetSalePricePerServing: recipe.targetSalePricePerServing || 0,
+                        ingredientName: item ? item.name : 'N/A',
+                        ingredientQuantity: ing.quantity,
+                        ingredientUnit: ing.unit,
+                    });
+                });
+            }
+        });
+
+        const csvString = convertToCSV(dataToExport, headers);
+        downloadCSV(csvString, 'recipes.csv');
+    };
+
+    type ParsedRecipeRow = {
+        recipeName: string;
+        category: string;
+        servings: number;
+        instructions: string[];
+        targetSalePricePerServing: number;
+        ingredients: Ingredient[];
+    };
+    
+    const parseRecipeFile = async (fileContent: string): Promise<{ data: Omit<Recipe, 'id' | 'businessId'>[]; errors: string[] }> => {
+        const lines = fileContent.trim().split('\n');
+        const headers = lines[0].trim().split(',').map(h => h.replace(/"/g, '').trim());
+        const requiredHeaders = ['recipeName', 'category', 'servings', 'ingredientName', 'ingredientQuantity', 'ingredientUnit'];
+        const errors: string[] = [];
+        
+        requiredHeaders.forEach(h => {
+            if (!headers.includes(h)) errors.push(`Missing required header: ${h}`);
+        });
+        if(errors.length > 0) return { data: [], errors };
+
+        const inventoryNameMap = new Map(inventory.map(i => [i.name.toLowerCase(), i.id]));
+        const recipesMap = new Map<string, ParsedRecipeRow>();
+
+        lines.slice(1).forEach((line, index) => {
+            const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+            const row: any = {};
+            headers.forEach((header, i) => row[header] = values[i]);
+
+            const recipeName = String(row.recipeName || '');
+            if (!recipeName) return;
+
+            if (!recipesMap.has(recipeName.toLowerCase())) {
+                recipesMap.set(recipeName.toLowerCase(), {
+                    recipeName: recipeName,
+                    category: row.category,
+                    servings: parseFloat(row.servings) || 1,
+                    instructions: row.instructions ? row.instructions.split('|') : [],
+                    targetSalePricePerServing: parseFloat(row.targetSalePricePerServing) || 0,
+                    ingredients: [],
+                });
+            }
+
+            const ingredientName = String(row.ingredientName || '');
+            if (ingredientName) {
+                // Fix: `itemId` was being inferred as unknown. Casting `ingredientName` to string solves this.
+                const itemId = inventoryNameMap.get(ingredientName.toLowerCase());
+                if (itemId) {
+                    const recipe = recipesMap.get(recipeName.toLowerCase());
+                    if (recipe) {
+                         recipe.ingredients.push({
+                            itemId: itemId,
+                            quantity: parseFloat(row.ingredientQuantity) || 0,
+                            unit: row.ingredientUnit,
+                        });
+                    }
+                } else {
+                    errors.push(`Row ${index + 2}: Ingredient "${ingredientName}" not found in inventory.`);
+                }
+            }
+        });
+        
+        const data = Array.from(recipesMap.values()).map(r => ({
+            name: r.recipeName,
+            category: r.category,
+            servings: r.servings,
+            instructions: r.instructions,
+            targetSalePricePerServing: r.targetSalePricePerServing,
+            ingredients: r.ingredients,
+        }));
+        
+        return { data, errors };
+    };
+
+    const handleImport = (data: Omit<Recipe, 'id' | 'businessId'>[]) => {
+        return Promise.resolve(bulkAddRecipes(data));
+    };
+
 
     const selectedRecipeCost = selectedRecipe ? calculateRecipeCost(selectedRecipe) : 0;
     const selectedCostPerServing = (selectedRecipe && selectedRecipe.servings > 0) ? selectedRecipeCost / selectedRecipe.servings : 0;
@@ -567,6 +685,21 @@ const Recipes: React.FC = () => {
         <RecipeFormModal isOpen={isNewRecipeModalOpen} onClose={() => setIsNewRecipeModalOpen(false)} onSave={addRecipe} categories={categories} templates={recipeTemplates} />
         <CategoryManagerModal isOpen={modalState.type === 'manageCategories'} onClose={() => setModalState({ type: null })} />
         <UnitManagerModal isOpen={modalState.type === 'manageUnits'} onClose={() => setModalState({ type: null })} />
+        <ImportModal
+            isOpen={isImportModalOpen}
+            onClose={() => setIsImportModalOpen(false)}
+            title="Import Recipes"
+            templateUrl="data:text/csv;charset=utf-8,recipeName,category,servings,instructions,targetSalePricePerServing,ingredientName,ingredientQuantity,ingredientUnit%0ASoup,Appetizers,4,Step%201%7CStep%202,10,Carrot,1,kg%0ASoup,Appetizers,4,Step%201%7CStep%202,10,Onion,2,unit"
+            templateFilename="recipes_template.csv"
+            parseFile={parseRecipeFile}
+            onImport={handleImport}
+            renderPreview={(recipe: any, index) => (
+                <div key={index} className="p-2 text-sm">
+                    <p className="font-semibold">{recipe.name} ({recipe.servings} servings)</p>
+                    <p className="text-muted-foreground">{recipe.ingredients.length} ingredients</p>
+                </div>
+            )}
+        />
 
 
         {selectedRecipe && <>
@@ -612,9 +745,12 @@ const Recipes: React.FC = () => {
                 <Card>
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-bold">Recipes</h2>
-                        <button onClick={() => setIsNewRecipeModalOpen(true)} className="flex items-center text-primary hover:text-primary/80" title="New Recipe">
-                            <PlusCircle size={22} />
-                        </button>
+                        <div className="flex items-center space-x-1">
+                            <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
+                            <button onClick={() => setIsNewRecipeModalOpen(true)} className="flex items-center text-primary hover:text-primary/80 p-2 rounded-lg" title="New Recipe">
+                                <PlusCircle size={22} />
+                            </button>
+                        </div>
                     </div>
                      <div className="mb-4 space-y-3">
                         <div className="relative">
@@ -776,68 +912,66 @@ const Recipes: React.FC = () => {
                                     <Plus size={16} className="mr-1" /> Add Ingredient
                                 </button>
                             </div>
-                             <div className="overflow-x-auto border border-border rounded-lg">
-                                <table className="w-full text-left">
-                                    <thead className="text-sm bg-muted">
-                                        <tr>
-                                            <th className="p-3 font-semibold text-muted-foreground">Ingredient</th>
-                                            <th className="p-3 font-semibold text-muted-foreground">Quantity</th>
-                                            <th className="p-3 font-semibold text-muted-foreground">Unit</th>
-                                            <th className="p-3 font-semibold text-right text-muted-foreground">Cost</th>
-                                            <th className="p-3 font-semibold"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {selectedRecipe.ingredients.map((ing, index) => {
-                                            const item = getInventoryItemById(ing.itemId);
-                                            const costConversionFactor = item ? getConversionFactor(ing.unit, item.unit) || 1 : 1;
-                                            const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
-                                           
-                                            return (
-                                                <tr key={`${ing.itemId}-${index}`} className="border-b border-border last:border-b-0 hover:bg-accent">
-                                                    <td className="p-2">
-                                                        <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="w-full border rounded-md p-2 bg-background text-sm border-input focus:ring-ring focus:ring-1">
-                                                            {inventory.map(invItem => <option key={invItem.id} value={invItem.id}>{invItem.name}</option>)}
-                                                        </select>
-                                                    </td>
-                                                    <td className="p-2">
-                                                         <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="w-20 border rounded-md p-2 text-sm border-input focus:ring-ring focus:ring-1" />
-                                                    </td>
-                                                    <td className="p-2">
-                                                        <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="w-full border rounded-md p-2 bg-background text-sm border-input focus:ring-ring focus:ring-1">
-                                                            {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
-                                                        </select>
-                                                    </td>
-                                                    <td className="p-2 text-right">
-                                                        {item ? (
-                                                            <div className="flex flex-col items-end">
-                                                                <span className="font-medium text-foreground text-sm">{formatCurrency(ingredientCost)}</span>
-                                                                <span className="text-xs text-muted-foreground">
-                                                                    {formatCurrency(item.unitCost)} / {item.unit}
-                                                                </span>
-                                                            </div>
-                                                        ) : <span className="text-destructive text-xs">Item not found</span>}
-                                                    </td>
-                                                    <td className="p-2 text-center">
-                                                        <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-destructive/70 hover:text-destructive"><XCircle size={18} /></button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                    <tfoot className="font-semibold border-t-2 border-border text-foreground">
-                                        <tr>
-                                            <td colSpan={3} className="p-3 text-right text-lg">Total Recipe Cost:</td>
-                                            <td className="p-3 text-right text-lg">{formatCurrency(selectedRecipeCost)}</td>
-                                            <td></td>
-                                        </tr>
-                                        <tr className="bg-primary/5">
-                                            <td colSpan={3} className="p-3 text-right text-primary text-lg">Cost per Serving:</td>
-                                            <td className="p-3 text-right text-primary text-lg">{formatCurrency(selectedCostPerServing)}</td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                            <div className="border border-border rounded-lg">
+                                <div className="hidden md:grid md:grid-cols-[1fr,100px,120px,100px,40px] gap-x-2 px-3 py-2 text-sm bg-muted text-muted-foreground font-semibold">
+                                    <span>Ingredient</span>
+                                    <span>Quantity</span>
+                                    <span>Unit</span>
+                                    <span className="text-right">Cost</span>
+                                    <span></span>
+                                </div>
+                                <div className="divide-y md:divide-y-0 divide-border">
+                                    {selectedRecipe.ingredients.map((ing, index) => {
+                                        const item = getInventoryItemById(ing.itemId);
+                                        const costConversionFactor = item ? getConversionFactor(ing.unit, item.unit) || 1 : 1;
+                                        const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
+                                        
+                                        return (
+                                            <div key={`${ing.itemId}-${index}`} className="p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-accent space-y-2 md:space-y-0">
+                                                <div>
+                                                    <label className="text-xs font-medium text-muted-foreground md:hidden">Ingredient</label>
+                                                    <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="w-full border rounded-md p-2 bg-background text-sm border-input focus:ring-ring focus:ring-1">
+                                                        {inventory.map(invItem => <option key={invItem.id} value={invItem.id}>{invItem.name}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-muted-foreground md:hidden">Quantity</label>
+                                                    <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="w-full border rounded-md p-2 text-sm border-input focus:ring-ring focus:ring-1" />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-muted-foreground md:hidden">Unit</label>
+                                                    <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="w-full border rounded-md p-2 bg-background text-sm border-input focus:ring-ring focus:ring-1">
+                                                        {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="flex justify-between items-center md:block md:text-right">
+                                                    <label className="text-xs font-medium text-muted-foreground md:hidden">Cost</label>
+                                                    {item ? (
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="font-medium text-foreground text-sm">{formatCurrency(ingredientCost)}</span>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {formatCurrency(item.unitCost)} / {item.unit}
+                                                            </span>
+                                                        </div>
+                                                    ) : <span className="text-destructive text-xs">Item not found</span>}
+                                                </div>
+                                                <div className="flex justify-end md:justify-center">
+                                                    <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-destructive/70 hover:text-destructive"><XCircle size={18} /></button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="font-semibold border-t-2 border-border text-foreground">
+                                    <div className="flex justify-between items-center p-3">
+                                        <span className="text-right text-lg">Total Recipe Cost:</span>
+                                        <span className="text-right text-lg">{formatCurrency(selectedRecipeCost)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 bg-primary/5">
+                                        <span className="text-right text-primary text-lg">Cost per Serving:</span>
+                                        <span className="text-right text-primary text-lg">{formatCurrency(selectedCostPerServing)}</span>
+                                    </div>
+                                </div>
                             </div>
                             <div className="flex justify-between items-center mt-6 mb-2">
                                  <h3 className="text-lg font-semibold">Instructions</h3>

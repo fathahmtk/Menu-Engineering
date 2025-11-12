@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem, IngredientUnit } from '../types';
 import { supabase } from '../services/supabaseClient';
@@ -40,6 +41,7 @@ interface DataContextType {
   addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => void;
   updateSupplier: (supplier: Supplier) => void;
   deleteSupplier: (id: string) => { success: boolean; message?: string };
+  bulkAddSuppliers: (newSuppliers: Omit<Supplier, 'id' | 'businessId'>[]) => { successCount: number; duplicateCount: number };
   
   setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
   addInventoryItem: (item: Omit<InventoryItem, 'id' | 'businessId'>) => InventoryItem;
@@ -47,6 +49,7 @@ interface DataContextType {
   deleteInventoryItem: (id: string) => void;
   bulkUpdateInventoryItems: (itemIds: string[], update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice' | 'supplierId'>>) => void;
   bulkDeleteInventoryItems: (itemIds: string[]) => { deletedCount: number; failedItems: string[] };
+  bulkAddInventoryItems: (newItems: Omit<InventoryItem, 'id' | 'businessId'>[]) => { successCount: number; duplicateCount: number };
 
   addRecipe: (recipe: Omit<Recipe, 'id' | 'businessId'>) => void;
   updateRecipe: (recipe: Recipe) => void;
@@ -55,6 +58,8 @@ interface DataContextType {
   duplicateRecipe: (id: string, includeHistory: boolean) => Recipe | undefined;
   uploadRecipeImage: (recipeId: string, file: File) => Promise<void>;
   removeRecipeImage: (recipeId: string) => Promise<void>;
+  bulkAddRecipes: (newRecipes: Omit<Recipe, 'id' | 'businessId'>[]) => { successCount: number; duplicateCount: number };
+
 
   addMenuItem: (item: Omit<MenuItem, 'id' | 'businessId'>) => void;
   updateMenuItem: (item: MenuItem) => void;
@@ -85,6 +90,16 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+// Fix: Export useData hook
+export const useData = (): DataContextType => {
+  const context = useContext(DataContext);
+  if (context === undefined) {
+    throw new Error('useData must be used within a DataProvider');
+  }
+  return context;
+};
+
+// Fix: Add return statement and implement missing context functions
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Master data lists using localStorage persistence, initialized empty
   const [businesses, setBusinesses] = useStickyState<Business[]>([], 'fb_businesses');
@@ -156,6 +171,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Helper functions
   const getInventoryItemById = useCallback((id: string) => inventory.find(item => item.id === id), [inventory]);
+  const getRecipeById = useCallback((id: string) => recipes.find(r => r.id === id), [recipes]);
+  const getSupplierById = useCallback((id: string) => suppliers.find(s => s.id === id), [suppliers]);
   
   const getConversionFactor = useCallback((fromUnit: Ingredient['unit'], toUnit: InventoryItem['unit']): number | null => {
       if (fromUnit.toLowerCase() === toUnit.toLowerCase()) return 1;
@@ -187,6 +204,32 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setSuppliers(prev => [...prev, newSupplier]);
   }, [activeBusinessId, setSuppliers]);
 
+  const bulkAddSuppliers = useCallback((newSuppliers: Omit<Supplier, 'id' | 'businessId'>[]) => {
+    if (!activeBusinessId) return { successCount: 0, duplicateCount: 0 };
+
+    let successCount = 0;
+    let duplicateCount = 0;
+    const itemsToAdd: Supplier[] = [];
+    const existingNames = new Set(suppliers.filter(s => s.businessId === activeBusinessId).map(s => s.name.toLowerCase()));
+
+    newSuppliers.forEach(supplier => {
+        if (existingNames.has(supplier.name.toLowerCase())) {
+            duplicateCount++;
+        } else {
+            itemsToAdd.push({ ...supplier, id: `sup${Date.now()}${successCount}`, businessId: activeBusinessId });
+            existingNames.add(supplier.name.toLowerCase());
+            successCount++;
+        }
+    });
+
+    if (itemsToAdd.length > 0) {
+        setSuppliers(prev => [...prev, ...itemsToAdd]);
+    }
+
+    return { successCount, duplicateCount };
+  }, [activeBusinessId, suppliers, setSuppliers]);
+
+
   const updateSupplier = useCallback((updatedSupplier: Supplier) => {
     setSuppliers(prev => prev.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
   }, [setSuppliers]);
@@ -207,6 +250,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setInventory(prev => [...prev, newItem]);
       return newItem;
   }, [activeBusinessId, setInventory]);
+
+  const bulkAddInventoryItems = useCallback((newItems: Omit<InventoryItem, 'id' | 'businessId'>[]) => {
+    if (!activeBusinessId) return { successCount: 0, duplicateCount: 0 };
+    
+    let successCount = 0;
+    let duplicateCount = 0;
+    const itemsToAdd: InventoryItem[] = [];
+    const existingNames = new Set(inventory.filter(i => i.businessId === activeBusinessId).map(i => i.name.toLowerCase()));
+    
+    newItems.forEach(item => {
+        if (existingNames.has(item.name.toLowerCase())) {
+            duplicateCount++;
+        } else {
+            itemsToAdd.push({ ...item, id: `inv${Date.now()}${successCount}`, businessId: activeBusinessId });
+            existingNames.add(item.name.toLowerCase());
+            successCount++;
+        }
+    });
+
+    if (itemsToAdd.length > 0) {
+        setInventory(prev => [...prev, ...itemsToAdd]);
+    }
+
+    return { successCount, duplicateCount };
+  }, [activeBusinessId, inventory, setInventory]);
 
   const updateInventoryItem = useCallback((updatedItem: InventoryItem) => {
       setInventory(prev => prev.map(i => i.id === updatedItem.id ? updatedItem : i));
@@ -328,6 +396,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newRecipe = { ...recipe, id: `rec${Date.now()}`, businessId: activeBusinessId };
     setRecipes(prev => [...prev, newRecipe]);
   }, [activeBusinessId, categories, addCategory, setRecipes]);
+  
+  const bulkAddRecipes = useCallback((newRecipes: Omit<Recipe, 'id' | 'businessId'>[]) => {
+      if (!activeBusinessId) return { successCount: 0, duplicateCount: 0 };
+      
+      let successCount = 0;
+      let duplicateCount = 0;
+      const itemsToAdd: Recipe[] = [];
+      const existingNames = new Set(recipes.filter(r => r.businessId === activeBusinessId).map(r => r.name.toLowerCase()));
+      
+      newRecipes.forEach(recipe => {
+          if (existingNames.has(recipe.name.toLowerCase())) {
+              duplicateCount++;
+          } else {
+              // Auto-add new category
+              if (!categories.some(c => c.name.toLowerCase() === recipe.category.toLowerCase() && c.businessId === activeBusinessId)) {
+                addCategory(recipe.category);
+              }
+              itemsToAdd.push({ ...recipe, id: `rec${Date.now()}${successCount}`, businessId: activeBusinessId });
+              existingNames.add(recipe.name.toLowerCase());
+              successCount++;
+          }
+      });
+  
+      if (itemsToAdd.length > 0) {
+          setRecipes(prev => [...prev, ...itemsToAdd]);
+      }
+  
+      return { successCount, duplicateCount };
+  }, [activeBusinessId, recipes, categories, setRecipes, addCategory]);
+
 
   const updateRecipe = useCallback((updatedRecipe: Recipe) => {
     setRecipes(prev => prev.map(r => r.id === updatedRecipe.id ? updatedRecipe : r));
@@ -335,236 +433,154 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const deleteRecipe = useCallback((id: string) => {
     if (menuItems.some(m => m.recipeId === id && m.businessId === activeBusinessId)) {
-        return { success: false, message: 'Cannot delete recipe. It is currently used in one or more menu items.'};
+        return { success: false, message: 'Cannot delete recipe. It is currently on a menu.' };
     }
     setRecipes(prev => prev.filter(r => r.id !== id));
     return { success: true };
   }, [menuItems, activeBusinessId, setRecipes]);
 
+  const recordRecipeCostHistory = useCallback((recipeId: string) => {
+    setRecipes(prev => {
+      const recipe = prev.find(r => r.id === recipeId);
+      // find uses the full list, so this should work even with filtering
+      const masterRecipe = recipes.find(r => r.id === recipeId);
+      if (!recipe || !masterRecipe) return prev;
+      
+      const currentCost = calculateRecipeCost(masterRecipe);
+      const today = new Date().toISOString().split('T')[0];
+
+      const lastHistory = recipe.costHistory?.[recipe.costHistory.length - 1];
+      
+      if (lastHistory && lastHistory.date === today && lastHistory.cost.toFixed(2) === currentCost.toFixed(2)) {
+          return prev; // No change, don't add duplicate entry for same day/cost
+      }
+      
+      const newHistory = [...(recipe.costHistory || []), { date: today, cost: currentCost }];
+      
+      if (newHistory.length > 30) {
+        newHistory.shift();
+      }
+
+      return prev.map(r => r.id === recipeId ? { ...r, costHistory: newHistory } : r);
+    });
+  }, [setRecipes, calculateRecipeCost, recipes]);
+
   const duplicateRecipe = useCallback((id: string, includeHistory: boolean): Recipe | undefined => {
-    if (!activeBusinessId) return undefined;
     const recipeToDuplicate = recipes.find(r => r.id === id);
     if (!recipeToDuplicate) return undefined;
-
-    const { id: _oldId, name, costHistory, ...restOfRecipe } = recipeToDuplicate;
-
     const newRecipe: Recipe = {
-        ...restOfRecipe,
-        id: `rec${Date.now()}`,
-        name: `${name} (Copy)`,
-        businessId: activeBusinessId,
-        ...(includeHistory && { costHistory: costHistory })
+      ...recipeToDuplicate,
+      id: `rec${Date.now()}`,
+      name: `${recipeToDuplicate.name} (Copy)`,
+      costHistory: includeHistory ? recipeToDuplicate.costHistory : [],
     };
-    
     setRecipes(prev => [...prev, newRecipe]);
     return newRecipe;
-  }, [recipes, activeBusinessId, setRecipes]);
-
-  const recordRecipeCostHistory = useCallback((recipeId: string) => {
-    setRecipes(prevRecipes => {
-        const recipeIndex = prevRecipes.findIndex(r => r.id === recipeId);
-        if (recipeIndex === -1) return prevRecipes;
-
-        const recipe = prevRecipes[recipeIndex];
-        const currentCost = parseFloat(calculateRecipeCost(recipe).toFixed(2));
-        
-        const costHistory = recipe.costHistory || [];
-        const lastEntry = costHistory.length > 0 ? costHistory[costHistory.length - 1] : null;
-
-        if (!lastEntry || lastEntry.cost !== currentCost) {
-            const newHistoryEntry = {
-                date: new Date().toISOString().split('T')[0],
-                cost: currentCost,
-            };
-            const updatedRecipe = {
-                ...recipe,
-                costHistory: [...costHistory, newHistoryEntry],
-            };
-            
-            const newRecipes = [...prevRecipes];
-            newRecipes[recipeIndex] = updatedRecipe;
-            return newRecipes;
-        }
-
-        return prevRecipes; // No change needed
-    });
-  }, [calculateRecipeCost, setRecipes]);
+  }, [recipes, setRecipes]);
 
   const uploadRecipeImage = useCallback(async (recipeId: string, file: File) => {
-    if (!activeBusinessId) {
-        throw new Error("No active business selected");
-    }
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `${activeBusinessId}/${recipeId}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-        .from('recipe-images')
-        .upload(filePath, file);
-
-    if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        alert('Failed to upload image. Please try again.');
-        return;
-    }
-
-    const { data } = supabase.storage
-        .from('recipe-images')
-        .getPublicUrl(filePath);
-    
-    if (!data.publicUrl) {
-        console.error('Error getting public URL');
-        alert('Image uploaded but failed to get URL.');
-        return;
-    }
-
-    setRecipes(prev => prev.map(recipe => 
-        recipe.id === recipeId ? { ...recipe, imageUrl: data.publicUrl } : recipe
-    ));
-
+    if (!activeBusinessId) throw new Error("No active business");
+    const filePath = `${activeBusinessId}/${recipeId}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+    const { error } = await supabase.storage.from('recipe-images').upload(filePath, file, { upsert: true });
+    if (error) throw error;
+    const { data } = supabase.storage.from('recipe-images').getPublicUrl(filePath);
+    const imageUrl = data.publicUrl;
+    setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, imageUrl } : r));
   }, [activeBusinessId, setRecipes]);
 
   const removeRecipeImage = useCallback(async (recipeId: string) => {
     const recipe = recipes.find(r => r.id === recipeId);
-    if (!recipe || !recipe.imageUrl) return;
-
-    const urlParts = recipe.imageUrl.split('/recipe-images/');
-    if (urlParts.length < 2) {
-        console.error("Could not parse image path from URL:", recipe.imageUrl);
-        // Still allow removing the URL from the recipe object
-    } else {
-        const filePath = urlParts[1];
-        const { error } = await supabase.storage.from('recipe-images').remove([filePath]);
-
-        if (error) {
-            console.error('Error removing image from storage:', error);
-            alert('Failed to remove image from storage, but it will be removed from the recipe.');
-        }
+    if (recipe?.imageUrl) {
+        const urlParts = recipe.imageUrl.split('/');
+        const fileName = urlParts[urlParts.length-1];
+        const businessIdFromFile = urlParts[urlParts.length-2];
+        const { error } = await supabase.storage.from('recipe-images').remove([`${businessIdFromFile}/${fileName}`]);
+        if(error) console.error("Error removing image: ", error);
     }
-
-    setRecipes(prev => {
-        const newRecipes = [...prev];
-        const recipeIndex = newRecipes.findIndex(r => r.id === recipeId);
-        if (recipeIndex > -1) {
-            const { imageUrl, ...rest } = newRecipes[recipeIndex];
-            newRecipes[recipeIndex] = rest;
-        }
-        return newRecipes;
-    });
+    setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, imageUrl: undefined } : r));
   }, [recipes, setRecipes]);
 
+  const addMenuItem = useCallback((item: Omit<MenuItem, 'id' | 'businessId'>) => {
+    if (!activeBusinessId) return;
+    const newMenuItem = { ...item, id: `menu${Date.now()}`, businessId: activeBusinessId };
+    setMenuItems(prev => [...prev, newMenuItem]);
+  }, [activeBusinessId, setMenuItems]);
 
-  // Recipe Template CRUD
+  const updateMenuItem = useCallback((updatedItem: MenuItem) => {
+    setMenuItems(prev => prev.map(i => i.id === updatedItem.id ? updatedItem : i));
+  }, [setMenuItems]);
+
+  const deleteMenuItem = useCallback((id: string) => {
+    setMenuItems(prev => prev.filter(i => i.id !== id));
+  }, [setMenuItems]);
+
   const addRecipeTemplate = useCallback((template: Omit<RecipeTemplate, 'id' | 'businessId'>) => {
     if (!activeBusinessId) return;
     const newTemplate = { ...template, id: `tmpl${Date.now()}`, businessId: activeBusinessId };
     setRecipeTemplates(prev => [...prev, newTemplate]);
   }, [activeBusinessId, setRecipeTemplates]);
 
-  // Menu Item CRUD
-  const addMenuItem = useCallback((item: Omit<MenuItem, 'id' | 'businessId'>) => {
-    if (!activeBusinessId) return;
-    const newItem = { ...item, id: `menu${Date.now()}`, businessId: activeBusinessId };
-    setMenuItems(prev => [...prev, newItem]);
-  }, [activeBusinessId, setMenuItems]);
-
-  const updateMenuItem = useCallback((updatedItem: MenuItem) => {
-    setMenuItems(prev => prev.map(m => m.id === updatedItem.id ? updatedItem : m));
-  }, [setMenuItems]);
-
-  const deleteMenuItem = useCallback((id: string) => {
-    setMenuItems(prev => prev.filter(m => m.id !== id));
-  }, [setMenuItems]);
-
-  // Purchase Order CRUD
   const addPurchaseOrder = useCallback((po: Omit<PurchaseOrder, 'id' | 'businessId' | 'status' | 'orderDate' | 'totalCost'>) => {
     if (!activeBusinessId) return;
-    const totalCost = po.items.reduce((sum, item) => sum + item.cost * item.quantity, 0);
+    const totalCost = po.items.reduce((sum, item) => sum + (item.quantity * item.cost), 0);
     const newPO: PurchaseOrder = {
       ...po,
       id: `po${Date.now()}`,
       businessId: activeBusinessId,
       status: 'Pending',
-      orderDate: new Date().toISOString().split('T')[0],
+      orderDate: new Date().toISOString(),
       totalCost,
     };
     setPurchaseOrders(prev => [...prev, newPO]);
   }, [activeBusinessId, setPurchaseOrders]);
 
   const updatePurchaseOrderStatus = useCallback((id: string, status: PurchaseOrder['status']) => {
-    const order = purchaseOrders.find(po => po.id === id);
-    if (!order) return;
-
-    if (status === 'Completed' && order.status !== 'Completed') {
-      const inventoryMap = new Map(inventory.map(i => [i.id, { ...i }]));
-      order.items.forEach(orderItem => {
-        if (inventoryMap.has(orderItem.itemId)) {
-          const item = inventoryMap.get(orderItem.itemId)!;
-          item.quantity += orderItem.quantity;
+    setPurchaseOrders(prev => {
+        const order = prev.find(p => p.id === id);
+        if (order && status === 'Completed' && order.status !== 'Completed') {
+            // Update inventory
+            setInventory(currentInventory => {
+                const newInventory = [...currentInventory];
+                order.items.forEach(poItem => {
+                    const invItemIndex = newInventory.findIndex(inv => inv.id === poItem.itemId);
+                    if (invItemIndex > -1) {
+                        newInventory[invItemIndex].quantity += poItem.quantity;
+                    }
+                });
+                return newInventory;
+            });
         }
-      });
-      setInventory(Array.from(inventoryMap.values()));
-    }
+        return prev.map(p => p.id === id ? { ...p, status, completionDate: status === 'Completed' ? new Date().toISOString() : undefined } : p);
+    });
+  }, [setPurchaseOrders, setInventory]);
 
-    setPurchaseOrders(prev => prev.map(po => 
-      po.id === id 
-        ? { 
-            ...po, 
-            status,
-            completionDate: status === 'Completed' ? new Date().toISOString().split('T')[0] : po.completionDate
-          } 
-        : po
-    ));
-  }, [inventory, purchaseOrders, setInventory, setPurchaseOrders]);
-
-  // Sales CRUD
   const addSale = useCallback((items: { menuItemId: string; quantity: number }[]) => {
     if (!activeBusinessId) return;
 
-    const saleItems: SaleItem[] = [];
     let totalRevenue = 0;
     let totalCost = 0;
 
-    const inventoryUpdates = new Map<string, number>();
-
-    for (const saleItem of items) {
-        const menuItem = menuItems.find(m => m.id === saleItem.menuItemId);
-        if (!menuItem) continue;
+    const saleItems: SaleItem[] = items.map(item => {
+        const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
+        if (!menuItem) return null;
 
         const recipe = recipes.find(r => r.id === menuItem.recipeId);
-        if (!recipe) continue;
-
-        const recipeCost = calculateRecipeCost(recipe);
-        const costPerServing = recipe.servings > 0 ? recipeCost / recipe.servings : 0;
+        const recipeCost = calculateRecipeCost(recipe || null);
+        const costPerServing = (recipe && recipe.servings > 0) ? recipeCost / recipe.servings : 0;
         
-        // Denormalize data for the sale record
-        saleItems.push({
-            menuItemId: saleItem.menuItemId,
-            quantity: saleItem.quantity,
+        totalRevenue += menuItem.salePrice * item.quantity;
+        totalCost += costPerServing * item.quantity;
+
+        return {
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
             salePrice: menuItem.salePrice,
             cost: costPerServing,
-        });
+        };
+    }).filter((item): item is SaleItem => item !== null);
 
-        totalRevenue += menuItem.salePrice * saleItem.quantity;
-        totalCost += costPerServing * saleItem.quantity;
+    const totalProfit = totalRevenue - totalCost;
 
-        // Tally up inventory deductions
-        for (const ingredient of recipe.ingredients) {
-            const currentQuantity = inventoryUpdates.get(ingredient.itemId) || 0;
-            // The total quantity of this ingredient needed for this line item in the sale
-            const quantityToDecrement = (ingredient.quantity / recipe.servings) * saleItem.quantity;
-            
-            // Handle unit conversions for inventory deduction
-            const inventoryItem = getInventoryItemById(ingredient.itemId);
-            if(inventoryItem) {
-                const conversionFactor = getConversionFactor(ingredient.unit, inventoryItem.unit) || 1;
-                inventoryUpdates.set(ingredient.itemId, currentQuantity + (quantityToDecrement * conversionFactor));
-            }
-        }
-    }
-
-    // Create the sale record
     const newSale: Sale = {
         id: `sale${Date.now()}`,
         businessId: activeBusinessId,
@@ -572,84 +588,97 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         saleDate: new Date().toISOString(),
         totalRevenue,
         totalCost,
-        totalProfit: totalRevenue - totalCost,
+        totalProfit,
     };
     setSales(prev => [...prev, newSale]);
-    
-    // Update inventory
-    setInventory(prevInventory => {
-        return prevInventory.map(invItem => {
-            if (inventoryUpdates.has(invItem.id)) {
-                return { ...invItem, quantity: invItem.quantity - (inventoryUpdates.get(invItem.id) || 0) };
-            }
-            return invItem;
-        });
-    });
-
-    // Update menu item sales counts
+    // Also update sales count on menu item
     setMenuItems(prevMenuItems => {
-        return prevMenuItems.map(menuItem => {
-            const saleItem = items.find(i => i.menuItemId === menuItem.id);
-            if (saleItem) {
-                return { ...menuItem, salesCount: menuItem.salesCount + saleItem.quantity };
+        const newMenuItems = [...prevMenuItems];
+        saleItems.forEach(saleItem => {
+            const menuItemIndex = newMenuItems.findIndex(mi => mi.id === saleItem.menuItemId);
+            if(menuItemIndex > -1) {
+                newMenuItems[menuItemIndex].salesCount += saleItem.quantity;
             }
-            return menuItem;
         });
+        return newMenuItems;
     });
-  }, [activeBusinessId, calculateRecipeCost, getConversionFactor, getInventoryItemById, menuItems, recipes, setSales, setInventory, setMenuItems]);
 
-  const getRecipeById = useCallback((id: string) => recipes.find(recipe => recipe.id === id), [recipes]);
-  const getSupplierById = useCallback((id: string) => suppliers.find(supplier => supplier.id === id), [suppliers]);
+  }, [activeBusinessId, menuItems, recipes, calculateRecipeCost, setSales, setMenuItems]);
 
-  // Memoized filtered data based on active business
-  const activeSuppliers = useMemo(() => suppliers.filter(s => s.businessId === activeBusinessId), [suppliers, activeBusinessId]);
-  const activeInventory = useMemo(() => inventory.filter(i => i.businessId === activeBusinessId), [inventory, activeBusinessId]);
-  const activeRecipes = useMemo(() => recipes.filter(r => r.businessId === activeBusinessId), [recipes, activeBusinessId]);
-  const activeMenuItems = useMemo(() => menuItems.filter(m => m.businessId === activeBusinessId), [menuItems, activeBusinessId]);
-  const activeCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
-  const activeIngredientUnits = useMemo(() => ingredientUnits.filter(u => u.businessId === activeBusinessId), [ingredientUnits, activeBusinessId]);
-  const activeRecipeTemplates = useMemo(() => recipeTemplates.filter(rt => rt.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
-  const activePurchaseOrders = useMemo(() => purchaseOrders.filter(po => po.businessId === activeBusinessId), [purchaseOrders, activeBusinessId]);
-  const activeSales = useMemo(() => sales.filter(s => s.businessId === activeBusinessId), [sales, activeBusinessId]);
+  // Filtered data for the active business
+  const filteredSuppliers = useMemo(() => suppliers.filter(s => s.businessId === activeBusinessId), [suppliers, activeBusinessId]);
+  const filteredInventory = useMemo(() => inventory.filter(i => i.businessId === activeBusinessId), [inventory, activeBusinessId]);
+  const filteredRecipes = useMemo(() => recipes.filter(r => r.businessId === activeBusinessId), [recipes, activeBusinessId]);
+  const filteredMenuItems = useMemo(() => menuItems.filter(m => m.businessId === activeBusinessId), [menuItems, activeBusinessId]);
+  const filteredCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
+  const filteredIngredientUnits = useMemo(() => ingredientUnits.filter(u => u.businessId === activeBusinessId), [ingredientUnits, activeBusinessId]);
+  const filteredRecipeTemplates = useMemo(() => recipeTemplates.filter(t => t.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
+  const filteredPurchaseOrders = useMemo(() => purchaseOrders.filter(p => p.businessId === activeBusinessId), [purchaseOrders, activeBusinessId]);
+  const filteredSales = useMemo(() => sales.filter(s => s.businessId === activeBusinessId), [sales, activeBusinessId]);
 
-  if (!isDataInitialized) {
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-transparent">
-            <div className="text-center p-8">
-                <p className="text-lg font-semibold text-primary">Initializing Application Data...</p>
-            </div>
-        </div>
-    );
-  }
 
-  return (
-    <DataContext.Provider value={{
-      businesses, activeBusinessId, setActiveBusinessId, addBusiness,
-      suppliers: activeSuppliers, addSupplier, updateSupplier, deleteSupplier,
-      inventory: activeInventory, setInventory, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems,
-      recipes: activeRecipes, addRecipe, updateRecipe, deleteRecipe, recordRecipeCostHistory, duplicateRecipe, uploadRecipeImage, removeRecipeImage,
-      menuItems: activeMenuItems, addMenuItem, updateMenuItem, deleteMenuItem,
-      categories: activeCategories, addCategory, updateCategory, deleteCategory,
-      ingredientUnits: activeIngredientUnits, addUnit, updateUnit, deleteUnit,
-      recipeTemplates: activeRecipeTemplates, addRecipeTemplate,
-      purchaseOrders: activePurchaseOrders,
-      addPurchaseOrder,
-      updatePurchaseOrderStatus,
-      sales: activeSales,
-      addSale,
-      getInventoryItemById, getRecipeById, getSupplierById,
-      calculateRecipeCost,
-      getConversionFactor,
-    }}>
-      {children}
-    </DataContext.Provider>
-  );
-};
+  const value: DataContextType = {
+    businesses,
+    activeBusinessId,
+    setActiveBusinessId,
+    addBusiness,
+    
+    suppliers: filteredSuppliers,
+    inventory: filteredInventory,
+    recipes: filteredRecipes,
+    menuItems: filteredMenuItems,
+    categories: filteredCategories,
+    ingredientUnits: filteredIngredientUnits,
+    recipeTemplates: filteredRecipeTemplates,
+    purchaseOrders: filteredPurchaseOrders,
+    sales: filteredSales,
+    
+    addSupplier,
+    updateSupplier,
+    deleteSupplier,
+    bulkAddSuppliers,
+    
+    setInventory,
+    addInventoryItem,
+    updateInventoryItem,
+    deleteInventoryItem,
+    bulkUpdateInventoryItems,
+    bulkDeleteInventoryItems,
+    bulkAddInventoryItems,
 
-export const useData = (): DataContextType => {
-  const context = useContext(DataContext);
-  if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider');
-  }
-  return context;
+    addRecipe,
+    updateRecipe,
+    deleteRecipe,
+    recordRecipeCostHistory,
+    duplicateRecipe,
+    uploadRecipeImage,
+    removeRecipeImage,
+    bulkAddRecipes,
+
+    addMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
+
+    addCategory,
+    updateCategory,
+    deleteCategory,
+
+    addUnit,
+    updateUnit,
+    deleteUnit,
+
+    addRecipeTemplate,
+
+    addPurchaseOrder,
+    updatePurchaseOrderStatus,
+    addSale,
+
+    getInventoryItemById,
+    getRecipeById,
+    getSupplierById,
+    calculateRecipeCost,
+    getConversionFactor,
+  };
+
+  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };

@@ -166,71 +166,69 @@ const Menu: React.FC = () => {
                         Add Menu Item
                     </button>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-muted">
-                            <tr>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Menu Item</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Classification</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Sales Count</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Sale Price</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Cost</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Profit</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Food Cost %</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {menuPerformance.map(item => {
-                                const classification = getClassification(item.profit, item.salesCount);
-                                const isEditing = editingItemId === item.id;
-                                return (
-                                    <tr key={item.id} className="border-b border-border last:border-b-0 hover:bg-accent group">
-                                        <td className="p-4 font-medium whitespace-nowrap">{item.name}</td>
-                                        <td className="p-4"><ClassificationBadge classification={classification} /></td>
-                                        <td className="p-4">
-                                            {isEditing ? (
-                                                <div className="flex items-center space-x-2">
-                                                    <input
-                                                        type="number"
-                                                        value={editedSales}
-                                                        onChange={(e) => setEditedSales(parseInt(e.target.value) || 0)}
-                                                        className="w-20 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm"
-                                                        autoFocus
-                                                        min="0"
-                                                    />
-                                                    <button onClick={() => handleSaveSales(item.id)} className="text-green-600 hover:text-green-800"><Save size={18} /></button>
-                                                    <button onClick={handleCancelSalesEdit} className="text-muted-foreground hover:text-foreground"><XCircle size={18} /></button>
-                                                </div>
-                                            ) : (
-                                                 <div className="flex items-center space-x-2 text-muted-foreground">
-                                                    <span>{item.salesCount}</span>
-                                                    <button onClick={() => handleEditSales(item)} className="text-primary hover:text-primary/80 opacity-0 group-hover:opacity-100" aria-label="Edit sales count">
-                                                        <Edit size={16} />
-                                                    </button>
-                                                 </div>
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-foreground font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
-                                        <td className="p-4 text-muted-foreground whitespace-nowrap">{formatCurrency(item.costPerServing)}</td>
-                                        <td className="p-4">
-                                            <span className={`font-bold ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                {formatCurrency(item.profit)}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-muted-foreground whitespace-nowrap">{item.foodCostPercentage.toFixed(1)}%</td>
-                                        <td className="p-4">
-                                            <div className="flex items-center space-x-3">
-                                                <button onClick={() => handleOpenModal(item)} className="text-primary hover:text-primary/80"><Edit size={20} /></button>
-                                                <button onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={20} /></button>
+                <table className="w-full text-left responsive-table">
+                    <thead className="bg-muted">
+                        <tr>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Menu Item</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Classification</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Sales Count</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Sale Price</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Cost</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Profit</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Food Cost %</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {menuPerformance.map(item => {
+                            const classification = getClassification(item.profit, item.salesCount);
+                            const isEditing = editingItemId === item.id;
+                            return (
+                                <tr key={item.id} className="border-b border-border last:border-b-0 hover:bg-accent group">
+                                    <td data-label="Menu Item" className="p-4 font-medium whitespace-nowrap">{item.name}</td>
+                                    <td data-label="Classification" className="p-4"><ClassificationBadge classification={classification} /></td>
+                                    <td data-label="Sales Count" className="p-4">
+                                        {isEditing ? (
+                                            <div className="flex items-center space-x-2">
+                                                <input
+                                                    type="number"
+                                                    value={editedSales}
+                                                    onChange={(e) => setEditedSales(parseInt(e.target.value) || 0)}
+                                                    className="w-20 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm"
+                                                    autoFocus
+                                                    min="0"
+                                                />
+                                                <button onClick={() => handleSaveSales(item.id)} className="text-green-600 hover:text-green-800"><Save size={18} /></button>
+                                                <button onClick={handleCancelSalesEdit} className="text-muted-foreground hover:text-foreground"><XCircle size={18} /></button>
                                             </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
+                                        ) : (
+                                             <div className="flex items-center space-x-2 text-muted-foreground">
+                                                <span>{item.salesCount}</span>
+                                                <button onClick={() => handleEditSales(item)} className="text-primary hover:text-primary/80 opacity-0 group-hover:opacity-100" aria-label="Edit sales count">
+                                                    <Edit size={16} />
+                                                </button>
+                                             </div>
+                                        )}
+                                    </td>
+                                    <td data-label="Sale Price" className="p-4 text-foreground font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
+                                    <td data-label="Cost" className="p-4 text-muted-foreground whitespace-nowrap">{formatCurrency(item.costPerServing)}</td>
+                                    <td data-label="Profit" className="p-4">
+                                        <span className={`font-bold ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            {formatCurrency(item.profit)}
+                                        </span>
+                                    </td>
+                                    <td data-label="Food Cost %" className="p-4 text-muted-foreground whitespace-nowrap">{item.foodCostPercentage.toFixed(1)}%</td>
+                                    <td data-label="Actions" className="p-4">
+                                        <div className="flex items-center space-x-3">
+                                            <button onClick={() => handleOpenModal(item)} className="text-primary hover:text-primary/80"><Edit size={20} /></button>
+                                            <button onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={20} /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </Card>
 
              <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={currentItem ? 'Edit Menu Item' : 'Add New Menu Item'}>

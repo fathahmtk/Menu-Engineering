@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -9,13 +8,17 @@ import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
 import { AlertTriangle, PlusCircle, Edit, Save, XCircle, Trash2, Edit2, DollarSign, Truck } from 'lucide-react';
 import { InventoryItem } from '../types';
+import ActionsDropdown from './common/ActionsDropdown';
+import ImportModal from './common/ImportModal';
+import { convertToCSV, downloadCSV } from '../utils/csvHelper';
+
 
 const ITEM_CATEGORIES: InventoryItem['category'][] = ['Produce', 'Meat', 'Dairy', 'Pantry', 'Bakery', 'Beverages', 'Seafood'];
 const DEFAULT_UNITS = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
 
 
 const Inventory: React.FC = () => {
-    const { inventory, getSupplierById, suppliers, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems, ingredientUnits } = useData();
+    const { inventory, getSupplierById, suppliers, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems, ingredientUnits, bulkAddInventoryItems } = useData();
     const { formatCurrency, currency } = useCurrency();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newItem, setNewItem] = useState<Omit<InventoryItem, 'id' | 'businessId'>>({
@@ -41,6 +44,7 @@ const Inventory: React.FC = () => {
     const [bulkError, setBulkError] = useState('');
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
     const [deletionResult, setDeletionResult] = useState<{ deletedCount: number; failedItems: string[] } | null>(null);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     const allUnits = useMemo(() => {
         const customUnits = ingredientUnits.map(u => u.name);
@@ -166,17 +170,86 @@ const Inventory: React.FC = () => {
 
     const isAllSelected = inventory.length > 0 && selectedItems.size === inventory.length;
 
+    const handleExport = () => {
+        const headers = ['name', 'category', 'quantity', 'unit', 'unitCost', 'unitPrice', 'supplierName', 'lowStockThreshold'];
+        const dataToExport = inventory.map(item => {
+            const supplier = getSupplierById(item.supplierId);
+            return {
+                name: item.name,
+                category: item.category,
+                quantity: item.quantity,
+                unit: item.unit,
+                unitCost: item.unitCost,
+                unitPrice: item.unitPrice,
+                supplierName: supplier ? supplier.name : 'N/A',
+                lowStockThreshold: item.lowStockThreshold,
+            };
+        });
+        const csvString = convertToCSV(dataToExport, headers);
+        downloadCSV(csvString, 'inventory.csv');
+    };
+
+    const parseInventoryFile = async (fileContent: string): Promise<{ data: Omit<InventoryItem, 'id' | 'businessId'>[]; errors: string[] }> => {
+        const lines = fileContent.trim().split('\n');
+        const headers = lines[0].trim().split(',').map(h => h.replace(/"/g, '').trim());
+        const requiredHeaders = ['name', 'category', 'quantity', 'unit', 'unitCost', 'unitPrice', 'supplierName', 'lowStockThreshold'];
+        const errors: string[] = [];
+        
+        requiredHeaders.forEach(h => {
+            if (!headers.includes(h)) errors.push(`Missing required header: ${h}`);
+        });
+
+        const supplierNameMap = new Map(suppliers.map(s => [s.name.toLowerCase(), s.id]));
+
+        const data = lines.slice(1).map((line, index) => {
+            const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+            const item: any = {};
+            headers.forEach((header, i) => item[header] = values[i]);
+            
+            // Fix: Cast item.supplierName to string to ensure type safety with Map.get()
+            const supplierId = supplierNameMap.get(String(item.supplierName || '').toLowerCase());
+            if (!supplierId) errors.push(`Row ${index + 2}: Supplier "${item.supplierName}" not found. Please add it first.`);
+
+            const category = item.category as InventoryItem['category'];
+            if (!ITEM_CATEGORIES.includes(category)) {
+                errors.push(`Row ${index + 2}: Invalid category "${item.category}".`);
+            }
+
+            return {
+                name: item.name,
+                category: ITEM_CATEGORIES.includes(category) ? category : 'Pantry',
+                quantity: parseFloat(item.quantity) || 0,
+                unit: item.unit,
+                unitCost: parseFloat(item.unitCost) || 0,
+                unitPrice: parseFloat(item.unitPrice) || 0,
+                supplierId: supplierId || '',
+                lowStockThreshold: parseFloat(item.lowStockThreshold) || 0,
+            };
+        }).filter(item => item.name && item.supplierId);
+        
+        if (data.length === 0 && errors.length > 0) return { data: [], errors };
+        
+        return { data, errors };
+    };
+
+    const handleImport = (data: Omit<InventoryItem, 'id' | 'businessId'>[]) => {
+        return Promise.resolve(bulkAddInventoryItems(data));
+    };
+
     return (
         <>
             <Card>
                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-2 justify-between items-start sm:items-center mb-4">
                     <h2 className="text-xl font-bold text-foreground">Inventory List</h2>
-                    <button 
-                        onClick={handleOpenModal}
-                        className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-                        <PlusCircle size={20} className="mr-2" />
-                        Add Item
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
+                        <button 
+                            onClick={handleOpenModal}
+                            className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                            <PlusCircle size={20} className="mr-2" />
+                            Add Item
+                        </button>
+                    </div>
                 </div>
 
                 {selectedItems.size > 0 && (
@@ -191,77 +264,96 @@ const Inventory: React.FC = () => {
                     </div>
                 )}
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-muted">
-                            <tr>
-                                <th className="p-4 w-4">
-                                    <input type="checkbox" onChange={handleSelectAll} checked={isAllSelected} aria-label="Select all items" className="rounded border-gray-300 text-primary focus:ring-primary" />
-                                </th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Name</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Category</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Stock</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Unit Cost</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Unit Price</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Supplier</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Status</th>
-                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {inventory.map(item => {
-                                const supplier = getSupplierById(item.supplierId);
-                                const isLowStock = item.quantity <= item.lowStockThreshold;
-                                const isEditing = editingItemId === item.id;
+                <table className="w-full text-left responsive-table">
+                    <thead className="bg-muted">
+                        <tr>
+                            <th className="p-4 w-4">
+                                <input type="checkbox" onChange={handleSelectAll} checked={isAllSelected} aria-label="Select all items" className="rounded border-gray-300 text-primary focus:ring-primary" />
+                            </th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Name</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Category</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Stock</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Unit Cost</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Unit Price</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Supplier</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Status</th>
+                            <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {inventory.map(item => {
+                            const supplier = getSupplierById(item.supplierId);
+                            const isLowStock = item.quantity <= item.lowStockThreshold;
+                            const isEditing = editingItemId === item.id;
 
-                                return (
-                                    <tr key={item.id} className={`border-b border-border last:border-b-0 transition-colors hover:bg-accent ${selectedItems.has(item.id) ? 'bg-primary/10' : ''}`}>
-                                        <td className="p-4">
-                                            <input type="checkbox" onChange={() => handleSelect(item.id)} checked={selectedItems.has(item.id)} aria-label={`Select ${item.name}`} className="rounded border-gray-300 text-primary focus:ring-primary" />
-                                        </td>
-                                        <td className="p-4 font-medium text-foreground whitespace-nowrap">{item.name}</td>
-                                        <td className="p-4 text-muted-foreground whitespace-nowrap">{item.category}</td>
-                                        <td className="p-4 text-muted-foreground whitespace-nowrap">{item.quantity} {item.unit}</td>
-                                        <td className="p-4 text-muted-foreground whitespace-nowrap">
+                            return (
+                                <tr key={item.id} className={`border-b border-border last:border-b-0 transition-colors hover:bg-accent ${selectedItems.has(item.id) ? 'bg-primary/10' : ''}`}>
+                                    <td className="p-4 checkbox-cell">
+                                        <input type="checkbox" onChange={() => handleSelect(item.id)} checked={selectedItems.has(item.id)} aria-label={`Select ${item.name}`} className="rounded border-gray-300 text-primary focus:ring-primary" />
+                                    </td>
+                                    <td data-label="Name" className="p-4 font-medium text-foreground whitespace-nowrap">{item.name}</td>
+                                    <td data-label="Category" className="p-4 text-muted-foreground whitespace-nowrap">{item.category}</td>
+                                    <td data-label="Stock" className="p-4 text-muted-foreground whitespace-nowrap">{item.quantity} {item.unit}</td>
+                                    <td data-label="Unit Cost" className="p-4 text-muted-foreground whitespace-nowrap">
+                                        {isEditing ? (
+                                            <input type="number" value={editedCost} onChange={(e) => setEditedCost(parseFloat(e.target.value) || 0)} className="w-24 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm" autoFocus step="0.01" min="0.01" />
+                                        ) : ( formatCurrency(item.unitCost) )}
+                                    </td>
+                                    <td data-label="Unit Price" className="p-4 text-muted-foreground whitespace-nowrap">
+                                        {isEditing ? (
+                                            <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(parseFloat(e.target.value) || 0)} className="w-24 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm" step="0.01" min="0.01" />
+                                        ) : ( formatCurrency(item.unitPrice) )}
+                                    </td>
+                                    <td data-label="Supplier" className="p-4 text-muted-foreground whitespace-nowrap">{supplier?.name || 'N/A'}</td>
+                                    <td data-label="Status" className="p-4">
+                                        {isLowStock ? (
+                                            <span className="flex items-center text-destructive bg-destructive/10 px-2 py-1 rounded-full text-xs font-semibold">
+                                                <AlertTriangle size={14} className="mr-1" />Low Stock
+                                            </span>
+                                        ) : (
+                                            <span className="text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs font-semibold">In Stock</span>
+                                        )}
+                                    </td>
+                                    <td data-label="Actions" className="p-4">
+                                        <div className="flex items-center space-x-3">
                                             {isEditing ? (
-                                                <input type="number" value={editedCost} onChange={(e) => setEditedCost(parseFloat(e.target.value) || 0)} className="w-24 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm" autoFocus step="0.01" min="0.01" />
-                                            ) : ( formatCurrency(item.unitCost) )}
-                                        </td>
-                                        <td className="p-4 text-muted-foreground whitespace-nowrap">
-                                            {isEditing ? (
-                                                <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(parseFloat(e.target.value) || 0)} className="w-24 px-2 py-1 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 sm:text-sm" step="0.01" min="0.01" />
-                                            ) : ( formatCurrency(item.unitPrice) )}
-                                        </td>
-                                        <td className="p-4 text-muted-foreground whitespace-nowrap">{supplier?.name || 'N/A'}</td>
-                                        <td className="p-4">
-                                            {isLowStock ? (
-                                                <span className="flex items-center text-destructive bg-destructive/10 px-2 py-1 rounded-full text-xs font-semibold">
-                                                    <AlertTriangle size={14} className="mr-1" />Low Stock
-                                                </span>
+                                                <>
+                                                    <button onClick={() => handleSave(item.id)} className="text-green-600 hover:text-green-800" aria-label="Save cost"><Save size={20} /></button>
+                                                    <button onClick={handleCancel} className="text-muted-foreground hover:text-foreground" aria-label="Cancel edit"><XCircle size={20} /></button>
+                                                </>
                                             ) : (
-                                                <span className="text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs font-semibold">In Stock</span>
+                                                <button onClick={() => handleEdit(item)} className="text-primary hover:text-primary/80" aria-label="Edit item cost"><Edit size={20} /></button>
                                             )}
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex items-center space-x-3">
-                                                {isEditing ? (
-                                                    <>
-                                                        <button onClick={() => handleSave(item.id)} className="text-green-600 hover:text-green-800" aria-label="Save cost"><Save size={20} /></button>
-                                                        <button onClick={handleCancel} className="text-muted-foreground hover:text-foreground" aria-label="Cancel edit"><XCircle size={20} /></button>
-                                                    </>
-                                                ) : (
-                                                    <button onClick={() => handleEdit(item)} className="text-primary hover:text-primary/80" aria-label="Edit item cost"><Edit size={20} /></button>
-                                                )}
-                                                <button onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive/80" aria-label="Delete item"><Trash2 size={20} /></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
+                                            <button onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive/80" aria-label="Delete item"><Trash2 size={20} /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </Card>
+            <ImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                title="Import Inventory Items"
+                templateUrl="data:text/csv;charset=utf-8,name,category,quantity,unit,unitCost,unitPrice,supplierName,lowStockThreshold%0AExample%20Item,Produce,10,kg,5,8,Example%20Supplier,2"
+                templateFilename="inventory_template.csv"
+                parseFile={parseInventoryFile}
+                onImport={handleImport}
+                renderPreview={(item: any, index: number) => (
+                    <div key={index} className="p-2 text-sm flex justify-between">
+                        <div>
+                            <p className="font-semibold">{item.name}</p>
+                            <p className="text-muted-foreground">{item.quantity} {item.unit} from {item.supplierName}</p>
+                        </div>
+                        <div className="text-right">
+                             <p className="font-medium">{formatCurrency(item.unitCost)}</p>
+                             <p className="text-xs text-muted-foreground">Unit Cost</p>
+                        </div>
+                    </div>
+                )}
+            />
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Add New Inventory Item">
                 <div className="space-y-4">
                      <div>

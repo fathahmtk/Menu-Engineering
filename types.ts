@@ -134,6 +134,8 @@ export interface DataContextType {
   addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => void;
   updateSupplier: (supplier: Supplier) => void;
   deleteSupplier: (id: string) => { success: boolean; message?: string };
+  bulkAddSuppliers: (newSuppliers: Omit<Supplier, 'id' | 'businessId'>[]) => { successCount: number; duplicateCount: number };
+
   
   // Fix: Use imported Dispatch and SetStateAction types.
   setInventory: Dispatch<SetStateAction<InventoryItem[]>>;
@@ -142,6 +144,8 @@ export interface DataContextType {
   deleteInventoryItem: (id: string) => void;
   bulkUpdateInventoryItems: (itemIds: string[], update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice' | 'supplierId'>>) => void;
   bulkDeleteInventoryItems: (itemIds: string[]) => { deletedCount: number; failedItems: string[] };
+  bulkAddInventoryItems: (newItems: Omit<InventoryItem, 'id' | 'businessId'>[]) => { successCount: number; duplicateCount: number };
+
 
   addRecipe: (recipe: Omit<Recipe, 'id' | 'businessId'>) => void;
   updateRecipe: (recipe: Recipe) => void;
@@ -150,6 +154,8 @@ export interface DataContextType {
   duplicateRecipe: (id: string, includeHistory: boolean) => Recipe | undefined;
   uploadRecipeImage: (recipeId: string, file: File) => Promise<void>;
   removeRecipeImage: (recipeId: string) => Promise<void>;
+  bulkAddRecipes: (newRecipes: Omit<Recipe, 'id' | 'businessId'>[]) => { successCount: number; duplicateCount: number };
+
 
   addMenuItem: (item: Omit<MenuItem, 'id' | 'businessId'>) => void;
   updateMenuItem: (item: MenuItem) => void;
