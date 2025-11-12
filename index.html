@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%231E40AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z'/%3E%3Cpath d='M15.5 8.5c-.83-1.17-2.17-2-3.5-2s-2.67.83-3.5 2'/%3E%3Cpath d='M15.5 15.5c-.83 1.17-2.17 2-3.5 2s-2.67-.83-3.5-2'/%3E%3Cpath d='M8.5 15.5c-1.17-.83-2-2.17-2-3.5s.83-2.67 2-3.5'/%3E%3Cpath d='M15.5 8.5c1.17.83 2 2.17 2 3.5s-.83 2.67-2 3.5'/%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F97316' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'%3E%3C/path%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CAN Group | F&B Business Intelligence</title>
+    <title>iCAN | F&B Intelligence Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,31 +13,31 @@
       :root {
         --font-sans: 'Poppins', sans-serif;
         
-        /* Color Palette */
-        --color-background: #F8F9FA; /* Off-white */
-        --color-sidebar: #FFFFFF;
-        --color-card: #FFFFFF;
-        --color-primary: #1E40AF; /* Corporate Blue */
-        --color-primary-hover: #1D4ED8;
-        --color-primary-light: #DBEAFE;
+        /* Dark Theme Color Palette */
+        --color-background: #111827; /* Very Dark Blue/Gray */
+        --color-sidebar: #1F2937;
+        --color-card: #1F2937; /* Dark Gray */
+        --color-primary: #F97316; /* Fiery Orange */
+        --color-primary-hover: #EA580C;
+        --color-primary-light: rgba(249, 115, 22, 0.1);
         --color-primary-foreground: #FFFFFF;
         
-        --color-text-primary: #111827; /* Dark Gray */
-        --color-text-secondary: #4B5563;
+        --color-text-primary: #F9FAFB; /* Off-white */
+        --color-text-secondary: #9CA3AF;
         --color-text-muted: #6B7280;
         
-        --color-border: #E5E7EB;
-        --color-input: #F3F4F6;
-        --color-ring: #A5B4FC;
+        --color-border: #374151;
+        --color-input: #111827;
+        --color-ring: rgba(249, 115, 22, 0.5);
         
-        --color-success: #16A34A;
+        --color-success: #22C55E;
         --color-warning: #F59E0B;
-        --color-danger: #DC2626;
+        --color-danger: #EF4444;
 
         /* Sizing & Radius */
         --radius: 0.75rem;
-        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
-        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
       }
 
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -53,11 +53,11 @@
         -moz-osx-font-smoothing: grayscale;
       }
       
-      /* Custom Scrollbar */
+      /* Custom Scrollbar for dark theme */
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: #D1D5DB; }
+      ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
 
       /* Cursor */
       :root { cursor: default; }
@@ -69,7 +69,6 @@
         border: 1px solid var(--color-border);
         border-radius: var(--radius);
         box-shadow: var(--shadow);
-        transition: box-shadow 0.2s ease-in-out;
       }
       .can-card:hover {
         box-shadow: var(--shadow-md);
@@ -103,7 +102,7 @@
         border-color: var(--color-border);
       }
       .can-btn-secondary:hover {
-        background-color: var(--color-input);
+        background-color: var(--color-border);
         color: var(--color-text-primary);
       }
       .can-btn-danger {
@@ -114,14 +113,16 @@
         opacity: 0.9;
       }
       .can-btn-disabled {
-        opacity: 0.6;
+        opacity: 0.5;
         cursor: not-allowed;
         transform: none !important;
         box-shadow: none !important;
+        background-color: var(--color-border) !important;
+        color: var(--color-text-muted) !important;
       }
 
       .can-input, .can-select {
-        background-color: var(--color-background);
+        background-color: var(--color-input);
         border: 1px solid var(--color-border);
         border-radius: 0.5rem;
         padding: 0.6rem 0.85rem;
@@ -132,11 +133,15 @@
       .can-input:focus, .can-select:focus {
         outline: none;
         border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px var(--color-primary-light);
+        box-shadow: 0 0 0 3px var(--color-ring);
       }
       
       .can-table-header {
-        background-color: #F9FAFB;
+        background-color: #374151; /* Medium Gray */
+      }
+      
+      option {
+        background-color: var(--color-background);
       }
 
       /* Responsive Table Styles */

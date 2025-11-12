@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from './hooks/useAuthContext';
 
 
 // Lazy-load page components for better performance
+const AuthPage = lazy(() => import('./components/AuthPage'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const Inventory = lazy(() => import('./components/Inventory'));
 const Recipes = lazy(() => import('./components/Recipes'));
@@ -65,13 +66,9 @@ const OnboardingScreen: React.FC = () => {
         }
     };
     
-    const CanGroupLogo = () => (
+    const ICanLogo = () => (
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="10" fill="var(--color-primary)"/>
-          <path d="M15.5 8.5C14.67 7.33 13.33 6.5 12 6.5C10.67 6.5 9.33 7.33 8.5 8.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-          <path d="M15.5 15.5C14.67 16.67 13.33 17.5 12 17.5C10.67 17.5 9.33 16.67 8.5 15.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-          <path d="M8.5 15.5C7.33 14.67 6.5 13.33 6.5 12C6.5 10.67 7.33 9.33 8.5 8.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-          <path d="M15.5 8.5C16.67 9.33 17.5 10.67 17.5 12C17.5 13.33 16.67 14.67 15.5 15.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     );
 
@@ -80,9 +77,9 @@ const OnboardingScreen: React.FC = () => {
             className="flex items-center justify-center min-h-screen bg-cover bg-center p-4 bg-[var(--color-background)]"
         >
             <div className="text-center w-full max-w-lg mx-auto z-10 p-8 sm:p-12 rounded-2xl shadow-2xl border border-black/5 bg-[var(--color-card)]" style={{ animation: 'slideUp 0.5s ease-out' }}>
-                <CanGroupLogo />
-                <h1 className="text-3xl sm:text-4xl font-bold mt-4 text-[var(--color-text-primary)]">Welcome to CAN Group</h1>
-                <h2 className="text-xl font-medium text-[var(--color-primary)]">F&B Business Intelligence Platform</h2>
+                <ICanLogo />
+                <h1 className="text-3xl sm:text-4xl font-bold mt-4 text-[var(--color-text-primary)]">Welcome to iCAN</h1>
+                <h2 className="text-xl font-medium text-[var(--color-primary)]">F&B Intelligence Platform</h2>
                 <p className="text-[var(--color-text-secondary)] mt-4 mb-8 max-w-md mx-auto">
                     Centralize your operations. Manage inventory, recipes, and sales for all your business divisions in one powerful platform.
                 </p>
@@ -94,7 +91,7 @@ const OnboardingScreen: React.FC = () => {
                         value={newBusinessName}
                         onChange={(e) => setNewBusinessName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleCreateFirstBusiness()}
-                        placeholder="e.g., CAN Group - Qatar Division"
+                        placeholder="e.g., iCAN - Qatar Division"
                         className="can-input text-center"
                         aria-label="New business name"
                     />
@@ -107,7 +104,7 @@ const OnboardingScreen: React.FC = () => {
                     </button>
                 </div>
                  <footer className="mt-12 text-center text-xs text-[var(--color-text-muted)]">
-                    <p>&copy; {new Date().getFullYear()} CAN Food & Beverage Group. All Rights Reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} iCAN F&B Group. All Rights Reserved.</p>
                 </footer>
             </div>
         </div>
@@ -168,6 +165,14 @@ const AppContainer: React.FC = () => {
     
     if (authLoading) {
         return <GlobalLoading />;
+    }
+
+    if (!session) {
+        return (
+            <Suspense fallback={<GlobalLoading />}>
+                <AuthPage />
+            </Suspense>
+        );
     }
 
     return (

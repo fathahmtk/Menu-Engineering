@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
         return acc + (item.salePrice - costPerServing);
     }, 0);
 
-    const COLORS = ['#1E40AF', '#16A34A', '#F59E0B', '#6D28D9', '#DC2626'];
+    const COLORS = ['#F97316', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899'];
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -50,7 +50,7 @@ const Dashboard: React.FC = () => {
             </Card>
             <Card className="col-span-1">
                 <div className="flex items-center">
-                    <div className="p-3 bg-red-100 rounded-full">
+                    <div className="p-3 bg-red-500/10 rounded-full">
                         <AlertTriangle className="text-[var(--color-danger)]" />
                     </div>
                     <div className="ml-4">
@@ -61,8 +61,8 @@ const Dashboard: React.FC = () => {
             </Card>
             <Card className="col-span-1">
                 <div className="flex items-center">
-                    <div className="p-3 bg-sky-100 rounded-full">
-                        <BookCheck className="text-sky-500" />
+                    <div className="p-3 bg-sky-500/10 rounded-full">
+                        <BookCheck className="text-sky-400" />
                     </div>
                     <div className="ml-4">
                         <p className="text-sm text-[var(--color-text-muted)]">Total Recipes</p>
@@ -72,8 +72,8 @@ const Dashboard: React.FC = () => {
             </Card>
             <Card className="col-span-1">
                  <div className="flex items-center">
-                    <div className="p-3 bg-amber-100 rounded-full">
-                        <PieChart className="text-amber-500" />
+                    <div className="p-3 bg-amber-500/10 rounded-full">
+                        <PieChart className="text-amber-400" />
                     </div>
                     <div className="ml-4">
                         <p className="text-sm text-[var(--color-text-muted)]">Avg. Menu Profit</p>
@@ -92,7 +92,7 @@ const Dashboard: React.FC = () => {
                           formatter={(value: number, name: string) => [formatCurrency(value), name.charAt(0).toUpperCase() + name.slice(1)]}
                           contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', color: 'var(--color-text-primary)', boxShadow: 'var(--shadow-md)' }}
                           labelStyle={{ color: 'var(--color-text-primary)', fontWeight: '600' }}
-                          cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                          cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
                         />
                         <Legend wrapperStyle={{ color: 'var(--color-text-muted)' }} />
                         <Bar dataKey="profit" name="Profit" fill="var(--color-primary)">
