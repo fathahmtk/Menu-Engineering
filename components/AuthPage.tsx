@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuthContext';
 import { Mail, Lock, User, LoaderCircle } from 'lucide-react';
@@ -39,7 +38,7 @@ const AuthPage: React.FC = () => {
                         {isSignUp ? 'Create an Account' : 'Sign In'}
                     </h1>
                     <p className="text-[var(--color-text-secondary)] mt-2">
-                        to continue to iCAN F&B Intelligence
+                        to continue to iCAN
                     </p>
                 </div>
 
