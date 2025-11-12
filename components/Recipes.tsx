@@ -413,6 +413,17 @@ const Recipes: React.FC = () => {
         }
     }, [activeBusinessId, recipes, selectedRecipe]);
 
+    useEffect(() => {
+        // Sync local selectedRecipe with the master list from context, especially after an update like an image upload.
+        if (selectedRecipe) {
+            const updatedRecipeFromContext = recipes.find(r => r.id === selectedRecipe.id);
+            // Use stringify for a simple but effective deep-ish comparison to prevent infinite loops.
+            if (updatedRecipeFromContext && JSON.stringify(updatedRecipeFromContext) !== JSON.stringify(selectedRecipe)) {
+                setSelectedRecipe(updatedRecipeFromContext);
+            }
+        }
+    }, [recipes, selectedRecipe]);
+
     const handleInstructionChange = (instIndex: number, newText: string) => {
         if (!selectedRecipe) return;
         const updatedInstructions = selectedRecipe.instructions.map((inst, index) => index === instIndex ? newText : inst);
