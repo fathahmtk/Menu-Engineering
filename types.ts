@@ -1,4 +1,5 @@
 
+
 import type { Dispatch, SetStateAction } from 'react';
 
 export interface Business {
@@ -88,6 +89,7 @@ export interface PurchaseOrder {
   items: PurchaseOrderItem[];
   status: 'Pending' | 'Completed' | 'Cancelled';
   orderDate: string;
+  dueDate?: string;
   completionDate?: string;
   totalCost: number;
   businessId: string;
@@ -167,7 +169,7 @@ export interface DataContextType {
 
   addRecipeTemplate: (template: Omit<RecipeTemplate, 'id' | 'businessId'>) => Promise<void>;
 
-  addPurchaseOrder: (po: Omit<PurchaseOrder, 'id' | 'businessId' | 'status' | 'orderDate' | 'totalCost'>) => Promise<void>;
+  addPurchaseOrder: (po: { supplierId: string; items: PurchaseOrderItem[]; dueDate?: string; }) => Promise<void>;
   updatePurchaseOrderStatus: (id: string, status: PurchaseOrder['status']) => Promise<void>;
   addSale: (items: { menuItemId: string; quantity: number }[]) => Promise<void>;
 

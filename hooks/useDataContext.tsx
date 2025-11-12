@@ -1,6 +1,7 @@
 
+
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem, IngredientUnit, DataContextType } from '../types';
+import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem, IngredientUnit, DataContextType, PurchaseOrderItem } from '../types';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from './useAuthContext';
 
@@ -305,6 +306,68 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (updatedRecipe) setRecipes(prev => prev.map(r => r.id === recipeId ? updatedRecipe : r));
   };
   
+  const addPurchaseOrder = async (po: { supplierId: string; items: PurchaseOrderItem[]; dueDate?: string; }) => {
+    if (!activeBusinessId) return;
+
+    const totalCost = po.items.reduce((sum, item) => {
+        return sum + (item.quantity * item.cost);
+    }, 0);
+
+    const newPO: Omit<PurchaseOrder, 'id'> = {
+        ...po,
+        businessId: activeBusinessId,
+        status: 'Pending',
+        orderDate: new Date().toISOString(),
+        totalCost,
+    };
+
+    const { data, error } = await supabase.from('purchaseOrders').insert(newPO).select().single();
+    if (error) throw error;
+    if (data) {
+        setPurchaseOrders(prev => [...prev, data]);
+    }
+  };
+
+  const updatePurchaseOrderStatus = async (id: string, status: PurchaseOrder['status']) => {
+      const poToUpdate = purchaseOrders.find(po => po.id === id);
+      if (!poToUpdate || !activeBusinessId) return;
+      
+      const update: Partial<PurchaseOrder> = { status };
+      let inventoryWasUpdated = false;
+
+      if (status === 'Completed') {
+          update.completionDate = new Date().toISOString();
+          
+          for (const poItem of poToUpdate.items) {
+              const currentItem = inventory.find(invItem => invItem.id === poItem.itemId);
+              if (currentItem) {
+                  const newQuantity = currentItem.quantity + poItem.quantity;
+                  const { error } = await supabase
+                      .from('inventory')
+                      .update({ quantity: newQuantity })
+                      .eq('id', poItem.itemId);
+                  if (error) {
+                      console.error(`Failed to update inventory for item ${currentItem.name}:`, error);
+                  }
+              }
+          }
+          inventoryWasUpdated = true;
+      }
+      
+      const { data, error } = await supabase.from('purchaseOrders').update(update).eq('id', id).select().single();
+      if (error) throw error;
+      if (data) {
+          const updatedPOs = purchaseOrders.map(po => po.id === id ? data : po);
+          setPurchaseOrders(updatedPOs);
+
+          if (inventoryWasUpdated) {
+              const { data: refreshedInventory } = await supabase.from('inventory').select('*').eq('businessId', activeBusinessId);
+              if (refreshedInventory) setInventory(refreshedInventory);
+          }
+      }
+  };
+
+
   // Stubs for other functions
   const placeholder = async () => { console.warn("Function not implemented"); return { success: false } as any; };
   const placeholderArray = async () => { console.warn("Function not implemented"); return []; };
@@ -318,7 +381,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const filteredCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
   const filteredIngredientUnits = useMemo(() => ingredientUnits.filter(u => u.businessId === activeBusinessId), [ingredientUnits, activeBusinessId]);
   const filteredRecipeTemplates = useMemo(() => recipeTemplates.filter(t => t.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
-  const filteredPurchaseOrders = useMemo(() => purchaseOrders.filter(p => p.businessId === activeBusinessId), [purchaseOrders, activeBusinessId]);
+  const filteredPurchaseOrders = useMemo(() => purchaseOrders.filter(p => p.businessId === activeBusinessId).sort((a,b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()), [purchaseOrders, activeBusinessId]);
   const filteredSales = useMemo(() => sales.filter(s => s.businessId === activeBusinessId), [sales, activeBusinessId]);
 
 
@@ -374,8 +437,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     addRecipeTemplate: placeholder,
 
-    addPurchaseOrder: placeholder,
-    updatePurchaseOrderStatus: placeholder,
+    addPurchaseOrder,
+    updatePurchaseOrderStatus,
     addSale: placeholder,
 
     getInventoryItemById,

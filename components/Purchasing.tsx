@@ -24,6 +24,12 @@ type NewPOItem = {
     cost: number;
 };
 
+const getDefaultDueDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    return date.toISOString().split('T')[0];
+};
+
 const Purchasing: React.FC = () => {
     const { purchaseOrders, suppliers, inventory, getSupplierById, addPurchaseOrder, updatePurchaseOrderStatus } = useData();
     const { formatCurrency } = useCurrency();
@@ -35,15 +41,17 @@ const Purchasing: React.FC = () => {
     const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
     const [confirmationAction, setConfirmationAction] = useState<{ id: string, status: PurchaseOrder['status'] } | null>(null);
 
-    const [newPoData, setNewPoData] = useState<{ supplierId: string; items: NewPOItem[] }>({
+    const [newPoData, setNewPoData] = useState<{ supplierId: string; items: NewPOItem[], dueDate: string }>({
         supplierId: suppliers[0]?.id || '',
-        items: [{ itemId: null, quantity: 1, cost: 0 }]
+        items: [{ itemId: null, quantity: 1, cost: 0 }],
+        dueDate: getDefaultDueDate(),
     });
 
     const handleOpenFormModal = () => {
         setNewPoData({
             supplierId: suppliers.length > 0 ? suppliers[0].id : '',
-            items: [{ itemId: inventory.length > 0 ? inventory[0].id : null, quantity: 1, cost: inventory.length > 0 ? inventory[0].unitCost : 0 }]
+            items: [{ itemId: inventory.length > 0 ? inventory[0].id : null, quantity: 1, cost: inventory.length > 0 ? inventory[0].unitCost : 0 }],
+            dueDate: getDefaultDueDate()
         });
         setIsFormModalOpen(true);
     };
@@ -81,8 +89,8 @@ const Purchasing: React.FC = () => {
     };
 
     const handleSubmitNewPO = () => {
-        if (!newPoData.supplierId || newPoData.items.some(i => !i.itemId || i.quantity <= 0 || i.cost < 0)) {
-            alert('Please fill all fields correctly. Item quantities must be positive.');
+        if (!newPoData.supplierId || !newPoData.dueDate || newPoData.items.some(i => !i.itemId || i.quantity <= 0 || i.cost < 0)) {
+            alert('Please fill all fields correctly. Due date is required and item quantities must be positive.');
             return;
         }
 
@@ -94,7 +102,7 @@ const Purchasing: React.FC = () => {
                 cost: item.cost,
             }));
         
-        addPurchaseOrder({ supplierId: newPoData.supplierId, items: finalItems });
+        addPurchaseOrder({ supplierId: newPoData.supplierId, items: finalItems, dueDate: newPoData.dueDate });
         handleCloseFormModal();
     };
 
@@ -133,17 +141,26 @@ const Purchasing: React.FC = () => {
                                 <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">PO #</th>
                                 <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Supplier</th>
                                 <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Order Date</th>
+                                <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Due Date</th>
                                 <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Total</th>
                                 <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Status</th>
                                 <th className="p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {purchaseOrders.map(order => (
-                                <tr key={order.id} className="border-b border-border last:border-b-0 hover:bg-accent">
+                            {purchaseOrders.map(order => {
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const isOverdue = order.status === 'Pending' && order.dueDate && new Date(order.dueDate) < today;
+
+                                return (
+                                <tr key={order.id} className={`border-b border-border last:border-b-0 hover:bg-accent ${isOverdue ? 'bg-destructive/5' : ''}`}>
                                     <td data-label="PO #" className="p-4 font-medium text-primary whitespace-nowrap">#{order.id.slice(-6).toUpperCase()}</td>
                                     <td data-label="Supplier" className="p-4 text-foreground whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
                                     <td data-label="Order Date" className="p-4 text-muted-foreground whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
+                                    <td data-label="Due Date" className={`p-4 text-muted-foreground whitespace-nowrap ${isOverdue ? 'font-bold text-destructive' : ''}`}>
+                                        {order.dueDate ? new Date(order.dueDate).toLocaleDateString() : 'N/A'}
+                                    </td>
                                     <td data-label="Total" className="p-4 text-muted-foreground whitespace-nowrap">{formatCurrency(order.totalCost)}</td>
                                     <td data-label="Status" className="p-4"><StatusBadge status={order.status} /></td>
                                     <td data-label="Actions" className="p-4">
@@ -158,7 +175,7 @@ const Purchasing: React.FC = () => {
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                            )})}
                         </tbody>
                     </table>
                     {purchaseOrders.length === 0 && (
@@ -172,16 +189,29 @@ const Purchasing: React.FC = () => {
 
             <Modal isOpen={isFormModalOpen} onClose={handleCloseFormModal} title="Create New Purchase Order">
                 <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-foreground">Supplier</label>
-                        <select
-                            value={newPoData.supplierId}
-                            onChange={(e) => setNewPoData({ ...newPoData, supplierId: e.target.value })}
-                            className="w-full mt-1 border rounded-md p-2 bg-background border-input focus:ring-1 focus:ring-ring"
-                        >
-                            {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
-                        </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-foreground">Supplier</label>
+                            <select
+                                value={newPoData.supplierId}
+                                onChange={(e) => setNewPoData({ ...newPoData, supplierId: e.target.value })}
+                                className="w-full mt-1 border rounded-md p-2 bg-background border-input focus:ring-1 focus:ring-ring"
+                            >
+                                {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="dueDate" className="block text-sm font-medium text-foreground">Due Date</label>
+                            <input
+                                type="date"
+                                id="dueDate"
+                                value={newPoData.dueDate}
+                                onChange={(e) => setNewPoData({ ...newPoData, dueDate: e.target.value })}
+                                className="w-full mt-1 border rounded-md p-2 bg-background border-input focus:ring-1 focus:ring-ring"
+                            />
+                        </div>
                     </div>
+
                     <div>
                         <h4 className="text-sm font-medium mb-2">Items</h4>
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
@@ -218,6 +248,7 @@ const Purchasing: React.FC = () => {
                     <div className="space-y-4">
                         <p><strong>Supplier:</strong> {getSupplierById(selectedOrder.supplierId)?.name}</p>
                         <p><strong>Order Date:</strong> {new Date(selectedOrder.orderDate).toLocaleDateString()}</p>
+                        {selectedOrder.dueDate && <p><strong>Due Date:</strong> {new Date(selectedOrder.dueDate).toLocaleDateString()}</p>}
                         <p><strong>Status:</strong> <StatusBadge status={selectedOrder.status} /></p>
                         {selectedOrder.completionDate && <p><strong>Completion Date:</strong> {new Date(selectedOrder.completionDate).toLocaleDateString()}</p>}
                         <h4 className="font-semibold pt-2 border-t border-border">Items</h4>
