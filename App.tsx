@@ -10,7 +10,7 @@ import { Menu as MenuIcon, ChefHat, LoaderCircle, CheckCircle } from 'lucide-rea
 import { useData } from './hooks/useDataContext';
 import Card from './components/common/Card';
 import { AuthProvider, useAuth } from './hooks/useAuthContext';
-import AuthPage from './components/AuthPage';
+
 
 // Lazy-load page components for better performance
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -174,10 +174,7 @@ const AppContainer: React.FC = () => {
         return <GlobalLoading />;
     }
 
-    if (!session) {
-        return <AuthPage />;
-    }
-
+    // With a mocked auth context, session will always exist, so AuthPage is no longer needed.
     return (
         <DataProvider>
             <CurrencyProvider>

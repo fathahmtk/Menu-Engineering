@@ -1,11 +1,18 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { supabase } from '../services/supabaseClient';
-import type { Session, User } from '@supabase/supabase-js';
+
+// Mock types to avoid importing from Supabase
+interface MockUser {
+  id: string;
+  email?: string;
+}
+interface MockSession {
+  user: MockUser | null;
+}
 
 interface AuthContextType {
-  session: Session | null;
-  user: User | null;
+  session: MockSession | null;
+  user: MockUser | null;
   signOut: () => void;
   loading: boolean;
 }
@@ -13,41 +20,21 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const mockUser: MockUser = { id: 'mock-user-123', email: 'user@example.com' };
+  const mockSession: MockSession = { user: mockUser };
 
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
-    );
-
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, []);
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const signOut = () => {
+    console.log("Signing out... (mocked)");
+    // This is a mock function. In a real scenario, this would clear the session.
+    // For this app, we'll keep the user logged in to allow continued use.
+    alert("Sign out is disabled in this version.");
   };
 
   const value = {
-    session,
-    user,
+    session: mockSession,
+    user: mockUser,
     signOut,
-    loading,
+    loading: false, // Set to false as authentication is now instant.
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
