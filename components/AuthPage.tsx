@@ -13,12 +13,14 @@ const AuthPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [isConfigError, setIsConfigError] = useState(false);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setMessage(null);
+    setIsConfigError(false);
 
     try {
       if (isLogin) {
@@ -30,7 +32,13 @@ const AuthPage: React.FC = () => {
         setMessage('Check your email for the confirmation link!');
       }
     } catch (error: any) {
-      setError(error.error_description || error.message);
+      if (error.message === 'Failed to fetch') {
+        setError('Could not connect to the authentication service. Please check your network connection and Supabase configuration.');
+        setIsConfigError(true);
+      } else {
+        setError(error.error_description || error.message);
+        setIsConfigError(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -41,6 +49,7 @@ const AuthPage: React.FC = () => {
     setLoading(true);
     setError(null);
     setMessage(null);
+    setIsConfigError(false);
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -49,7 +58,13 @@ const AuthPage: React.FC = () => {
       if (error) throw error;
       setMessage('Password reset link sent. Please check your email inbox.');
     } catch (error: any) {
-      setError(error.error_description || error.message);
+      if (error.message === 'Failed to fetch') {
+        setError('Could not connect to the authentication service. Please check your network connection and Supabase configuration.');
+        setIsConfigError(true);
+      } else {
+        setError(error.error_description || error.message);
+        setIsConfigError(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -60,12 +75,14 @@ const AuthPage: React.FC = () => {
     setError(null);
     setMessage(null);
     setPassword('');
+    setIsConfigError(false);
   };
   
   const toggleLoginMode = () => {
     setIsLogin(!isLogin);
     setError(null);
     setMessage(null);
+    setIsConfigError(false);
   }
 
   const headerText = 
@@ -81,6 +98,18 @@ const AuthPage: React.FC = () => {
             <h1 className="text-3xl font-bold mt-4 text-foreground">F&B Costing Pro</h1>
             <p className="text-muted-foreground mt-2">{headerText}</p>
         </div>
+
+        {isConfigError && (
+          <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded-md my-4 text-sm" role="alert">
+            <p className="font-bold">Configuration Issue</p>
+            <p className="mt-1">Could not connect to the backend. This usually means the Supabase project is not set up correctly.</p>
+            <ol className="list-decimal list-inside mt-2 space-y-1">
+              <li>Make sure your Supabase project is running.</li>
+              <li>Verify the URL and anon key in <strong>services/supabaseClient.ts</strong> are correct.</li>
+              <li>Ensure this app's domain is listed in your Supabase project's CORS settings under Authentication &gt; URL Configuration.</li>
+            </ol>
+          </div>
+        )}
 
         {authView === 'credentials' ? (
           <form onSubmit={handleAuth} className="bg-card p-8 rounded-xl shadow-lg border border-border space-y-6">
@@ -103,7 +132,7 @@ const AuthPage: React.FC = () => {
               </div>
             )}
             
-            {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</p>}
+            {error && !isConfigError && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</p>}
             {message && <p className="text-sm text-primary bg-primary/10 p-3 rounded-md">{message}</p>}
 
             <div>
@@ -122,7 +151,7 @@ const AuthPage: React.FC = () => {
               </div>
             </div>
 
-            {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</p>}
+            {error && !isConfigError && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</p>}
             {message && <p className="text-sm text-primary bg-primary/10 p-3 rounded-md">{message}</p>}
 
             <div>
