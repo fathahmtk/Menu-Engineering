@@ -29,14 +29,18 @@ export interface InventoryItem {
   supplierId: string;
   lowStockThreshold: number;
   businessId: string;
-  yieldPercentage?: number;
+  yieldPercentage?: number; // Trim/peel yield
 }
 
+export type IngredientType = 'item' | 'recipe';
+
 export interface Ingredient {
-  itemId: string;
+  id: string; // Unique ID for the ingredient entry itself
+  type: IngredientType;
+  itemId: string; // ID of either InventoryItem or Recipe
   quantity: number;
   unit: string;
-  prepWastePercentage?: number;
+  yieldPercentage?: number; // Preparation yield
 }
 
 export interface Recipe {
@@ -50,6 +54,8 @@ export interface Recipe {
   costHistory?: { date: string; cost: number }[];
   businessId: string;
   imageUrl?: string;
+  productionYield?: number; // How much this recipe produces
+  productionUnit?: string; // e.g., kg, L, portion
 }
 
 export interface MenuItem {
@@ -70,6 +76,15 @@ export interface RecipeCategory {
 export interface IngredientUnit {
   id: string;
   name: string;
+  businessId: string;
+}
+
+export interface UnitConversion {
+  id: string;
+  fromUnit: string;
+  toUnit: string;
+  factor: number;
+  itemId?: string; // For item-specific conversions
   businessId: string;
 }
 
@@ -170,6 +185,7 @@ export interface DataContextType {
   recipeTemplates: RecipeTemplate[];
   purchaseOrders: PurchaseOrder[];
   sales: Sale[];
+  unitConversions: UnitConversion[];
   
   // CRUD Operations
   addSupplier: (supplier: Omit<Supplier, 'id' | 'businessId'>) => Promise<void>;
@@ -205,6 +221,10 @@ export interface DataContextType {
   updateUnit: (id: string, name: string) => Promise<void>;
   deleteUnit: (id: string) => Promise<{ success: boolean; message?: string }>;
 
+  addUnitConversion: (conversion: Omit<UnitConversion, 'id' | 'businessId'>) => Promise<void>;
+  updateUnitConversion: (conversion: UnitConversion) => Promise<void>;
+  deleteUnitConversion: (id: string) => Promise<void>;
+
   addRecipeTemplate: (template: Omit<RecipeTemplate, 'id' | 'businessId'>) => Promise<void>;
 
   addPurchaseOrder: (po: { supplierId: string; items: PurchaseOrderItem[]; dueDate?: string; }) => Promise<void>;
@@ -216,5 +236,5 @@ export interface DataContextType {
   getRecipeById: (id: string) => Recipe | undefined;
   getSupplierById: (id: string) => Supplier | undefined;
   calculateRecipeCost: (recipe: Recipe | null) => number;
-  getConversionFactor: (fromUnit: Ingredient['unit'], toUnit: InventoryItem['unit']) => number | null;
+  getConversionFactor: (fromUnit: string, toUnit: string, itemId: string | null) => number | null;
 }

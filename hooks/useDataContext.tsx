@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem, IngredientUnit, DataContextType, PurchaseOrderItem } from '../types';
-import { mockBusinesses, mockSuppliers, mockInventory, mockRecipes, mockMenuItems, mockCategories, mockIngredientUnits, mockPurchaseOrders, mockSales, mockRecipeTemplates } from './mockData';
+import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem, IngredientUnit, DataContextType, PurchaseOrderItem, UnitConversion } from '../types';
+import { mockBusinesses, mockSuppliers, mockInventory, mockRecipes, mockMenuItems, mockCategories, mockIngredientUnits, mockPurchaseOrders, mockSales, mockRecipeTemplates, mockUnitConversions } from './mockData';
 import { AlertTriangle } from 'lucide-react';
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -24,6 +24,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
   const [categories, setCategories] = useState<RecipeCategory[]>(mockCategories);
   const [ingredientUnits, setIngredientUnits] = useState<IngredientUnit[]>(mockIngredientUnits);
+  const [unitConversions, setUnitConversions] = useState<UnitConversion[]>(mockUnitConversions);
   const [recipeTemplates, setRecipeTemplates] = useState<RecipeTemplate[]>(mockRecipeTemplates);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(mockPurchaseOrders);
   const [sales, setSales] = useState<Sale[]>(mockSales);
@@ -71,46 +72,108 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const getRecipeById = useCallback((id: string) => recipes.find(r => r.id === id), [recipes]);
   const getSupplierById = useCallback((id: string) => suppliers.find(s => s.id === id), [suppliers]);
   
-  const getConversionFactor = useCallback((fromUnit: Ingredient['unit'], toUnit: InventoryItem['unit']): number | null => {
-      if (fromUnit.toLowerCase() === toUnit.toLowerCase()) return 1;
-      const conversions: { [key: string]: { [key: string]: number } } = {
-          'kg': { 'g': 1000 }, 'g': { 'kg': 0.001 },
-          'l': { 'ml': 1000 }, 'ml': { 'l': 0.001 },
-          'dozen': { 'unit': 12 }, 'unit': { 'dozen': 1 / 12 },
-      };
+  const getConversionFactor = useCallback((fromUnit: string, toUnit: string, itemId: string | null): number | null => {
       const from = fromUnit.toLowerCase();
       const to = toUnit.toLowerCase();
-      return conversions[from]?.[to] || null;
-  }, []);
+      if (from === to) return 1;
 
+      // 1. Check for item-specific conversions
+      if(itemId) {
+        const specificConversion = unitConversions.find(c => 
+          c.itemId === itemId && 
+          ((c.fromUnit.toLowerCase() === from && c.toUnit.toLowerCase() === to) || 
+           (c.fromUnit.toLowerCase() === to && c.toUnit.toLowerCase() === from))
+        );
+        if (specificConversion) {
+          return specificConversion.fromUnit.toLowerCase() === from ? specificConversion.factor : 1 / specificConversion.factor;
+        }
+      }
+
+      // 2. Check for generic conversions
+      const genericConversion = unitConversions.find(c =>
+        !c.itemId &&
+         ((c.fromUnit.toLowerCase() === from && c.toUnit.toLowerCase() === to) || 
+           (c.fromUnit.toLowerCase() === to && c.toUnit.toLowerCase() === from))
+      );
+       if (genericConversion) {
+          return genericConversion.fromUnit.toLowerCase() === from ? genericConversion.factor : 1 / genericConversion.factor;
+       }
+      
+      // 3. Fallback to hardcoded metric conversions
+      const hardcodedConversions: { [key: string]: { [key: string]: number } } = {
+          'kg': { 'g': 1000, 'lb': 2.20462, 'oz': 35.274 },
+          'g': { 'kg': 0.001, 'oz': 0.035274 },
+          'lb': { 'kg': 0.453592, 'g': 453.592, 'oz': 16 },
+          'oz': { 'g': 28.3495, 'kg': 0.02835, 'lb': 0.0625 },
+          'l': { 'ml': 1000, 'gal': 0.264172 },
+          'ml': { 'l': 0.001 },
+          'gal': { 'l': 3.78541 },
+          'dozen': { 'unit': 12 }, 'unit': { 'dozen': 1 / 12 },
+      };
+      
+      if (hardcodedConversions[from]?.[to]) return hardcodedConversions[from][to];
+      if (hardcodedConversions[to]?.[from]) return 1 / hardcodedConversions[to][from];
+      
+      return null;
+  }, [unitConversions]);
+  
   const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
     if (!recipe) return 0;
-    return recipe.ingredients.reduce((total, ingredient) => {
-        const item = getInventoryItemById(ingredient.itemId);
-        if (!item) return total;
-        
-        const costConversionFactor = getConversionFactor(ingredient.unit, item.unit) || 1;
-        
-        // New logic for yield and waste
-        const yieldFactor = (item.yieldPercentage || 100) / 100;
-        const wasteFactor = 1 - ((ingredient.prepWastePercentage || 0) / 100);
-        
+    
+    const visitedRecipes = new Set<string>();
+
+    const calculateCostRecursive = (currentRecipe: Recipe): number => {
+      if (visitedRecipes.has(currentRecipe.id)) {
+        console.error(`Circular dependency detected in recipe: ${currentRecipe.name}`);
+        return 0;
+      }
+      visitedRecipes.add(currentRecipe.id);
+
+      const total = currentRecipe.ingredients.reduce((total, ingredient) => {
         let ingredientCost = 0;
-        if (yieldFactor > 0 && wasteFactor > 0) {
-            // Adjust unit cost based on yield (As-Purchased cost vs Edible-Portion cost)
-            const trueUnitCost = item.unitCost / yieldFactor;
-            // Adjust quantity needed based on prep waste
-            const requiredQuantity = ingredient.quantity / wasteFactor;
+        
+        if (ingredient.type === 'item') {
+            const item = getInventoryItemById(ingredient.itemId);
+            if (!item) return total;
             
-            ingredientCost = trueUnitCost * requiredQuantity * costConversionFactor;
-        } else {
-            // Fallback for invalid percentages
-            ingredientCost = item.unitCost * ingredient.quantity * costConversionFactor;
+            const costConversionFactor = getConversionFactor(ingredient.unit, item.unit, item.id) || 1;
+            
+            const trimYieldFactor = (item.yieldPercentage || 100) / 100;
+            const prepYieldFactor = (ingredient.yieldPercentage || 100) / 100;
+            
+            if (trimYieldFactor > 0 && prepYieldFactor > 0) {
+                const ediblePortionCost = item.unitCost / trimYieldFactor;
+                const requiredQuantity = ingredient.quantity / prepYieldFactor;
+                ingredientCost = ediblePortionCost * requiredQuantity * costConversionFactor;
+            }
+        } else { // type === 'recipe'
+            const subRecipe = recipes.find(r => r.id === ingredient.itemId);
+            if (!subRecipe || !subRecipe.productionYield || !subRecipe.productionUnit) {
+                console.warn(`Sub-recipe "${subRecipe?.name}" is not configured correctly for costing.`);
+                return total;
+            }
+
+            const subRecipeTotalCost = calculateCostRecursive(subRecipe);
+            const costPerProductionUnit = subRecipeTotalCost / subRecipe.productionYield;
+            
+            const conversionFactor = getConversionFactor(ingredient.unit, subRecipe.productionUnit, null) || 1;
+            
+            const subRecipeCostInRecipe = costPerProductionUnit * ingredient.quantity * conversionFactor;
+            
+            const prepYieldFactor = (ingredient.yieldPercentage || 100) / 100;
+            ingredientCost = prepYieldFactor > 0 ? subRecipeCostInRecipe / prepYieldFactor : subRecipeCostInRecipe;
         }
 
         return total + ingredientCost;
-    }, 0);
-  }, [getInventoryItemById, getConversionFactor]);
+      }, 0);
+
+      visitedRecipes.delete(currentRecipe.id);
+      return total;
+    };
+    
+    return calculateCostRecursive(recipe);
+}, [getInventoryItemById, getConversionFactor, recipes]);
+
 
   const filteredSuppliers = useMemo(() => suppliers.filter(s => s.businessId === activeBusinessId), [suppliers, activeBusinessId]);
   const filteredInventory = useMemo(() => inventory.filter(i => i.businessId === activeBusinessId), [inventory, activeBusinessId]);
@@ -118,6 +181,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const filteredMenuItems = useMemo(() => menuItems.filter(m => m.businessId === activeBusinessId), [menuItems, activeBusinessId]);
   const filteredCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
   const filteredIngredientUnits = useMemo(() => ingredientUnits.filter(u => u.businessId === activeBusinessId), [ingredientUnits, activeBusinessId]);
+  const filteredUnitConversions = useMemo(() => unitConversions.filter(uc => uc.businessId === activeBusinessId), [unitConversions, activeBusinessId]);
   const filteredRecipeTemplates = useMemo(() => recipeTemplates.filter(t => t.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
   const filteredPurchaseOrders = useMemo(() => purchaseOrders.filter(p => p.businessId === activeBusinessId).sort((a,b) => (b.poNumber || '').localeCompare(a.poNumber || '')), [purchaseOrders, activeBusinessId]);
   const filteredSales = useMemo(() => sales.filter(s => s.businessId === activeBusinessId), [sales, activeBusinessId]);
@@ -196,7 +260,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const usedItemIds = new Set<string>();
     recipes.forEach(recipe => recipe.ingredients.forEach(ingredient => {
-        if (itemIdsSet.has(ingredient.itemId)) usedItemIds.add(ingredient.itemId);
+        if (ingredient.type === 'item' && itemIdsSet.has(ingredient.itemId)) usedItemIds.add(ingredient.itemId);
     }));
 
     const successfulIdsToDelete = itemIds.filter(id => !usedItemIds.has(id));
@@ -225,8 +289,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setRecipes(prev => prev.map(r => r.id === recipe.id ? recipe : r));
   };
   const deleteRecipe = async (id: string) => {
-      const isUsed = menuItems.some(m => m.recipeId === id);
-      if (isUsed) return { success: false, message: 'Cannot delete recipe. It is currently on a menu.' };
+      const isUsedOnMenu = menuItems.some(m => m.recipeId === id);
+      if (isUsedOnMenu) return { success: false, message: 'Cannot delete recipe. It is currently on a menu.' };
+
+      const isUsedAsSubRecipe = recipes.some(r => r.ingredients.some(i => i.type === 'recipe' && i.itemId === id));
+      if (isUsedAsSubRecipe) return { success: false, message: 'Cannot delete recipe. It is being used as a sub-recipe in another recipe.' };
 
       setRecipes(prev => prev.filter(r => r.id !== id));
       return { success: true };
@@ -330,6 +397,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { success: true };
   };
   
+  const addUnitConversion = async (conversion: Omit<UnitConversion, 'id' | 'businessId'>) => {
+    if(!activeBusinessId) return;
+    const newConversion = { ...conversion, id: crypto.randomUUID(), businessId: activeBusinessId };
+    setUnitConversions(prev => [...prev, newConversion]);
+  };
+
+  const updateUnitConversion = async (conversion: UnitConversion) => {
+    setUnitConversions(prev => prev.map(uc => uc.id === conversion.id ? conversion : uc));
+  };
+
+  const deleteUnitConversion = async (id: string) => {
+    setUnitConversions(prev => prev.filter(uc => uc.id !== id));
+  };
+
   const addMenuItem = async (item: Omit<MenuItem, 'id' | 'businessId'>) => {
     if(!activeBusinessId) return;
     const newMenuItem = { ...item, id: crypto.randomUUID(), businessId: activeBusinessId };
@@ -446,12 +527,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (recipe) {
         for (const ingredient of recipe.ingredients) {
-          const invItem = inventoryMap.get(ingredient.itemId);
-          if (invItem) {
-            const conversionFactor = getConversionFactor(ingredient.unit, invItem.unit) || 1;
-            const quantityToDecrement = (ingredient.quantity / (recipe.servings || 1)) * item.quantity * conversionFactor;
-            invItem.quantity -= quantityToDecrement;
-          }
+            if (ingredient.type === 'item') {
+                const invItem = inventoryMap.get(ingredient.itemId);
+                if (invItem) {
+                    const conversionFactor = getConversionFactor(ingredient.unit, invItem.unit, invItem.id) || 1;
+                    const quantityToDecrement = (ingredient.quantity / (recipe.servings || 1)) * item.quantity * conversionFactor;
+                    invItem.quantity -= quantityToDecrement;
+                }
+            }
         }
       }
 
@@ -488,6 +571,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     menuItems: filteredMenuItems,
     categories: filteredCategories,
     ingredientUnits: filteredIngredientUnits,
+    unitConversions: filteredUnitConversions,
     recipeTemplates: filteredRecipeTemplates,
     purchaseOrders: filteredPurchaseOrders,
     sales: filteredSales,
@@ -524,6 +608,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addUnit,
     updateUnit,
     deleteUnit,
+
+    addUnitConversion,
+    updateUnitConversion,
+    deleteUnitConversion,
 
     addRecipeTemplate,
 

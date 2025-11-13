@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card';
 import { useData } from '../hooks/useDataContext';
 import { useAuth } from '../hooks/useAuthContext';
@@ -6,7 +6,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useCurrency } from '../hooks/useCurrencyContext';
 import { useNotification } from '../hooks/useNotificationContext';
-import { Business, RecipeCategory, IngredientUnit } from '../types';
+import { Business, RecipeCategory, IngredientUnit, UnitConversion } from '../types';
 import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { Edit3, Trash2, Sun, Moon, AlertTriangle, Building, Settings as SettingsIcon, Database, List } from 'lucide-react';
@@ -234,7 +234,7 @@ const DataManagementTab: React.FC<{onExport: ()=>void, onReset: ()=>void}> = ({o
 );
 
 const ManageListsTab: React.FC = () => {
-    const { categories, addCategory, updateCategory, deleteCategory, ingredientUnits, addUnit, updateUnit, deleteUnit } = useData();
+    const { categories, addCategory, updateCategory, deleteCategory, ingredientUnits, addUnit, updateUnit, deleteUnit, unitConversions, addUnitConversion, deleteUnitConversion, inventory } = useData();
     const { addNotification } = useNotification();
 
     const [newCategoryName, setNewCategoryName] = useState('');
@@ -242,6 +242,8 @@ const ManageListsTab: React.FC = () => {
     
     const [newUnitName, setNewUnitName] = useState('');
     const [editingUnit, setEditingUnit] = useState<IngredientUnit | null>(null);
+
+    const [newConversion, setNewConversion] = useState<Omit<UnitConversion, 'id' | 'businessId'>>({ fromUnit: '', toUnit: '', factor: 1, itemId: undefined });
 
     const handleAddCategory = async () => {
         if (newCategoryName.trim()) {
@@ -287,9 +289,52 @@ const ManageListsTab: React.FC = () => {
         else addNotification('Unit deleted.', 'success');
     };
 
+    const handleAddConversion = async () => {
+        if (newConversion.fromUnit.trim() && newConversion.toUnit.trim() && newConversion.factor > 0) {
+            await addUnitConversion(newConversion);
+            addNotification('Conversion added!', 'success');
+            setNewConversion({ fromUnit: '', toUnit: '', factor: 1, itemId: undefined });
+        } else {
+            addNotification('Please fill all conversion fields correctly.', 'error');
+        }
+    };
+
+    const allUnits = useMemo(() => {
+        const customUnits = ingredientUnits.map(u => u.name);
+        return [...new Set(['kg', 'g', 'L', 'ml', 'unit', 'dozen', 'lb', 'oz', 'gal', ...customUnits])];
+    }, [ingredientUnits]);
+
     return (
         <div className="space-y-8">
             <h3 className="text-xl font-bold">Manage Lists</h3>
+            {/* Unit Conversions */}
+            <div>
+                <h4 className="font-semibold mb-2">Unit Conversions</h4>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3 p-3 bg-[var(--color-input)] rounded-lg">
+                    <input type="text" value={newConversion.fromUnit} onChange={(e) => setNewConversion(p=>({...p, fromUnit: e.target.value}))} placeholder="From Unit (e.g., case)" className="ican-input" list="units-list"/>
+                    <input type="text" value={newConversion.toUnit} onChange={(e) => setNewConversion(p=>({...p, toUnit: e.target.value}))} placeholder="To Unit (e.g., kg)" className="ican-input" list="units-list"/>
+                    <input type="number" value={newConversion.factor} onChange={(e) => setNewConversion(p=>({...p, factor: parseFloat(e.target.value) || 1}))} placeholder="Factor" className="ican-input" />
+                    <datalist id="units-list">{allUnits.map(u => <option key={u} value={u} />)}</datalist>
+                    <select value={newConversion.itemId || ''} onChange={(e) => setNewConversion(p=>({...p, itemId: e.target.value || undefined}))} className="ican-select">
+                        <option value="">Generic (All Items)</option>
+                        {inventory.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                    </select>
+                </div>
+                 <button onClick={handleAddConversion} className="ican-btn ican-btn-primary">Add Conversion</button>
+                <ul className="space-y-2 max-h-48 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-input)] mt-3">
+                    {unitConversions.map(conv => (
+                        <li key={conv.id} className="flex items-center justify-between p-2 hover:bg-[var(--color-border)] rounded">
+                            <span className="text-sm">
+                                1 {conv.fromUnit} = {conv.factor} {conv.toUnit}
+                                <span className="text-xs text-[var(--color-text-muted)] ml-2">
+                                    ({conv.itemId ? inventory.find(i=>i.id===conv.itemId)?.name || 'Specific Item' : 'Generic'})
+                                </span>
+                            </span>
+                             <button onClick={() => deleteUnitConversion(conv.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={16} /></button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
             {/* Recipe Categories */}
             <div>
                 <h4 className="font-semibold mb-2">Recipe Categories</h4>

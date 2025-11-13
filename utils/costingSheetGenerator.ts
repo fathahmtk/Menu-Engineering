@@ -1,4 +1,4 @@
-import { Recipe, Business } from '../types';
+import { Recipe, Business, IngredientType } from '../types';
 
 interface IngredientDetail {
     name: string;
@@ -6,8 +6,9 @@ interface IngredientDetail {
     unit: string;
     cost: number;
     percentage: number;
-    yieldPercentage: number;
-    prepWastePercentage: number;
+    trimYield: number;
+    prepYield: number;
+    type: IngredientType;
 }
 
 interface CostingSheetData {
@@ -51,8 +52,8 @@ export const generateCostingSheetSVG = ({
         <tr style="border-bottom: 1px solid #334155;">
             <td style="padding: 8px 12px; text-align: left;">${escapeHTML(ing.name)}</td>
             <td style="padding: 8px 12px; text-align: left;">${ing.quantity} ${escapeHTML(ing.unit)}</td>
-            <td style="padding: 8px 12px; text-align: right;">${ing.yieldPercentage}%</td>
-            <td style="padding: 8px 12px; text-align: right;">${ing.prepWastePercentage}%</td>
+            <td style="padding: 8px 12px; text-align: right;">${ing.type === 'item' ? `${ing.trimYield}%` : 'N/A'}</td>
+            <td style="padding: 8px 12px; text-align: right;">${ing.prepYield}%</td>
             <td style="padding: 8px 12px; text-align: right;">${formatCurrency(ing.cost)}</td>
             <td style="padding: 8px 12px; text-align: right;">${ing.percentage.toFixed(1)}%</td>
         </tr>
@@ -109,8 +110,8 @@ export const generateCostingSheetSVG = ({
                         <tr style="background-color: #334155;">
                             <th style="padding: 10px 12px; text-align: left; font-weight: 600; border-top-left-radius: 6px;">Ingredient</th>
                             <th style="padding: 10px 12px; text-align: left; font-weight: 600;">Quantity</th>
-                            <th style="padding: 10px 12px; text-align: right; font-weight: 600;">Yield %</th>
-                            <th style="padding: 10px 12px; text-align: right; font-weight: 600;">Waste %</th>
+                            <th style="padding: 10px 12px; text-align: right; font-weight: 600;">Trim Yield %</th>
+                            <th style="padding: 10px 12px; text-align: right; font-weight: 600;">Prep Yield %</th>
                             <th style="padding: 10px 12px; text-align: right; font-weight: 600;">True Cost</th>
                             <th style="padding: 10px 12px; text-align: right; font-weight: 600; border-top-right-radius: 6px;">Cost %</th>
                         </tr>

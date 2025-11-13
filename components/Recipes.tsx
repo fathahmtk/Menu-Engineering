@@ -5,7 +5,7 @@ import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
 import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download, Sparkles, Bot, Info, DollarSign } from 'lucide-react';
-import { Recipe, Ingredient, RecipeCategory, RecipeTemplate } from '../types';
+import { Recipe, Ingredient, RecipeCategory, RecipeTemplate, IngredientType } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import ActionsDropdown from './common/ActionsDropdown';
 import ImportModal from './common/ImportModal';
@@ -27,13 +27,15 @@ const RecipeFormModal: React.FC<{
     templates: RecipeTemplate[];
     initialData?: Partial<Omit<Recipe, 'id' | 'businessId'>>;
 }> = ({ isOpen, onClose, onSave, categories, templates, initialData }) => {
-    const { inventory, calculateRecipeCost, ingredientUnits } = useData();
+    const { inventory, recipes, calculateRecipeCost, ingredientUnits } = useData();
     const { formatCurrency } = useCurrency();
     const { settings } = useAppSettings();
     const [name, setName] = useState('');
     const [category, setCategory] = useState('');
     const [servings, setServings] = useState(1);
     const [targetSalePricePerServing, setTargetSalePrice] = useState(0);
+    const [productionYield, setProductionYield] = useState<number | undefined>();
+    const [productionUnit, setProductionUnit] = useState<string | undefined>('');
     const [instructions, setInstructions] = useState('');
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -42,8 +44,10 @@ const RecipeFormModal: React.FC<{
         return [...new Set([...DEFAULT_UNITS, ...ingredientUnits.map(u => u.name)])]
     }, [ingredientUnits]);
 
+    // Fix: initialData is for a new recipe and has no 'id'. There is no need to filter sub-recipes when creating a new recipe.
+    const subRecipes = useMemo(() => recipes, [recipes]);
+
     const recipeCost = useMemo(() => {
-        // We create a temporary recipe object to pass to the central calculation function
         const tempRecipe: Recipe = { id: '', name, category, servings, ingredients, instructions: [], businessId: '' };
         return calculateRecipeCost(tempRecipe);
     }, [ingredients, name, category, servings, calculateRecipeCost]);
@@ -57,6 +61,8 @@ const RecipeFormModal: React.FC<{
         setCategory(categories.length > 0 ? categories[0].name : '');
         setServings(1);
         setTargetSalePrice(0);
+        setProductionYield(undefined);
+        setProductionUnit('');
         setInstructions('');
         setIngredients([]);
         setErrors({});
@@ -69,6 +75,8 @@ const RecipeFormModal: React.FC<{
                 setCategory(initialData.category || (categories.length > 0 ? categories[0].name : ''));
                 setServings(initialData.servings || 1);
                 setTargetSalePrice(initialData.targetSalePricePerServing || 0);
+                setProductionYield(initialData.productionYield);
+                setProductionUnit(initialData.productionUnit);
                 setInstructions(initialData.instructions?.join('\n') || '');
                 setIngredients(initialData.ingredients || []);
                 setErrors({});
@@ -90,6 +98,8 @@ const RecipeFormModal: React.FC<{
         setCategory(recipeData.category);
         setServings(recipeData.servings);
         setTargetSalePrice(recipeData.targetSalePricePerServing || 0);
+        setProductionYield(recipeData.productionYield);
+        setProductionUnit(recipeData.productionUnit);
         setIngredients(recipeData.ingredients);
         setInstructions(recipeData.instructions.join('\n'));
     };
@@ -100,13 +110,18 @@ const RecipeFormModal: React.FC<{
 
     const handleAddIngredient = () => {
         if (inventory.length > 0) {
-            setIngredients([...ingredients, { itemId: inventory[0].id, quantity: 1, unit: 'g', prepWastePercentage: 0 }]);
+            setIngredients([...ingredients, { id: crypto.randomUUID(), type: 'item', itemId: inventory[0].id, quantity: 1, unit: 'g', yieldPercentage: 100 }]);
         }
     };
     
-    const handleIngredientChange = (index: number, field: keyof Ingredient, value: string | number) => {
+    const handleIngredientChange = (index: number, field: keyof Ingredient, value: any) => {
         const newIngredients = [...ingredients];
-        newIngredients[index] = { ...newIngredients[index], [field]: value };
+        if (field === 'itemId') {
+            const [type, id] = value.split('::');
+            newIngredients[index] = { ...newIngredients[index], type, itemId: id };
+        } else {
+            newIngredients[index] = { ...newIngredients[index], [field]: value };
+        }
         setIngredients(newIngredients);
     };
 
@@ -129,7 +144,7 @@ const RecipeFormModal: React.FC<{
 
         const instructionSteps = instructions.split('\n').filter(line => line.trim() !== '');
         
-        onSave({ name, category, servings, targetSalePricePerServing, ingredients, instructions: instructionSteps });
+        onSave({ name, category, servings, targetSalePricePerServing, productionYield, productionUnit, ingredients, instructions: instructionSteps });
         handleClose();
     };
 
@@ -181,19 +196,37 @@ const RecipeFormModal: React.FC<{
                     </div>
                 </div>
                 <div>
+                     <h4 className="text-sm font-medium text-[var(--color-text-muted)]">Production Details (for Sub-Recipes)</h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+                        <div>
+                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Production Yield</label>
+                            <input type="number" min="0" value={productionYield || ''} onChange={e => setProductionYield(parseFloat(e.target.value) || undefined)} className="ican-input mt-1" placeholder="e.g. 5" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Production Unit</label>
+                            <input type="text" value={productionUnit || ''} onChange={e => setProductionUnit(e.target.value)} className="ican-input mt-1" placeholder="e.g. kg, L" />
+                        </div>
+                    </div>
+                </div>
+                <div>
                     <h4 className="text-sm font-medium mb-2 text-[var(--color-text-muted)]">Ingredients</h4>
                     {errors.ingredients && <p className="text-[var(--color-danger)] text-xs mb-2">{errors.ingredients}</p>}
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                        {ingredients.map((ing, index) => (
-                           <div key={index} className="grid grid-cols-[1fr,80px,80px,80px,auto] gap-2 items-center">
-                               <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select">
-                                   {inventory.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                           <div key={ing.id} className="grid grid-cols-[1fr,80px,80px,80px,auto] gap-2 items-center">
+                               <select value={`${ing.type}::${ing.itemId}`} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select">
+                                   <optgroup label="Inventory Items">
+                                    {inventory.map(item => <option key={item.id} value={`item::${item.id}`}>{item.name}</option>)}
+                                   </optgroup>
+                                   <optgroup label="Sub-Recipes">
+                                     {subRecipes.map(item => <option key={item.id} value={`recipe::${item.id}`}>{item.name}</option>)}
+                                   </optgroup>
                                </select>
                                <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', parseFloat(e.target.value) || 0)} className="ican-input" placeholder="Qty"/>
                                <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="ican-select">
                                    {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                                </select>
-                               <input type="number" value={ing.prepWastePercentage || 0} onChange={e => handleIngredientChange(index, 'prepWastePercentage', parseFloat(e.target.value) || 0)} className="ican-input" placeholder="Waste %" title="Preparation Waste %"/>
+                               <input type="number" value={ing.yieldPercentage || 100} onChange={e => handleIngredientChange(index, 'yieldPercentage', parseFloat(e.target.value) || 0)} className="ican-input" placeholder="Yield %" title="Preparation Yield %"/>
                                <button onClick={() => handleRemoveIngredient(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)]"><X size={18} /></button>
                            </div>
                        ))}
@@ -240,7 +273,8 @@ const RecipeFormModal: React.FC<{
 };
 
 const Recipes: React.FC = () => {
-    const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes, businesses } = useData();
+    // Fix: Added getRecipeById to destructuring
+    const { recipes, getInventoryItemById, getRecipeById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes, businesses } = useData();
     const { formatCurrency } = useCurrency();
     const { addNotification } = useNotification();
     const { setIsDirty, promptNavigation } = useUnsavedChanges();
@@ -280,6 +314,8 @@ const Recipes: React.FC = () => {
             .filter(r => filterCategory === 'all' || r.category === filterCategory)
             .filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [recipes, filterCategory, searchTerm]);
+    
+    const subRecipes = useMemo(() => recipes.filter(r => r.id !== editedRecipe?.id), [recipes, editedRecipe]);
 
     const handleSelectRecipe = (recipe: Recipe) => {
         promptNavigation(() => {
@@ -420,13 +456,18 @@ const Recipes: React.FC = () => {
     const handleIngredientChange = (ingIndex: number, field: keyof Ingredient, value: string | number) => {
         if (!editedRecipe) return;
         const newIngredients = [...editedRecipe.ingredients];
-        newIngredients[ingIndex] = { ...newIngredients[ingIndex], [field]: value };
+        if (field === 'itemId') {
+            const [type, id] = (value as string).split('::');
+            newIngredients[ingIndex] = { ...newIngredients[ingIndex], type: type as IngredientType, itemId: id };
+        } else {
+          (newIngredients[ingIndex] as any)[field] = value;
+        }
         setEditedRecipe({ ...editedRecipe, ingredients: newIngredients });
     };
 
     const handleAddIngredientToRecipe = () => {
         if (!editedRecipe || inventory.length === 0) return;
-        const newIngredient: Ingredient = { itemId: inventory[0].id, quantity: 1, unit: 'unit', prepWastePercentage: 0 };
+        const newIngredient: Ingredient = { id: crypto.randomUUID(), type: 'item', itemId: inventory[0].id, quantity: 1, unit: 'unit', yieldPercentage: 100 };
         setEditedRecipe({ ...editedRecipe, ingredients: [...editedRecipe.ingredients, newIngredient] });
     };
 
@@ -565,6 +606,8 @@ const Recipes: React.FC = () => {
                     const recipe = recipesMap.get(recipeName.toLowerCase());
                     if (recipe) {
                          recipe.ingredients.push({
+                            id: crypto.randomUUID(),
+                            type: 'item',
                             itemId: itemId,
                             quantity: parseFloat(row.ingredientQuantity) || 0,
                             unit: row.ingredientUnit,
@@ -599,18 +642,28 @@ const Recipes: React.FC = () => {
         const totalCost = calculateRecipeCost(editedRecipe);
         
         const ingredientsWithDetails = editedRecipe.ingredients.map(ing => {
-            const item = getInventoryItemById(ing.itemId);
-            if (!item) return { name: 'Unknown', quantity: ing.quantity, unit: ing.unit, cost: 0, percentage: 0, yieldPercentage: 100, prepWastePercentage: 0 };
+            let item, name, trimYield = 100;
+            if (ing.type === 'item') {
+                item = getInventoryItemById(ing.itemId);
+                name = item?.name || 'Unknown Item';
+                trimYield = item?.yieldPercentage || 100;
+            } else {
+                item = getRecipeById(ing.itemId);
+                name = item?.name ? `(Sub-Recipe) ${item.name}` : 'Unknown Sub-Recipe';
+            }
+
+            if (!item) return { name: 'Unknown', quantity: ing.quantity, unit: ing.unit, cost: 0, percentage: 0, trimYield: 100, prepYield: 100, type: ing.type };
             const cost = calculateRecipeCost({ ...editedRecipe, ingredients: [ing] });
             const percentage = totalCost > 0 ? (cost / totalCost) * 100 : 0;
             return {
-                name: item.name,
+                name,
                 quantity: ing.quantity,
                 unit: ing.unit,
                 cost,
                 percentage,
-                yieldPercentage: item.yieldPercentage || 100,
-                prepWastePercentage: ing.prepWastePercentage || 0
+                trimYield,
+                prepYield: ing.yieldPercentage || 100,
+                type: ing.type,
             };
         });
 
@@ -668,11 +721,11 @@ const Recipes: React.FC = () => {
         setInitialRecipeData(undefined); // Reset on close
     };
 
-    const handleDetailChange = (field: 'servings' | 'targetSalePricePerServing', value: string) => {
+    const handleDetailChange = (field: keyof Recipe, value: string | number | undefined) => {
         if (!editedRecipe) return;
         setEditedRecipe({
             ...editedRecipe,
-            [field]: Math.max(0, parseFloat(value) || 0)
+            [field]: value
         });
     };
 
@@ -915,7 +968,6 @@ const Recipes: React.FC = () => {
                                 )}
                             </div>
                             
-                            {/* NEW: Interactive Costing Details Dashboard */}
                             <div className="bg-[var(--color-input)] p-4 rounded-lg border border-[var(--color-border)] mb-6">
                                 <h3 className="text-lg font-semibold mb-4 text-[var(--color-text-primary)]">Costing Details</h3>
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
@@ -947,15 +999,28 @@ const Recipes: React.FC = () => {
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <div>
                                         <label htmlFor="servings" className="block text-sm font-medium text-[var(--color-text-muted)]">Servings</label>
-                                        <input type="number" id="servings" value={editedRecipe.servings} onChange={(e) => handleDetailChange('servings', e.target.value)} min="1" className="ican-input mt-1" />
+                                        <input type="number" id="servings" value={editedRecipe.servings} onChange={(e) => handleDetailChange('servings', parseInt(e.target.value) || 0)} min="1" className="ican-input mt-1" />
                                      </div>
                                       <div>
                                         <label htmlFor="targetPrice" className="block text-sm font-medium text-[var(--color-text-muted)]">Target Sale Price</label>
                                         <div className="relative">
                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] text-sm">{useCurrency().currency}</span>
-                                           <input type="number" id="targetPrice" value={editedRecipe.targetSalePricePerServing || ''} onChange={(e) => handleDetailChange('targetSalePricePerServing', e.target.value)} min="0" step="0.01" className="ican-input mt-1 pl-10" />
+                                           <input type="number" id="targetPrice" value={editedRecipe.targetSalePricePerServing || ''} onChange={(e) => handleDetailChange('targetSalePricePerServing', parseFloat(e.target.value) || 0)} min="0" step="0.01" className="ican-input mt-1 pl-10" />
                                         </div>
                                      </div>
+                                 </div>
+                                 <div className="mt-4">
+                                     <h4 className="text-sm font-medium text-[var(--color-text-muted)]">Production Details (for Sub-Recipes)</h4>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+                                        <div>
+                                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Production Yield</label>
+                                            <input type="number" min="0" value={editedRecipe.productionYield || ''} onChange={(e) => handleDetailChange('productionYield', parseFloat(e.target.value) || undefined)} className="ican-input mt-1" placeholder="e.g. 5" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Production Unit</label>
+                                            <input type="text" value={editedRecipe.productionUnit || ''} onChange={(e) => handleDetailChange('productionUnit', e.target.value)} className="ican-input mt-1" placeholder="e.g. kg, L" />
+                                        </div>
+                                    </div>
                                  </div>
                             </div>
                             
@@ -975,20 +1040,25 @@ const Recipes: React.FC = () => {
                                     <span>Ingredient</span>
                                     <span>Quantity</span>
                                     <span>Unit</span>
-                                    <span>Waste %</span>
+                                    <span>Yield %</span>
                                     <span className="text-right">Cost</span>
                                     <span></span>
                                 </div>
                                 <div className="divide-y md:divide-y-0 divide-[var(--color-border)]">
                                     {editedRecipe.ingredients.map((ing, index) => {
-                                        const item = getInventoryItemById(ing.itemId);
+                                        const item = ing.type === 'item' ? getInventoryItemById(ing.itemId) : getRecipeById(ing.itemId);
                                         const ingredientCost = item ? calculateRecipeCost({ ...editedRecipe, ingredients: [ing] }) : 0;
                                         return (
-                                            <div key={`${ing.itemId}-${index}`} className={`p-3 md:p-2 md:grid md:grid-cols-[1fr,80px,80px,80px,80px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0 transition-colors`}>
+                                            <div key={ing.id} className={`p-3 md:p-2 md:grid md:grid-cols-[1fr,80px,80px,80px,80px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0 transition-colors`}>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Ingredient</label>
-                                                    <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select text-sm">
-                                                        {inventory.map(invItem => <option key={invItem.id} value={invItem.id}>{invItem.name}</option>)}
+                                                    <select value={`${ing.type}::${ing.itemId}`} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select text-sm">
+                                                       <optgroup label="Inventory Items">
+                                                        {inventory.map(invItem => <option key={invItem.id} value={`item::${invItem.id}`}>{invItem.name}</option>)}
+                                                       </optgroup>
+                                                       <optgroup label="Sub-Recipes">
+                                                         {subRecipes.map(rec => <option key={rec.id} value={`recipe::${rec.id}`}>{rec.name}</option>)}
+                                                       </optgroup>
                                                     </select>
                                                 </div>
                                                 <div>
@@ -1002,8 +1072,8 @@ const Recipes: React.FC = () => {
                                                     </select>
                                                 </div>
                                                  <div>
-                                                    <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Waste %</label>
-                                                    <input type="number" value={ing.prepWastePercentage || 0} min="0" max="99" onChange={e => handleIngredientChange(index, 'prepWastePercentage', parseFloat(e.target.value) || 0)} className="ican-input text-sm" title="Preparation Waste: loss from cooking, chopping, etc."/>
+                                                    <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Prep Yield %</label>
+                                                    <input type="number" value={ing.yieldPercentage || 100} min="0" max="100" onChange={e => handleIngredientChange(index, 'yieldPercentage', parseFloat(e.target.value) || 0)} className="ican-input text-sm" title="Preparation Yield: usable portion after cooking, chopping, etc."/>
                                                 </div>
                                                 <div className="flex justify-between items-center md:block md:text-right">
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Cost</label>

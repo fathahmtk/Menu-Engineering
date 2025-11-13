@@ -1,4 +1,4 @@
-import { Business, Supplier, InventoryItem, Recipe, MenuItem, RecipeCategory, IngredientUnit, PurchaseOrder, Sale, RecipeTemplate } from '../types';
+import { Business, Supplier, InventoryItem, Recipe, MenuItem, RecipeCategory, IngredientUnit, PurchaseOrder, Sale, RecipeTemplate, UnitConversion } from '../types';
 
 const MOCK_BUSINESS_ID = 'b1';
 
@@ -30,17 +30,30 @@ export const mockInventory: InventoryItem[] = [
 // Recipes for frozen products
 export const mockRecipes: Recipe[] = [
     { 
+        id: 'r4',
+        name: 'Samosa Filling (Batch)',
+        category: 'Sub-Recipes',
+        ingredients: [
+             { id: crypto.randomUUID(), type: 'item', itemId: 'i1', quantity: 10, unit: 'kg', yieldPercentage: 98 },  // Chicken Breast
+             { id: crypto.randomUUID(), type: 'item', itemId: 'i6', quantity: 5, unit: 'kg', yieldPercentage: 95 },   // Onions
+             { id: crypto.randomUUID(), type: 'item', itemId: 'i5', quantity: 0.5, unit: 'kg' }, // Cumin Powder
+        ],
+        servings: 1, // This is a batch recipe, so servings is 1
+        instructions: ['Cook chicken and onions with spices.', 'Let filling cool.'],
+        businessId: MOCK_BUSINESS_ID,
+        productionYield: 14, // Produces 14 kg of filling
+        productionUnit: 'kg',
+    },
+    { 
         id: 'r1', 
         name: 'Chicken Samosas (Production Batch)', 
         category: 'Frozen Snacks', 
         ingredients: [
-            { itemId: 'i1', quantity: 10, unit: 'kg', prepWastePercentage: 2 },  // Chicken Breast
-            { itemId: 'i6', quantity: 5, unit: 'kg', prepWastePercentage: 5 },   // Onions
-            { itemId: 'i5', quantity: 0.5, unit: 'kg' }, // Cumin Powder
-            { itemId: 'i3', quantity: 5, unit: 'box' },  // Samosa Pastry (5 boxes of 100 = 500 sheets)
+            { id: crypto.randomUUID(), type: 'recipe', itemId: 'r4', quantity: 14, unit: 'kg' }, // Use the sub-recipe
+            { id: crypto.randomUUID(), type: 'item', itemId: 'i3', quantity: 5, unit: 'box' },  // Samosa Pastry (5 boxes of 100 = 500 sheets)
         ],
         servings: 500, // Makes 500 individual samosas
-        instructions: ['Cook chicken and onions with spices.', 'Let filling cool.', 'Fold filling into samosa pastry sheets.', 'Flash freeze.', 'Package for sale.'],
+        instructions: ['Fold filling into samosa pastry sheets.', 'Flash freeze.', 'Package for sale.'],
         costHistory: [{ date: new Date().toISOString(), cost: 402.5 }],
         businessId: MOCK_BUSINESS_ID 
     },
@@ -49,9 +62,9 @@ export const mockRecipes: Recipe[] = [
         name: 'Lamb Kebabs (Production Batch)', 
         category: 'Frozen Meats', 
         ingredients: [
-            { itemId: 'i2', quantity: 20, unit: 'kg', prepWastePercentage: 4 }, // Lamb Mince
-            { itemId: 'i5', quantity: 1, unit: 'kg' },  // Cumin Powder
-            { itemId: 'i6', quantity: 4, unit: 'kg' },  // Onions
+            { id: crypto.randomUUID(), type: 'item', itemId: 'i2', quantity: 20, unit: 'kg', yieldPercentage: 96 }, // Lamb Mince
+            { id: crypto.randomUUID(), type: 'item', itemId: 'i5', quantity: 1, unit: 'kg' },  // Cumin Powder
+            { id: crypto.randomUUID(), type: 'item', itemId: 'i6', quantity: 4, unit: 'kg' },  // Onions
         ], 
         servings: 20, // Makes 20 packs of 1kg
         instructions: ['Mix lamb mince with spices and minced onions.', 'Form into kebab shapes.', 'Package into 1kg trays.', 'Flash freeze.'],
@@ -63,8 +76,8 @@ export const mockRecipes: Recipe[] = [
         name: 'Chicken Nuggets (Production Batch)', 
         category: 'Frozen Snacks', 
         ingredients: [
-            { itemId: 'i1', quantity: 15, unit: 'kg' }, // Chicken Breast
-            { itemId: 'i8', quantity: 5, unit: 'kg' },  // Breadcrumbs
+            { id: crypto.randomUUID(), type: 'item', itemId: 'i1', quantity: 15, unit: 'kg' }, // Chicken Breast
+            { id: crypto.randomUUID(), type: 'item', itemId: 'i8', quantity: 5, unit: 'kg' },  // Breadcrumbs
         ], 
         servings: 30, // Makes 30 packs of 500g
         instructions: ['Cut chicken into nugget shapes.', 'Coat with breadcrumbs.', 'Flash freeze.', 'Package into 500g bags.'],
@@ -84,11 +97,18 @@ export const mockMenuItems: MenuItem[] = [
 export const mockCategories: RecipeCategory[] = [
     { id: 'c1', name: 'Frozen Snacks', businessId: MOCK_BUSINESS_ID },
     { id: 'c2', name: 'Frozen Meats', businessId: MOCK_BUSINESS_ID },
-    { id: 'c3', name: 'Ready Meals', businessId: MOCK_BUSINESS_ID }
+    { id: 'c3', name: 'Ready Meals', businessId: MOCK_BUSINESS_ID },
+    { id: 'c4', name: 'Sub-Recipes', businessId: MOCK_BUSINESS_ID },
 ];
 
 export const mockIngredientUnits: IngredientUnit[] = [
     { id: 'u1', name: 'box', businessId: MOCK_BUSINESS_ID }
+];
+
+export const mockUnitConversions: UnitConversion[] = [
+    { id: 'uc1', fromUnit: 'box', toUnit: 'unit', factor: 100, itemId: 'i3', businessId: MOCK_BUSINESS_ID }, // Samosa pastry box
+    { id: 'uc2', fromUnit: 'kg', toUnit: 'g', factor: 1000, businessId: MOCK_BUSINESS_ID },
+    { id: 'uc3', fromUnit: 'L', toUnit: 'ml', factor: 1000, businessId: MOCK_BUSINESS_ID },
 ];
 
 export const mockRecipeTemplates: RecipeTemplate[] = [];

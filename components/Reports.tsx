@@ -36,7 +36,7 @@ const Reports: React.FC = () => {
     }).sort((a, b) => b.profit - a.profit);
     
 
-    const COLORS = ['#F97316', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899', '#64748B', '#0EA5E9'];
+    const COLORS = ['#06b6d4', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#64748B'];
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
