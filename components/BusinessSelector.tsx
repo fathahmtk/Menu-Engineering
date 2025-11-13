@@ -42,11 +42,11 @@ const BusinessSelector: React.FC = () => {
                     aria-expanded={isDropdownOpen}
                 >
                     <Building size={20} className="text-[var(--color-primary)]" />
-                    <span className="font-semibold text-[var(--color-text-primary)] hidden sm:inline">{activeBusiness.name}</span>
+                    <span className="font-semibold text-[var(--color-text-primary)] hidden md:inline">{activeBusiness.name}</span>
                     <ChevronDown size={16} className="text-[var(--color-text-muted)]" />
                 </button>
                 {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 sm:w-56 origin-top-right bg-[var(--color-card)] rounded-xl shadow-lg ring-1 ring-[var(--color-border)] z-50">
+                    <div className="absolute right-0 mt-2 w-48 md:w-56 origin-top-right bg-[var(--color-card)] rounded-xl shadow-lg ring-1 ring-[var(--color-border)] z-50">
                         <div className="py-1">
                             <div className="px-4 py-2 text-xs text-[var(--color-text-muted)] uppercase">Switch Business</div>
                             {businesses.map(business => (
@@ -104,8 +104,8 @@ const BusinessSelector: React.FC = () => {
                             </button>
                          </div>
                     </div>
-                     <div className="flex justify-end pt-4">
-                        <button onClick={() => setIsModalOpen(false)} className="ican-btn ican-btn-secondary">
+                     <div className="flex flex-col md:flex-row md:justify-end pt-4">
+                        <button onClick={() => setIsModalOpen(false)} className="ican-btn ican-btn-secondary w-full md:w-auto">
                             Close
                         </button>
                     </div>

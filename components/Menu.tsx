@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -161,9 +163,9 @@ const Menu: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Menu Engineering</h2>
-                    <button onClick={() => handleOpenModal()} className="ican-btn ican-btn-primary">
-                        <PlusCircle size={20} className="mr-2" />
-                        Add Menu Item
+                    <button onClick={() => handleOpenModal()} className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
+                        <PlusCircle size={20} className="md:mr-2" />
+                        <span className="hidden md:inline">Add Menu Item</span>
                     </button>
                 </div>
                 <table className="w-full text-left responsive-table">
@@ -189,12 +191,12 @@ const Menu: React.FC = () => {
                                     <td data-label="Classification" className="p-4"><ClassificationBadge classification={classification} /></td>
                                     <td data-label="Sales Count" className="p-4">
                                         {isEditing ? (
-                                            <div className="flex items-center space-x-2">
+                                            <div className="flex items-center space-x-2 w-full">
                                                 <input
                                                     type="number"
                                                     value={editedSales}
                                                     onChange={(e) => setEditedSales(parseInt(e.target.value) || 0)}
-                                                    className="ican-input w-20 py-1"
+                                                    className="ican-input w-full py-1"
                                                     autoFocus
                                                     min="0"
                                                 />
@@ -219,7 +221,7 @@ const Menu: React.FC = () => {
                                     </td>
                                     <td data-label="Food Cost %" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.foodCostPercentage.toFixed(1)}%</td>
                                     <td data-label="Actions" className="p-4">
-                                        <div className="flex items-center space-x-3">
+                                        <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
                                             <button onClick={() => handleOpenModal(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit size={20} /></button>
                                             <button onClick={() => handleDelete(item.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={20} /></button>
                                         </div>
@@ -246,7 +248,7 @@ const Menu: React.FC = () => {
                         </select>
                         {errors.recipeId && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.recipeId}</p>}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="salePrice" className="block text-sm font-medium text-[var(--color-text-muted)]">Sale Price</label>
                             <input type="number" name="salePrice" id="salePrice" value={formData.salePrice} onChange={handleChange} className={`ican-input mt-1 ${errors.salePrice ? 'border-[var(--color-danger)]' : ''}`} min="0" step="0.01" />
@@ -258,9 +260,9 @@ const Menu: React.FC = () => {
                             {errors.salesCount && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.salesCount}</p>}
                         </div>
                     </div>
-                    <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseModal} className="ican-btn ican-btn-secondary">Cancel</button>
-                        <button onClick={handleSubmit} className="ican-btn ican-btn-primary">Save Item</button>
+                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
+                        <button onClick={handleCloseModal} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+                        <button onClick={handleSubmit} className="ican-btn ican-btn-primary w-full md:w-auto">Save Item</button>
                     </div>
                 </div>
             </Modal>

@@ -29,16 +29,16 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <div className="flex items-start">
-        <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+        <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 md:mx-0 md:h-10 md:w-10">
           <AlertTriangle className="h-6 w-6 text-[var(--color-danger)]" aria-hidden="true" />
         </div>
-        <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+        <div className="mt-3 text-center md:mt-0 md:ml-4 md:text-left">
           <div className="mt-2">
             <p className="text-sm text-[var(--color-text-muted)]">{message}</p>
           </div>
         </div>
       </div>
-      <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+      <div className="mt-5 md:mt-4 md:flex md:flex-row-reverse">
         <button
           type="button"
           className={confirmButtonClass}
@@ -48,7 +48,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         </button>
         {cancelText && <button
           type="button"
-          className="ican-btn ican-btn-secondary mt-3 w-full sm:mt-0 sm:w-auto"
+          className="ican-btn ican-btn-secondary mt-3 w-full md:mt-0 md:w-auto"
           onClick={onClose}
         >
           {cancelText}

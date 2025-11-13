@@ -76,9 +76,9 @@ const OnboardingScreen: React.FC = () => {
         <div 
             className="flex items-center justify-center min-h-screen bg-cover bg-center p-4 bg-[var(--color-background)]"
         >
-            <div className="text-center w-full max-w-lg mx-auto z-10 p-8 sm:p-12 rounded-2xl shadow-2xl border border-black/5 bg-[var(--color-card)]" style={{ animation: 'slideUp 0.5s ease-out' }}>
+            <div className="text-center w-full max-w-md md:max-w-xl mx-auto z-10 p-8 md:p-12 rounded-2xl shadow-2xl border border-black/5 bg-[var(--color-card)]" style={{ animation: 'slideUp 0.5s ease-out' }}>
                 <ICanLogo />
-                <h1 className="text-3xl sm:text-4xl font-bold mt-4 text-[var(--color-text-primary)]">Welcome to iCAN</h1>
+                <h1 className="text-3xl md:text-4xl font-bold mt-4 text-[var(--color-text-primary)]">Welcome to iCAN</h1>
                 <h2 className="text-xl font-medium text-[var(--color-primary)]">F&B Intelligence Platform</h2>
                 <p className="text-[var(--color-text-secondary)] mt-4 mb-8 max-w-md mx-auto">
                     Centralize your operations. Manage inventory, recipes, and sales for all your business divisions in one powerful platform.
@@ -134,23 +134,23 @@ const AppContent: React.FC = () => {
                 setIsOpen={setIsSidebarOpen}
             />
             <main className="flex-1 flex flex-col h-screen">
-                <header className="bg-[var(--color-card)]/80 border-b border-[var(--color-border)] p-3 sm:p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
-                    <div className="flex items-center">
+                <header className="bg-[var(--color-card)]/80 border-b border-[var(--color-border)] p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
+                    <div className="flex items-center min-w-0">
                         <button 
-                            className="lg:hidden mr-2 sm:mr-4 text-[var(--color-text-muted)]"
+                            className="lg:hidden mr-2 md:mr-4 text-[var(--color-text-muted)]"
                             onClick={() => setIsSidebarOpen(true)}
                             aria-label="Open sidebar"
                         >
                             <MenuIcon size={24} />
                         </button>
-                        <h2 className="text-xl font-semibold text-[var(--color-text-primary)] hidden sm:block">{viewTitles[currentView]}</h2>
+                        <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)] truncate">{viewTitles[currentView]}</h2>
                     </div>
-                    <div className="flex items-center space-x-2 sm:space-x-4">
+                    <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
                         <BusinessSelector />
                         <CurrencySelector />
                     </div>
                 </header>
-                <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                <div className="flex-1 p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
                     <Suspense fallback={<GlobalLoading message="Loading Content..." />}>
                         <CurrentViewComponent />
                     </Suspense>

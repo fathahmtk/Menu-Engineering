@@ -2,6 +2,7 @@
 
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -131,9 +132,9 @@ const Purchasing: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Purchase Orders</h2>
-                    <button onClick={handleOpenFormModal} className="ican-btn ican-btn-primary">
-                        <PlusCircle size={20} className="mr-2" />
-                        Create PO
+                    <button onClick={handleOpenFormModal} className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
+                        <PlusCircle size={20} className="md:mr-2" />
+                        <span className="hidden md:inline">Create PO</span>
                     </button>
                 </div>
                 <div className="overflow-x-auto md:overflow-visible">
@@ -166,7 +167,7 @@ const Purchasing: React.FC = () => {
                                     <td data-label="Total" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(order.totalCost)}</td>
                                     <td data-label="Status" className="p-4"><StatusBadge status={order.status} /></td>
                                     <td data-label="Actions" className="p-4">
-                                        <div className="flex items-center space-x-3">
+                                        <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
                                             <button onClick={() => handleViewDetails(order)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" title="View Details"><Eye size={20} /></button>
                                             {order.status === 'Pending' && (
                                                 <>
@@ -191,7 +192,7 @@ const Purchasing: React.FC = () => {
 
             <Modal isOpen={isFormModalOpen} onClose={handleCloseFormModal} title="Create New Purchase Order">
                 <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-[var(--color-text-muted)]">Supplier</label>
                             <select
@@ -218,7 +219,7 @@ const Purchasing: React.FC = () => {
                         <h4 className="text-sm font-medium mb-2 text-[var(--color-text-muted)]">Items</h4>
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                             {newPoData.items.map((item, index) => (
-                                <div key={index} className="flex flex-col sm:grid sm:grid-cols-[1fr,80px,100px,auto] gap-2 sm:items-center border border-transparent sm:border-0 rounded-md p-2 sm:p-0">
+                                <div key={index} className="flex flex-col md:grid md:grid-cols-[1fr,80px,100px,auto] gap-2 md:items-center border border-transparent md:border-0 rounded-md p-2 md:p-0">
                                     <select
                                         value={item.itemId || ''}
                                         onChange={(e) => handleItemChange(index, 'itemId', e.target.value)}
@@ -229,7 +230,7 @@ const Purchasing: React.FC = () => {
                                     </select>
                                     <input type="number" placeholder="Qty" value={item.quantity} min="1" onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="ican-input" />
                                     <input type="number" placeholder="Cost" value={item.cost} min="0" step="0.01" onChange={(e) => handleItemChange(index, 'cost', e.target.value)} className="ican-input" />
-                                    <button onClick={() => handleRemoveItem(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)] sm:justify-self-center"><Trash2 size={18} /></button>
+                                    <button onClick={() => handleRemoveItem(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)] md:justify-self-center"><Trash2 size={18} /></button>
                                 </div>
                             ))}
                         </div>
@@ -238,9 +239,9 @@ const Purchasing: React.FC = () => {
                     <div className="text-right font-bold text-lg pt-4 border-t border-[var(--color-border)]">
                         Total: {formatCurrency(newPoTotal)}
                     </div>
-                    <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseFormModal} className="ican-btn ican-btn-secondary">Cancel</button>
-                        <button onClick={handleSubmitNewPO} className="ican-btn ican-btn-primary">Create Order</button>
+                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
+                        <button onClick={handleCloseFormModal} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+                        <button onClick={handleSubmitNewPO} className="ican-btn ican-btn-primary w-full md:w-auto">Create Order</button>
                     </div>
                 </div>
             </Modal>

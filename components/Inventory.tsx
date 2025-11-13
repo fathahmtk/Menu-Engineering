@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -239,15 +238,15 @@ const Inventory: React.FC = () => {
     return (
         <>
             <Card>
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-2 justify-between items-start sm:items-center mb-4">
+                <div className="flex flex-col md:flex-row gap-4 md:gap-2 justify-between items-start md:items-center mb-4">
                     <h2 className="text-xl font-bold">Inventory List</h2>
                     <div className="flex items-center space-x-2">
                         <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
                         <button 
                             onClick={handleOpenModal}
-                            className="ican-btn ican-btn-primary">
-                            <PlusCircle size={20} className="mr-2" />
-                            Add Item
+                            className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
+                            <PlusCircle size={20} className="md:mr-2" />
+                            <span className="hidden md:inline">Add Item</span>
                         </button>
                     </div>
                 </div>
@@ -296,12 +295,12 @@ const Inventory: React.FC = () => {
                                     <td data-label="Stock" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.quantity} {item.unit}</td>
                                     <td data-label="Unit Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">
                                         {isEditing ? (
-                                            <input type="number" value={editedCost} onChange={(e) => setEditedCost(parseFloat(e.target.value) || 0)} className="ican-input w-24 py-1" autoFocus step="0.01" min="0.01" />
+                                            <input type="number" value={editedCost} onChange={(e) => setEditedCost(parseFloat(e.target.value) || 0)} className="ican-input w-full py-1" autoFocus step="0.01" min="0.01" />
                                         ) : ( formatCurrency(item.unitCost) )}
                                     </td>
                                     <td data-label="Unit Price" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">
                                         {isEditing ? (
-                                            <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(parseFloat(e.target.value) || 0)} className="ican-input w-24 py-1" step="0.01" min="0.01" />
+                                            <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(parseFloat(e.target.value) || 0)} className="ican-input w-full py-1" step="0.01" min="0.01" />
                                         ) : ( formatCurrency(item.unitPrice) )}
                                     </td>
                                     <td data-label="Supplier" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{supplier?.name || 'N/A'}</td>
@@ -315,7 +314,7 @@ const Inventory: React.FC = () => {
                                         )}
                                     </td>
                                     <td data-label="Actions" className="p-4">
-                                        <div className="flex items-center space-x-3">
+                                        <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
                                             {isEditing ? (
                                                 <>
                                                     <button onClick={() => handleSave(item.id)} className="text-green-500 hover:text-green-600" aria-label="Save cost"><Save size={20} /></button>
@@ -413,9 +412,9 @@ const Inventory: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseModal} className="ican-btn ican-btn-secondary">Cancel</button>
-                        <button onClick={handleAddItem} className="ican-btn ican-btn-primary">Add Item</button>
+                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
+                        <button onClick={handleCloseModal} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+                        <button onClick={handleAddItem} className="ican-btn ican-btn-primary w-full md:w-auto">Add Item</button>
                     </div>
                 </div>
             </Modal>
@@ -442,9 +441,9 @@ const Inventory: React.FC = () => {
                         </div>
                     )}
                     {bulkError && <p className="text-[var(--color-danger)] text-xs mt-1">{bulkError}</p>}
-                    <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={closeBulkModal} className="ican-btn ican-btn-secondary">Cancel</button>
-                        <button onClick={handleBulkUpdate} className="ican-btn ican-btn-primary">Update Items</button>
+                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
+                        <button onClick={closeBulkModal} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+                        <button onClick={handleBulkUpdate} className="ican-btn ican-btn-primary w-full md:w-auto">Update Items</button>
                     </div>
                 </div>
             </Modal>

@@ -1,5 +1,8 @@
 
 
+
+
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -133,7 +136,7 @@ const RecipeFormModal: React.FC<{
                         {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Recipe Name</label>
                         <input type="text" value={name} onChange={e => setName(e.target.value)} className={`ican-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
@@ -155,7 +158,7 @@ const RecipeFormModal: React.FC<{
                         {errors.category && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.category}</p>}
                     </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Servings</label>
                         <input type="number" min="1" value={servings} onChange={e => setServings(parseInt(e.target.value) || 1)} className={`ican-input mt-1 ${errors.servings ? 'border-[var(--color-danger)]' : ''}`} />
@@ -208,9 +211,9 @@ const RecipeFormModal: React.FC<{
                     <label className="block text-sm font-medium mt-4 text-[var(--color-text-muted)]">Instructions (one step per line)</label>
                     <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={5} className="ican-input mt-1"></textarea>
                 </div>
-                <div className="flex justify-end space-x-2 pt-4">
-                    <button onClick={handleClose} className="ican-btn ican-btn-secondary">Cancel</button>
-                    <button onClick={handleSave} className="ican-btn ican-btn-primary">Save Recipe</button>
+                <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
+                    <button onClick={handleClose} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+                    <button onClick={handleSave} className="ican-btn ican-btn-primary w-full md:w-auto">Save Recipe</button>
                 </div>
             </div>
         </Modal>
@@ -738,9 +741,9 @@ const Recipes: React.FC = () => {
             <Modal isOpen={modalState.type === 'duplicate'} onClose={() => setModalState({ type: null })} title="Duplicate Recipe">
                 <div>
                     <p className="mb-4">Do you want to include the cost history in the new duplicated recipe?</p>
-                    <div className="flex justify-end space-x-2">
-                        <button onClick={() => { handleConfirmDuplicate(false); setModalState({ type: null }); }} className="ican-btn ican-btn-secondary">No, Start Fresh</button>
-                        <button onClick={() => { handleConfirmDuplicate(true); setModalState({ type: null }); }} className="ican-btn ican-btn-primary">Yes, Include History</button>
+                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 gap-2">
+                        <button onClick={() => { handleConfirmDuplicate(false); setModalState({ type: null }); }} className="ican-btn ican-btn-secondary w-full md:w-auto">No, Start Fresh</button>
+                        <button onClick={() => { handleConfirmDuplicate(true); setModalState({ type: null }); }} className="ican-btn ican-btn-primary w-full md:w-auto">Yes, Include History</button>
                     </div>
                 </div>
             </Modal>
@@ -754,9 +757,9 @@ const Recipes: React.FC = () => {
                 }}>
                     <label htmlFor="templateName" className="block text-sm font-medium text-[var(--color-text-muted)]">Template Name</label>
                     <input type="text" name="templateName" id="templateName" defaultValue={`${selectedRecipe.name} Base`} className="ican-input mt-1" required />
-                    <div className="flex justify-end space-x-2 pt-4 mt-2">
-                        <button type="button" onClick={() => setModalState({ type: null })} className="ican-btn ican-btn-secondary">Cancel</button>
-                        <button type="submit" className="ican-btn ican-btn-primary">Save Template</button>
+                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 mt-2 gap-2">
+                        <button type="button" onClick={() => setModalState({ type: null })} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+                        <button type="submit" className="ican-btn ican-btn-primary w-full md:w-auto">Save Template</button>
                     </div>
                 </form>
             </Modal>
@@ -774,8 +777,8 @@ const Recipes: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                     <div className="mb-4 space-y-3">
-                        <div className="relative">
+                     <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="relative w-full md:max-w-xs">
                             <input
                                 type="text"
                                 placeholder="Search recipes..."
@@ -786,21 +789,21 @@ const Recipes: React.FC = () => {
                             />
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={20} />
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2 w-full md:w-auto">
                              <select
                                 id="category-filter"
                                 value={filterCategory}
                                 onChange={e => setFilterCategory(e.target.value)}
-                                className="ican-select"
+                                className="ican-select flex-grow"
                                 aria-label="Filter by category"
                             >
                                 <option value="all">All Categories</option>
                                 {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
                             </select>
-                            <button onClick={() => setModalState({ type: 'manageCategories' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-input)]" title="Manage Categories">
+                            <button onClick={() => setModalState({ type: 'manageCategories' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-input)] flex-shrink-0" title="Manage Categories">
                                <ListChecks size={20} className="text-[var(--color-text-muted)]"/>
                             </button>
-                             <button onClick={() => setModalState({ type: 'manageUnits' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-input)]" title="Manage Units">
+                             <button onClick={() => setModalState({ type: 'manageUnits' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-input)] flex-shrink-0" title="Manage Units">
                                <Weight size={20} className="text-[var(--color-text-muted)]"/>
                             </button>
                         </div>

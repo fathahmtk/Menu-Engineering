@@ -136,13 +136,13 @@ const Suppliers: React.FC = () => {
     return (
         <>
             <Card>
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-2 justify-between items-start sm:items-center mb-6">
+                <div className="flex flex-col md:flex-row gap-4 md:gap-2 justify-between items-start md:items-center mb-6">
                     <h2 className="text-xl font-bold">Supplier Directory</h2>
                     <div className="flex items-center space-x-2">
                         <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
-                        <button onClick={() => handleOpenModal()} className="ican-btn ican-btn-primary">
-                            <PlusCircle size={20} className="mr-2" />
-                            Add Supplier
+                        <button onClick={() => handleOpenModal()} className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
+                            <PlusCircle size={20} className="md:mr-2" />
+                            <span className="hidden md:inline">Add Supplier</span>
                         </button>
                     </div>
                 </div>
@@ -164,11 +164,11 @@ const Suppliers: React.FC = () => {
                                         </a>
                                     </div>
                                 </div>
-                                <div className="flex justify-end items-center space-x-3 mt-4">
-                                    <button onClick={() => handleOpenModal(supplier)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]" aria-label={`Edit ${supplier.name}`}>
+                                <div className="flex justify-end items-center space-x-1 mt-4">
+                                    <button onClick={() => handleOpenModal(supplier)} className="p-3 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-input)] hover:text-[var(--color-primary)] transition-colors" aria-label={`Edit ${supplier.name}`}>
                                         <Edit size={20}/>
                                     </button>
-                                     <button onClick={() => handleDeleteClick(supplier)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]" aria-label={`Delete ${supplier.name}`}>
+                                     <button onClick={() => handleDeleteClick(supplier)} className="p-3 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-input)] hover:text-[var(--color-danger)] transition-colors" aria-label={`Delete ${supplier.name}`}>
                                         <Trash2 size={20}/>
                                     </button>
                                 </div>
@@ -229,9 +229,9 @@ const Suppliers: React.FC = () => {
                         <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} className={`ican-input mt-1 ${errors.phone ? 'border-[var(--color-danger)]' : ''}`} />
                         {errors.phone && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.phone}</p>}
                     </div>
-                    <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={handleCloseModal} className="ican-btn ican-btn-secondary">Cancel</button>
-                        <button onClick={handleSubmit} className="ican-btn ican-btn-primary">Save Supplier</button>
+                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
+                        <button onClick={handleCloseModal} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+                        <button onClick={handleSubmit} className="ican-btn ican-btn-primary w-full md:w-auto">Save Supplier</button>
                     </div>
                 </div>
             </Modal>

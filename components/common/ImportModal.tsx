@@ -1,3 +1,5 @@
+
+
 import React, { useState, useCallback } from 'react';
 import Modal from './Modal';
 import { Upload, FileText, CheckCircle, XCircle, AlertTriangle, Download } from 'lucide-react';
@@ -138,9 +140,9 @@ const ImportModal = <T extends {}>({
               {parsedData.slice(0, 10).map(renderPreview)}
               {parsedData.length > 10 && <div className="p-2 text-center text-sm text-[var(--color-text-muted)]">...and {parsedData.length - 10} more.</div>}
             </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <button onClick={handleClose} className="ican-btn ican-btn-secondary">Cancel</button>
-              <button onClick={handleImportClick} disabled={parsedData.length === 0} className={`ican-btn ican-btn-primary ${parsedData.length === 0 ? 'ican-btn-disabled' : ''}`}>Import Data</button>
+            <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
+              <button onClick={handleClose} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+              <button onClick={handleImportClick} disabled={parsedData.length === 0} className={`ican-btn ican-btn-primary w-full md:w-auto ${parsedData.length === 0 ? 'ican-btn-disabled' : ''}`}>Import Data</button>
             </div>
           </div>
         );
@@ -156,8 +158,8 @@ const ImportModal = <T extends {}>({
                 <span className="font-semibold text-[var(--color-warning)]">{importResult.duplicateCount}</span> duplicates were skipped.
               </p>
             )}
-            <div className="pt-4">
-              <button onClick={handleClose} className="ican-btn ican-btn-primary px-6">Done</button>
+            <div className="pt-4 w-full md:w-auto md:mx-auto">
+              <button onClick={handleClose} className="ican-btn ican-btn-primary px-6 w-full md:w-auto">Done</button>
             </div>
           </div>
         );

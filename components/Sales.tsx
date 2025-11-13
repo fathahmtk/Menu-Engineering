@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -158,9 +159,9 @@ const Sales: React.FC = () => {
                 <Card className="lg:col-span-2">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">Recent Transactions</h3>
-                         <button onClick={openModal} className="ican-btn ican-btn-primary text-sm py-1.5 px-3">
-                            <PlusCircle size={16} className="mr-2" />
-                            Record Sale
+                         <button onClick={openModal} className="ican-btn ican-btn-primary p-2 md:py-1.5 md:px-3 text-sm">
+                            <PlusCircle size={16} className="md:mr-2" />
+                            <span className="hidden md:inline">Record Sale</span>
                         </button>
                     </div>
                     <div className="overflow-y-auto max-h-[280px]">
@@ -194,7 +195,7 @@ const Sales: React.FC = () => {
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Record New Sale">
                 <div className="space-y-4">
                     {saleItems.map((item, index) => (
-                         <div key={item.id} className="flex flex-col sm:grid sm:grid-cols-[1fr,80px,auto] gap-2 sm:items-center">
+                         <div key={item.id} className="flex flex-col md:grid md:grid-cols-[1fr,80px,auto] gap-2 md:items-center">
                             <select
                                 value={item.menuItemId}
                                 onChange={e => handleItemChange(item.id, 'menuItemId', e.target.value)}
@@ -218,7 +219,7 @@ const Sales: React.FC = () => {
                             <button
                                 onClick={() => removeSaleItem(item.id)}
                                 disabled={saleItems.length <= 1}
-                                className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed sm:justify-self-center"
+                                className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed md:justify-self-center"
                             >
                                 <Trash2 size={18} />
                             </button>
@@ -230,9 +231,9 @@ const Sales: React.FC = () => {
                     <div className="text-right font-bold text-lg pt-4 border-t border-[var(--color-border)]">
                         Total: {formatCurrency(modalSaleTotal)}
                     </div>
-                    <div className="flex justify-end space-x-2 pt-4">
-                        <button onClick={() => setIsModalOpen(false)} className="ican-btn ican-btn-secondary">Cancel</button>
-                        <button onClick={handleRecordSale} className="ican-btn ican-btn-primary">Record Sale</button>
+                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
+                        <button onClick={() => setIsModalOpen(false)} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+                        <button onClick={handleRecordSale} className="ican-btn ican-btn-primary w-full md:w-auto">Record Sale</button>
                     </div>
                 </div>
             </Modal>
