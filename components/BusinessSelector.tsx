@@ -1,14 +1,14 @@
 
 
-
-
 import React, { useState } from 'react';
 import { useData } from '../hooks/useDataContext';
 import { Building, ChevronDown, PlusCircle } from 'lucide-react';
 import Modal from './common/Modal';
+import { useNotification } from '../hooks/useNotificationContext';
 
 const BusinessSelector: React.FC = () => {
     const { businesses, activeBusinessId, setActiveBusinessId, addBusiness } = useData();
+    const { addNotification } = useNotification();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newBusinessName, setNewBusinessName] = useState('');
@@ -20,9 +20,10 @@ const BusinessSelector: React.FC = () => {
         setIsDropdownOpen(false);
     };
     
-    const handleAddBusiness = () => {
+    const handleAddBusiness = async () => {
         if (newBusinessName.trim()) {
-            addBusiness(newBusinessName.trim());
+            await addBusiness(newBusinessName.trim());
+            addNotification('Business added successfully!', 'success');
             setNewBusinessName('');
         }
     };

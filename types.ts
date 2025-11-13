@@ -113,6 +113,16 @@ export interface Sale {
   businessId: string;
 }
 
+export interface Notification {
+  id: number;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
+export interface NotificationContextType {
+  addNotification: (message: string, type: Notification['type']) => void;
+}
+
 
 export interface DataContextType {
   loading: boolean;

@@ -6,11 +6,12 @@ import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { AlertTriangle, PlusCircle, Edit, Save, XCircle, Trash2, Edit2, DollarSign, Truck } from 'lucide-react';
+import { AlertTriangle, PlusCircle, Edit, Save, XCircle, Trash2, Edit2, DollarSign, Truck, ShoppingCart } from 'lucide-react';
 import { InventoryItem } from '../types';
 import ActionsDropdown from './common/ActionsDropdown';
 import ImportModal from './common/ImportModal';
 import { convertToCSV, downloadCSV } from '../utils/csvHelper';
+import { useNotification } from '../hooks/useNotificationContext';
 
 
 const ITEM_CATEGORIES: InventoryItem['category'][] = ['Produce', 'Meat', 'Dairy', 'Pantry', 'Bakery', 'Beverages', 'Seafood'];
@@ -20,6 +21,8 @@ const DEFAULT_UNITS = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
 const Inventory: React.FC = () => {
     const { inventory, getSupplierById, suppliers, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems, ingredientUnits, bulkAddInventoryItems } = useData();
     const { formatCurrency, currency } = useCurrency();
+    const { addNotification } = useNotification();
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newItem, setNewItem] = useState<Omit<InventoryItem, 'id' | 'businessId'>>({
         name: '',
@@ -60,7 +63,7 @@ const Inventory: React.FC = () => {
         });
     };
 
-    const handleAddItem = () => {
+    const handleAddItem = async () => {
         const newErrors: { [key: string]: string } = {};
         if (!newItem.name.trim()) newErrors.name = 'Item name is required.';
         if (newItem.unitCost <= 0) newErrors.unitCost = 'Unit cost must be a positive number.';
@@ -69,7 +72,8 @@ const Inventory: React.FC = () => {
         if (newItem.lowStockThreshold < 0) newErrors.lowStockThreshold = 'Low stock threshold cannot be negative.';
         if (!newItem.supplierId) newErrors.supplierId = 'Please select a supplier.';
         if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
-        addInventoryItem(newItem);
+        await addInventoryItem(newItem);
+        addNotification('Inventory item added successfully!', 'success');
         handleCloseModal();
     };
     
@@ -92,16 +96,22 @@ const Inventory: React.FC = () => {
 
     const handleCancel = () => setEditingItemId(null);
 
-    const handleSave = (itemId: string) => {
+    const handleSave = async (itemId: string) => {
         if (editedCost <= 0) { alert("Unit cost must be a positive number."); return; }
         if (editedPrice <= 0) { alert("Unit price must be a positive number."); return; }
         const itemToUpdate = inventory.find(i => i.id === itemId);
-        if (itemToUpdate) updateInventoryItem({ ...itemToUpdate, unitCost: editedCost, unitPrice: editedPrice });
+        if (itemToUpdate) {
+            await updateInventoryItem({ ...itemToUpdate, unitCost: editedCost, unitPrice: editedPrice });
+            addNotification('Item updated successfully!', 'success');
+        }
         setEditingItemId(null);
     };
 
     const handleDelete = (itemId: string) => {
-        if (window.confirm('Are you sure you want to delete this item?')) deleteInventoryItem(itemId);
+        if (window.confirm('Are you sure you want to delete this item?')) {
+          deleteInventoryItem(itemId);
+          addNotification('Item deleted.', 'info');
+        }
     };
 
     const handleSelect = (itemId: string) => {
@@ -121,6 +131,12 @@ const Inventory: React.FC = () => {
     const handleConfirmBulkDelete = async () => {
         const result = await bulkDeleteInventoryItems(Array.from(selectedItems));
         setDeletionResult(result);
+        if (result.deletedCount > 0) {
+            addNotification(`${result.deletedCount} items deleted successfully.`, 'success');
+        }
+        if (result.failedItems.length > 0) {
+            addNotification(`${result.failedItems.length} items could not be deleted as they are in use.`, 'error');
+        }
         setSelectedItems(new Set());
         setIsConfirmDeleteOpen(false);
     };
@@ -139,7 +155,7 @@ const Inventory: React.FC = () => {
         setBulkError('');
     };
 
-    const handleBulkUpdate = () => {
+    const handleBulkUpdate = async () => {
         let update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice' | 'supplierId'>> = {};
         let isValid = true;
         setBulkError('');
@@ -162,7 +178,8 @@ const Inventory: React.FC = () => {
         }
 
         if (isValid) {
-            bulkUpdateInventoryItems(Array.from(selectedItems), update);
+            await bulkUpdateInventoryItems(Array.from(selectedItems), update);
+            addNotification(`${selectedItems.size} items updated.`, 'success');
             setSelectedItems(new Set());
             closeBulkModal();
         }
@@ -263,6 +280,7 @@ const Inventory: React.FC = () => {
                     </div>
                 )}
 
+                <div className="overflow-x-auto">
                 <table className="w-full text-left responsive-table">
                     <thead className="ican-table-header">
                         <tr>
@@ -280,7 +298,7 @@ const Inventory: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {inventory.map(item => {
+                        {inventory.length > 0 ? inventory.map(item => {
                             const supplier = getSupplierById(item.supplierId);
                             const isLowStock = item.quantity <= item.lowStockThreshold;
                             const isEditing = editingItemId === item.id;
@@ -295,12 +313,12 @@ const Inventory: React.FC = () => {
                                     <td data-label="Stock" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.quantity} {item.unit}</td>
                                     <td data-label="Unit Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">
                                         {isEditing ? (
-                                            <input type="number" value={editedCost} onChange={(e) => setEditedCost(parseFloat(e.target.value) || 0)} className="ican-input w-full py-1" autoFocus step="0.01" min="0.01" />
+                                            <input type="number" value={editedCost} onChange={(e) => setEditedCost(parseFloat(e.target.value) || 0)} className="ican-input w-full md:w-24 py-1" autoFocus step="0.01" min="0.01" />
                                         ) : ( formatCurrency(item.unitCost) )}
                                     </td>
                                     <td data-label="Unit Price" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">
                                         {isEditing ? (
-                                            <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(parseFloat(e.target.value) || 0)} className="ican-input w-full py-1" step="0.01" min="0.01" />
+                                            <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(parseFloat(e.target.value) || 0)} className="ican-input w-full md:w-24 py-1" step="0.01" min="0.01" />
                                         ) : ( formatCurrency(item.unitPrice) )}
                                     </td>
                                     <td data-label="Supplier" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{supplier?.name || 'N/A'}</td>
@@ -328,9 +346,21 @@ const Inventory: React.FC = () => {
                                     </td>
                                 </tr>
                             );
-                        })}
+                        }) : (
+                            <tr>
+                                <td colSpan={9} className="text-center py-10">
+                                     <div className="flex flex-col items-center text-[var(--color-text-muted)]">
+                                        <ShoppingCart size={40} className="mb-2 text-[var(--color-border)]"/>
+                                        <p className="font-semibold">No inventory items yet</p>
+                                        <p className="text-sm">Add your first item to get started.</p>
+                                        <button onClick={handleOpenModal} className="mt-4 ican-btn ican-btn-primary">Add Item</button>
+                                     </div>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
+                </div>
             </Card>
             <ImportModal
                 isOpen={isImportModalOpen}

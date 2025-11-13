@@ -5,8 +5,9 @@ import Card from './common/Card';
 import Modal from './common/Modal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Edit, Trash2, Star, Puzzle, ThumbsDown, Grip, Save, XCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Star, Puzzle, ThumbsDown, Grip, Save, XCircle, Utensils } from 'lucide-react';
 import { MenuItem } from '../types';
+import { useNotification } from '../hooks/useNotificationContext';
 
 type Classification = 'Star' | 'Plowhorse' | 'Puzzle' | 'Dog';
 
@@ -37,6 +38,7 @@ const ClassificationBadge: React.FC<{ classification: Classification }> = ({ cla
 const Menu: React.FC = () => {
     const { menuItems, recipes, addMenuItem, updateMenuItem, deleteMenuItem, calculateRecipeCost } = useData();
     const { formatCurrency } = useCurrency();
+    const { addNotification } = useNotification();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState<MenuItem | null>(null);
@@ -120,12 +122,14 @@ const Menu: React.FC = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!validate()) return;
         if (currentItem) {
-            updateMenuItem({ ...formData, id: currentItem.id, businessId: currentItem.businessId });
+            await updateMenuItem({ ...formData, id: currentItem.id, businessId: currentItem.businessId });
+            addNotification('Menu item updated!', 'success');
         } else {
-            addMenuItem(formData);
+            await addMenuItem(formData);
+            addNotification('Menu item added!', 'success');
         }
         handleCloseModal();
     };
@@ -133,6 +137,7 @@ const Menu: React.FC = () => {
     const handleDelete = (id: string) => {
         if (window.confirm('Are you sure you want to remove this item from the menu?')) {
             deleteMenuItem(id);
+            addNotification('Menu item removed.', 'info');
         }
     };
     
@@ -145,14 +150,15 @@ const Menu: React.FC = () => {
         setEditingItemId(null);
     };
 
-    const handleSaveSales = (itemId: string) => {
+    const handleSaveSales = async (itemId: string) => {
         if (editedSales < 0) {
             alert("Sales count cannot be negative.");
             return;
         }
         const itemToUpdate = menuItems.find(i => i.id === itemId);
         if (itemToUpdate) {
-            updateMenuItem({ ...itemToUpdate, salesCount: editedSales });
+            await updateMenuItem({ ...itemToUpdate, salesCount: editedSales });
+            addNotification('Sales count updated!', 'success');
         }
         setEditingItemId(null);
     };
@@ -168,6 +174,7 @@ const Menu: React.FC = () => {
                         <span className="hidden md:inline">Add Menu Item</span>
                     </button>
                 </div>
+                <div className="overflow-x-auto">
                 <table className="w-full text-left responsive-table">
                     <thead className="ican-table-header">
                         <tr>
@@ -182,7 +189,7 @@ const Menu: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {menuPerformance.map(item => {
+                        {menuPerformance.length > 0 ? menuPerformance.map(item => {
                             const classification = getClassification(item.profit, item.salesCount);
                             const isEditing = editingItemId === item.id;
                             return (
@@ -191,7 +198,7 @@ const Menu: React.FC = () => {
                                     <td data-label="Classification" className="p-4"><ClassificationBadge classification={classification} /></td>
                                     <td data-label="Sales Count" className="p-4">
                                         {isEditing ? (
-                                            <div className="flex items-center space-x-2 w-full">
+                                            <div className="flex items-center space-x-2 w-full md:w-32">
                                                 <input
                                                     type="number"
                                                     value={editedSales}
@@ -228,9 +235,21 @@ const Menu: React.FC = () => {
                                     </td>
                                 </tr>
                             );
-                        })}
+                        }) : (
+                            <tr>
+                                <td colSpan={8} className="text-center py-10">
+                                     <div className="flex flex-col items-center text-[var(--color-text-muted)]">
+                                        <Utensils size={40} className="mb-2 text-[var(--color-border)]"/>
+                                        <p className="font-semibold">No menu items yet</p>
+                                        <p className="text-sm">Add your first menu item to get started.</p>
+                                        <button onClick={() => handleOpenModal()} className="mt-4 ican-btn ican-btn-primary">Add Menu Item</button>
+                                     </div>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
+                </div>
             </Card>
 
              <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={currentItem ? 'Edit Menu Item' : 'Add New Menu Item'}>

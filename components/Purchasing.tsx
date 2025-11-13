@@ -1,8 +1,5 @@
 
 
-
-
-
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -11,6 +8,7 @@ import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
 import { PlusCircle, Eye, CheckCircle, XCircle, Trash2, Plus, Package } from 'lucide-react';
 import { PurchaseOrder, PurchaseOrderItem } from '../types';
+import { useNotification } from '../hooks/useNotificationContext';
 
 const StatusBadge: React.FC<{ status: PurchaseOrder['status'] }> = ({ status }) => {
     const config = {
@@ -36,6 +34,7 @@ const getDefaultDueDate = () => {
 const Purchasing: React.FC = () => {
     const { purchaseOrders, suppliers, inventory, getSupplierById, addPurchaseOrder, updatePurchaseOrderStatus } = useData();
     const { formatCurrency } = useCurrency();
+    const { addNotification } = useNotification();
 
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -91,7 +90,7 @@ const Purchasing: React.FC = () => {
         setNewPoData({ ...newPoData, items: newPoData.items.filter((_, i) => i !== index) });
     };
 
-    const handleSubmitNewPO = () => {
+    const handleSubmitNewPO = async () => {
         if (!newPoData.supplierId || !newPoData.dueDate || newPoData.items.some(i => !i.itemId || i.quantity <= 0 || i.cost < 0)) {
             alert('Please fill all fields correctly. Due date is required and item quantities must be positive.');
             return;
@@ -105,7 +104,8 @@ const Purchasing: React.FC = () => {
                 cost: item.cost,
             }));
         
-        addPurchaseOrder({ supplierId: newPoData.supplierId, items: finalItems, dueDate: newPoData.dueDate });
+        await addPurchaseOrder({ supplierId: newPoData.supplierId, items: finalItems, dueDate: newPoData.dueDate });
+        addNotification('Purchase Order created successfully!', 'success');
         handleCloseFormModal();
     };
 
@@ -118,9 +118,10 @@ const Purchasing: React.FC = () => {
         setIsConfirmModalOpen(true);
     };
     
-    const confirmStatusChange = () => {
+    const confirmStatusChange = async () => {
         if (confirmationAction) {
-            updatePurchaseOrderStatus(confirmationAction.id, confirmationAction.status);
+            await updatePurchaseOrderStatus(confirmationAction.id, confirmationAction.status);
+            addNotification(`Order status updated to ${confirmationAction.status}.`, 'success');
         }
         setIsConfirmModalOpen(false);
         setConfirmationAction(null);
@@ -157,7 +158,7 @@ const Purchasing: React.FC = () => {
                                 const isOverdue = order.status === 'Pending' && order.dueDate && new Date(order.dueDate) < today;
 
                                 return (
-                                <tr key={order.id} className={`border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input)] ${isOverdue ? 'bg-red-50' : ''}`}>
+                                <tr key={order.id} className={`border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input)] ${isOverdue ? 'bg-red-500/10' : ''}`}>
                                     <td data-label="PO #" className="p-4 font-medium text-[var(--color-primary)] whitespace-nowrap">#{order.id.slice(-6).toUpperCase()}</td>
                                     <td data-label="Supplier" className="p-4 text-[var(--color-text-primary)] whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
                                     <td data-label="Order Date" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>

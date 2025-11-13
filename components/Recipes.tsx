@@ -1,8 +1,5 @@
 
 
-
-
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -15,6 +12,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 import ActionsDropdown from './common/ActionsDropdown';
 import ImportModal from './common/ImportModal';
 import { convertToCSV, downloadCSV } from '../utils/csvHelper';
+import { useNotification } from '../hooks/useNotificationContext';
 
 const DEFAULT_UNITS: string[] = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
 
@@ -225,12 +223,14 @@ const CategoryManagerModal: React.FC<{
     onClose: () => void;
 }> = ({ isOpen, onClose }) => {
     const { categories, addCategory, updateCategory, deleteCategory } = useData();
+    const { addNotification } = useNotification();
     const [newCategoryName, setNewCategoryName] = useState('');
     const [editingCategory, setEditingCategory] = useState<{ id: string, name: string} | null>(null);
 
     const handleAdd = async () => {
         if (newCategoryName.trim()) {
             await addCategory(newCategoryName.trim());
+            addNotification('Category added successfully', 'success');
             setNewCategoryName('');
         }
     };
@@ -238,6 +238,7 @@ const CategoryManagerModal: React.FC<{
     const handleUpdate = async () => {
         if (editingCategory && editingCategory.name.trim()) {
             await updateCategory(editingCategory.id, editingCategory.name.trim());
+            addNotification('Category updated', 'success');
             setEditingCategory(null);
         }
     };
@@ -245,7 +246,9 @@ const CategoryManagerModal: React.FC<{
     const handleDelete = async (id: string) => {
         const result = await deleteCategory(id);
         if(!result.success) {
-            alert(result.message);
+            addNotification(result.message || 'Failed to delete category', 'error');
+        } else {
+            addNotification('Category deleted', 'success');
         }
     };
 
@@ -301,12 +304,14 @@ const UnitManagerModal: React.FC<{
     onClose: () => void;
 }> = ({ isOpen, onClose }) => {
     const { ingredientUnits, addUnit, updateUnit, deleteUnit } = useData();
+    const { addNotification } = useNotification();
     const [newUnitName, setNewUnitName] = useState('');
     const [editingUnit, setEditingUnit] = useState<IngredientUnit | null>(null);
 
     const handleAdd = async () => {
         if (newUnitName.trim()) {
             await addUnit(newUnitName.trim());
+            addNotification('Unit added successfully', 'success');
             setNewUnitName('');
         }
     };
@@ -314,6 +319,7 @@ const UnitManagerModal: React.FC<{
     const handleUpdate = async () => {
         if (editingUnit && editingUnit.name.trim()) {
             await updateUnit(editingUnit.id, editingUnit.name.trim());
+            addNotification('Unit updated', 'success');
             setEditingUnit(null);
         }
     };
@@ -321,7 +327,9 @@ const UnitManagerModal: React.FC<{
     const handleDelete = async (id: string) => {
         const result = await deleteUnit(id);
         if(!result.success) {
-            alert(result.message);
+            addNotification(result.message || 'Failed to delete unit', 'error');
+        } else {
+            addNotification('Unit deleted', 'success');
         }
     };
 
@@ -377,7 +385,12 @@ const UnitManagerModal: React.FC<{
 const Recipes: React.FC = () => {
     const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes } = useData();
     const { formatCurrency } = useCurrency();
+    const { addNotification } = useNotification();
+
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+    const [editedRecipe, setEditedRecipe] = useState<Recipe | null>(null);
+    const [isDirty, setIsDirty] = useState(false);
+
     const [isNewRecipeModalOpen, setIsNewRecipeModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -402,71 +415,99 @@ const Recipes: React.FC = () => {
             .filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [recipes, filterCategory, searchTerm]);
 
+    const handleSelectRecipe = (recipe: Recipe) => {
+        if (isDirty) {
+            if (!window.confirm("You have unsaved changes that will be lost. Are you sure you want to switch?")) {
+                return;
+            }
+        }
+        setSelectedRecipe(recipe);
+        setEditedRecipe(JSON.parse(JSON.stringify(recipe))); // Deep copy for editing
+        setIsHistoryVisible(false);
+    }
+    
+    useEffect(() => {
+      setIsDirty(JSON.stringify(selectedRecipe) !== JSON.stringify(editedRecipe));
+    }, [editedRecipe, selectedRecipe]);
+
     useEffect(() => {
         if (selectedRecipe && !filteredRecipes.some(r => r.id === selectedRecipe.id)) {
             setSelectedRecipe(filteredRecipes.length > 0 ? filteredRecipes[0] : null);
+            setEditedRecipe(filteredRecipes.length > 0 ? JSON.parse(JSON.stringify(filteredRecipes[0])) : null);
         } else if (!selectedRecipe && filteredRecipes.length > 0) {
             setSelectedRecipe(filteredRecipes[0]);
+            setEditedRecipe(JSON.parse(JSON.stringify(filteredRecipes[0])));
         }
         
         if (selectedRecipe) {
             recordRecipeCostHistory(selectedRecipe.id);
         }
-    }, [filteredRecipes, selectedRecipe, recordRecipeCostHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filteredRecipes, recordRecipeCostHistory]);
 
     useEffect(() => {
         if (recipes.length > 0 && !recipes.find(r => r.id === selectedRecipe?.id)) {
             setSelectedRecipe(recipes[0]);
+            setEditedRecipe(JSON.parse(JSON.stringify(recipes[0])));
         } else if (recipes.length === 0) {
             setSelectedRecipe(null);
+            setEditedRecipe(null);
         }
-    }, [activeBusinessId, recipes, selectedRecipe]);
+    }, [activeBusinessId, recipes, selectedRecipe?.id]);
 
     useEffect(() => {
-        // Sync local selectedRecipe with the master list from context, especially after an update like an image upload.
+        // Sync local selectedRecipe with the master list from context
         if (selectedRecipe) {
             const updatedRecipeFromContext = recipes.find(r => r.id === selectedRecipe.id);
-            // Use stringify for a simple but effective deep-ish comparison to prevent infinite loops.
             if (updatedRecipeFromContext && JSON.stringify(updatedRecipeFromContext) !== JSON.stringify(selectedRecipe)) {
                 setSelectedRecipe(updatedRecipeFromContext);
+                // Only reset editedRecipe if not currently dirty, to avoid wiping user changes
+                if(!isDirty) {
+                    setEditedRecipe(JSON.parse(JSON.stringify(updatedRecipeFromContext)));
+                }
             }
         }
-    }, [recipes, selectedRecipe]);
+    }, [recipes, selectedRecipe, isDirty]);
+    
+    const handleSaveChanges = async () => {
+        if (!editedRecipe) return;
+        await updateRecipe(editedRecipe);
+        setSelectedRecipe(editedRecipe);
+        addNotification('Recipe saved successfully!', 'success');
+    };
+
+    const handleCancelChanges = () => {
+        if (selectedRecipe) {
+            setEditedRecipe(JSON.parse(JSON.stringify(selectedRecipe)));
+        }
+    };
 
     const handleInstructionChange = (instIndex: number, newText: string) => {
-        if (!selectedRecipe) return;
-        const updatedInstructions = selectedRecipe.instructions.map((inst, index) => index === instIndex ? newText : inst);
-        const updatedRecipe = { ...selectedRecipe, instructions: updatedInstructions };
-        setSelectedRecipe(updatedRecipe);
-        updateRecipe(updatedRecipe);
+        if (!editedRecipe) return;
+        const updatedInstructions = editedRecipe.instructions.map((inst, index) => index === instIndex ? newText : inst);
+        setEditedRecipe({ ...editedRecipe, instructions: updatedInstructions });
     };
     
     const handleAddInstruction = () => {
-        if (!selectedRecipe) return;
-        const updatedRecipe = { ...selectedRecipe, instructions: [...selectedRecipe.instructions, 'New step'] };
-        setSelectedRecipe(updatedRecipe);
-        updateRecipe(updatedRecipe);
+        if (!editedRecipe) return;
+        setEditedRecipe({ ...editedRecipe, instructions: [...editedRecipe.instructions, 'New step'] });
     };
 
     const handleRemoveInstruction = (instIndex: number) => {
-        if (!selectedRecipe) return;
-        const updatedInstructions = selectedRecipe.instructions.filter((_, index) => index !== instIndex);
-        const updatedRecipe = { ...selectedRecipe, instructions: updatedInstructions };
-        setSelectedRecipe(updatedRecipe);
-        updateRecipe(updatedRecipe);
+        if (!editedRecipe) return;
+        const updatedInstructions = editedRecipe.instructions.filter((_, index) => index !== instIndex);
+        setEditedRecipe({ ...editedRecipe, instructions: updatedInstructions });
     };
     
     const handleDragSort = () => {
-        if (!selectedRecipe || dragItem.current === null || dragOverItem.current === null) return;
-        const newInstructions = [...selectedRecipe.instructions];
+        if (!editedRecipe || dragItem.current === null || dragOverItem.current === null) return;
+        const newInstructions = [...editedRecipe.instructions];
         const draggedItemContent = newInstructions.splice(dragItem.current, 1)[0];
         newInstructions.splice(dragOverItem.current, 0, draggedItemContent);
         dragItem.current = null;
         dragOverItem.current = null;
         
-        const updatedRecipe = { ...selectedRecipe, instructions: newInstructions };
-        setSelectedRecipe(updatedRecipe);
-        updateRecipe(updatedRecipe);
+        setEditedRecipe({ ...editedRecipe, instructions: newInstructions });
         setDraggedIndex(null);
     };
 
@@ -476,6 +517,8 @@ const Recipes: React.FC = () => {
         if (result.success) {
              const newSelected = recipes.length > 1 ? recipes.filter(r => r.id !== selectedRecipe.id)[0] : null;
              setSelectedRecipe(newSelected);
+             setEditedRecipe(newSelected ? JSON.parse(JSON.stringify(newSelected)) : null);
+             addNotification('Recipe deleted successfully.', 'success');
         } else {
              setDeleteError(result.message || 'An unknown error occurred.');
         }
@@ -485,7 +528,8 @@ const Recipes: React.FC = () => {
         if (!selectedRecipe) return;
         const newRecipe = await duplicateRecipe(selectedRecipe.id, includeHistory);
         if (newRecipe) {
-            setSelectedRecipe(newRecipe);
+            handleSelectRecipe(newRecipe);
+            addNotification('Recipe duplicated.', 'success');
         }
     };
 
@@ -493,73 +537,70 @@ const Recipes: React.FC = () => {
         if (!selectedRecipe || !templateName.trim()) return;
         const { id, name, costHistory, businessId, imageUrl, ...recipeData } = selectedRecipe;
         addRecipeTemplate({ name: templateName.trim(), recipeData });
+        addNotification('Recipe saved as template.', 'success');
     };
 
     const handleIngredientChange = (ingIndex: number, field: keyof Ingredient, value: string) => {
-        if (!selectedRecipe) return;
-        const newIngredients = [...selectedRecipe.ingredients];
+        if (!editedRecipe) return;
+        const newIngredients = [...editedRecipe.ingredients];
         const isQuantity = field === 'quantity';
         const updatedIngredient = {
             ...newIngredients[ingIndex],
             [field]: isQuantity ? parseFloat(value) || 0 : value,
         };
         newIngredients[ingIndex] = updatedIngredient;
-        const updatedRecipe = { ...selectedRecipe, ingredients: newIngredients };
-        setSelectedRecipe(updatedRecipe);
-        updateRecipe(updatedRecipe);
+        setEditedRecipe({ ...editedRecipe, ingredients: newIngredients });
     };
 
     const handleAddIngredientToRecipe = () => {
-        if (!selectedRecipe || inventory.length === 0) return;
+        if (!editedRecipe || inventory.length === 0) return;
         const newIngredient: Ingredient = { itemId: inventory[0].id, quantity: 1, unit: 'unit' };
-        const updatedRecipe = { ...selectedRecipe, ingredients: [...selectedRecipe.ingredients, newIngredient] };
-        setSelectedRecipe(updatedRecipe);
-        updateRecipe(updatedRecipe);
+        setEditedRecipe({ ...editedRecipe, ingredients: [...editedRecipe.ingredients, newIngredient] });
     };
 
     const handleRemoveIngredientFromRecipe = (ingIndex: number) => {
-        if (!selectedRecipe) return;
-        const updatedIngredients = selectedRecipe.ingredients.filter((_, index) => index !== ingIndex);
-        const updatedRecipe = { ...selectedRecipe, ingredients: updatedIngredients };
-        setSelectedRecipe(updatedRecipe);
-        updateRecipe(updatedRecipe);
+        if (!editedRecipe) return;
+        const updatedIngredients = editedRecipe.ingredients.filter((_, index) => index !== ingIndex);
+        setEditedRecipe({ ...editedRecipe, ingredients: updatedIngredients });
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0 || !selectedRecipe) {
-            return;
-        }
+        if (!e.target.files || e.target.files.length === 0 || !editedRecipe) return;
+        
         const file = e.target.files[0];
         if (file.size > 5 * 1024 * 1024) { // 5MB limit
-            alert("File is too large. Please select an image under 5MB.");
+            addNotification("File is too large. Please select an image under 5MB.", 'error');
             return;
         }
         if (!file.type.startsWith('image/')) {
-            alert("Please select a valid image file.");
+            addNotification("Please select a valid image file.", 'error');
             return;
         }
 
         setIsUploading(true);
         try {
-            await uploadRecipeImage(selectedRecipe.id, file);
+            await uploadRecipeImage(editedRecipe.id, file);
+            addNotification("Image uploaded successfully", 'success');
+            // The useEffect hook will sync the new image URL from the context
         } catch (error) {
             console.error(error);
-            alert("An error occurred during upload.");
+            addNotification("An error occurred during upload.", 'error');
         } finally {
             setIsUploading(false);
         }
     };
     
     const handleImageRemove = async () => {
-        if (!selectedRecipe || !selectedRecipe.imageUrl) return;
+        if (!editedRecipe || !editedRecipe.imageUrl) return;
         if (window.confirm("Are you sure you want to remove this image?")) {
             setIsUploading(true); // Re-use for loading state
             try {
-                await removeRecipeImage(selectedRecipe.id);
-                setSelectedRecipe(prev => prev ? { ...prev, imageUrl: undefined } : null);
+                await removeRecipeImage(editedRecipe.id);
+                setEditedRecipe(prev => prev ? { ...prev, imageUrl: undefined } : null);
+                addNotification("Image removed", 'success');
             } catch (error) {
                 console.error(error);
-                alert("An error occurred while removing the image.");
+                addNotification("An error occurred while removing the image.", 'error');
             } finally {
                 setIsUploading(false);
             }
@@ -680,21 +721,21 @@ const Recipes: React.FC = () => {
     };
 
 
-    const selectedRecipeCost = selectedRecipe ? calculateRecipeCost(selectedRecipe) : 0;
-    const selectedCostPerServing = (selectedRecipe && selectedRecipe.servings > 0) ? selectedRecipeCost / selectedRecipe.servings : 0;
-    const suggestedSalePrice = selectedCostPerServing > 0 ? selectedCostPerServing / 0.30 : 0;
+    const editedRecipeCost = editedRecipe ? calculateRecipeCost(editedRecipe) : 0;
+    const editedCostPerServing = (editedRecipe && editedRecipe.servings > 0) ? editedRecipeCost / editedRecipe.servings : 0;
+    const suggestedSalePrice = editedCostPerServing > 0 ? editedCostPerServing / 0.30 : 0;
 
     const costAnalysisData = useMemo(() => {
-        if (!selectedRecipe || !selectedRecipeCost) return [];
+        if (!editedRecipe || !editedRecipeCost) return [];
         
-        return selectedRecipe.ingredients
+        return editedRecipe.ingredients
             .map(ing => {
                 const item = getInventoryItemById(ing.itemId);
                 if (!item) return { name: 'Unknown Ingredient', cost: 0, percentage: 0 };
                 
                 const costConversionFactor = getConversionFactor(ing.unit, item.unit) || 1;
                 const ingredientCost = item.unitCost * ing.quantity * costConversionFactor;
-                const percentage = selectedRecipeCost > 0 ? (ingredientCost / selectedRecipeCost) * 100 : 0;
+                const percentage = editedRecipeCost > 0 ? (ingredientCost / editedRecipeCost) * 100 : 0;
                 
                 return {
                     name: item.name,
@@ -703,7 +744,7 @@ const Recipes: React.FC = () => {
                 };
             })
             .sort((a, b) => b.cost - a.cost);
-    }, [selectedRecipe, getInventoryItemById, getConversionFactor, selectedRecipeCost]);
+    }, [editedRecipe, getInventoryItemById, getConversionFactor, editedRecipeCost]);
 
     return (
         <>
@@ -727,13 +768,13 @@ const Recipes: React.FC = () => {
         />
 
 
-        {selectedRecipe && <>
+        {editedRecipe && <>
             <ConfirmationModal
                 isOpen={modalState.type === 'delete'}
                 onClose={() => { setModalState({ type: null }); setDeleteError(null); }}
                 onConfirm={handleConfirmDelete}
                 title="Delete Recipe"
-                message={deleteError ? <span className="text-red-700">{deleteError}</span> : `Are you sure you want to permanently delete "${selectedRecipe.name}"? This action cannot be undone.`}
+                message={deleteError ? <span className="text-red-700">{deleteError}</span> : `Are you sure you want to permanently delete "${editedRecipe.name}"? This action cannot be undone.`}
                 confirmText={deleteError ? 'OK' : 'Delete'}
                 confirmButtonClass={deleteError ? 'ican-btn ican-btn-primary' : 'ican-btn ican-btn-danger'}
                 cancelText={deleteError ? '' : 'Cancel'}
@@ -756,7 +797,7 @@ const Recipes: React.FC = () => {
                     setModalState({ type: null });
                 }}>
                     <label htmlFor="templateName" className="block text-sm font-medium text-[var(--color-text-muted)]">Template Name</label>
-                    <input type="text" name="templateName" id="templateName" defaultValue={`${selectedRecipe.name} Base`} className="ican-input mt-1" required />
+                    <input type="text" name="templateName" id="templateName" defaultValue={`${editedRecipe.name} Base`} className="ican-input mt-1" required />
                     <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 mt-2 gap-2">
                         <button type="button" onClick={() => setModalState({ type: null })} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
                         <button type="submit" className="ican-btn ican-btn-primary w-full md:w-auto">Save Template</button>
@@ -766,7 +807,7 @@ const Recipes: React.FC = () => {
         </>}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className={`${selectedRecipe ? 'hidden lg:block' : 'block'} lg:col-span-1`}>
+            <div className={`${editedRecipe ? 'hidden lg:block' : 'block'} lg:col-span-1`}>
                 <Card>
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-bold">Recipes</h2>
@@ -809,33 +850,44 @@ const Recipes: React.FC = () => {
                         </div>
                     </div>
                     <ul className="space-y-2 max-h-[calc(65vh-120px)] overflow-y-auto">
-                        {filteredRecipes.map(recipe => (
+                        {filteredRecipes.length > 0 ? filteredRecipes.map(recipe => (
                             <li
                                 key={recipe.id}
                                 className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedRecipe?.id === recipe.id ? 'bg-[var(--color-primary-light)]' : 'hover:bg-[var(--color-input)]'}`}
-                                onClick={() => { setSelectedRecipe(recipe); setIsHistoryVisible(false); }}
+                                onClick={() => handleSelectRecipe(recipe)}
                             >
                                 <div className="font-semibold">{recipe.name}</div>
                                 <div className="text-xs text-[var(--color-text-muted)] mt-1">Cost/Serving: {formatCurrency(calculateRecipeCost(recipe) / (recipe.servings || 1))}</div>
                             </li>
-                        ))}
+                        )) : (
+                           <div className="text-center py-10 text-[var(--color-text-muted)]">
+                                <p>No recipes match your search.</p>
+                           </div>
+                        )}
                     </ul>
                 </Card>
             </div>
             
-            <div className={`${!selectedRecipe ? 'hidden lg:block' : 'block'} lg:col-span-2`}>
-                <Card>
-                    {selectedRecipe ? (
-                        <div>
+            <div className={`${!editedRecipe ? 'hidden lg:block' : 'block'} lg:col-span-2`}>
+                 <Card noPadding className="flex flex-col max-h-[calc(100vh-8rem)]">
+                    {editedRecipe ? (
+                        <>
+                        <div className="flex-1 overflow-y-auto p-4 md:p-6">
                             <button 
-                                onClick={() => setSelectedRecipe(null)}
+                                onClick={() => {
+                                    if(isDirty) {
+                                        if(!window.confirm("You have unsaved changes. Are you sure you want to go back?")) return;
+                                    }
+                                    setEditedRecipe(null);
+                                    setSelectedRecipe(null);
+                                }}
                                 className="lg:hidden flex items-center text-sm text-[var(--color-primary)] hover:opacity-80 font-semibold mb-3 -ml-1"
                             >
                                 <ChevronLeft size={20} />
                                 Back to list
                             </button>
                             <div className="flex justify-between items-start mb-4">
-                                 <h2 className="text-2xl font-bold">{selectedRecipe.name}</h2>
+                                 <h2 className="text-2xl font-bold">{editedRecipe.name}</h2>
                                  <div className="flex items-center space-x-2">
                                     <button onClick={() => setModalState({ type: 'saveTemplate'})} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Save as Template">
                                         <FileText size={20} className="text-[var(--color-text-muted)]" />
@@ -855,9 +907,9 @@ const Recipes: React.FC = () => {
                                         <Loader2 size={32} className="animate-spin"/>
                                         <p className="mt-2 text-sm">Processing...</p>
                                     </div>
-                                ) : selectedRecipe.imageUrl ? (
+                                ) : editedRecipe.imageUrl ? (
                                     <>
-                                        <img src={selectedRecipe.imageUrl} alt={selectedRecipe.name} className="w-full h-full object-cover" />
+                                        <img src={editedRecipe.imageUrl} alt={editedRecipe.name} className="w-full h-full object-cover" />
                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-4">
                                             <label htmlFor="image-upload" className="cursor-pointer text-white bg-black/30 p-3 rounded-full hover:bg-black/50" title="Change image">
                                                 <Edit size={20} />
@@ -903,9 +955,9 @@ const Recipes: React.FC = () => {
                                 </button>
                                 {isHistoryVisible && (
                                     <div className="mt-4 p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-background)]">
-                                        {selectedRecipe.costHistory && selectedRecipe.costHistory.length > 1 ? (
+                                        {editedRecipe.costHistory && editedRecipe.costHistory.length > 1 ? (
                                             <ResponsiveContainer width="100%" height={250}>
-                                                <LineChart data={selectedRecipe.costHistory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                                <LineChart data={editedRecipe.costHistory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                                                     <XAxis 
                                                         dataKey="date" 
@@ -947,11 +999,11 @@ const Recipes: React.FC = () => {
                                     <span></span>
                                 </div>
                                 <div className="divide-y md:divide-y-0 divide-[var(--color-border)]">
-                                    {selectedRecipe.ingredients.map((ing, index) => {
+                                    {editedRecipe.ingredients.map((ing, index) => {
                                         const item = getInventoryItemById(ing.itemId);
                                         const costConversionFactor = item ? getConversionFactor(ing.unit, item.unit) || 1 : 1;
                                         const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
-                                        const costPercentage = selectedRecipeCost > 0 ? (ingredientCost / selectedRecipeCost) * 100 : 0;
+                                        const costPercentage = editedRecipeCost > 0 ? (ingredientCost / editedRecipeCost) * 100 : 0;
                                         const isHighCost = costPercentage >= 25;
                                         
                                         return (
@@ -993,11 +1045,11 @@ const Recipes: React.FC = () => {
                                 <div className="font-semibold border-t-2 border-[var(--color-border)]">
                                     <div className="flex justify-between items-center p-3">
                                         <span className="text-right text-lg">Total Recipe Cost:</span>
-                                        <span className="text-right text-lg">{formatCurrency(selectedRecipeCost)}</span>
+                                        <span className="text-right text-lg">{formatCurrency(editedRecipeCost)}</span>
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-[var(--color-primary-light)]">
                                         <span className="text-right text-[var(--color-primary)] text-lg">Cost per Serving:</span>
-                                        <span className="text-right text-[var(--color-primary)] text-lg">{formatCurrency(selectedCostPerServing)}</span>
+                                        <span className="text-right text-[var(--color-primary)] text-lg">{formatCurrency(editedCostPerServing)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1031,7 +1083,7 @@ const Recipes: React.FC = () => {
                                 </button>
                             </div>
                             <ol className="list-decimal list-inside space-y-2">
-                               {selectedRecipe.instructions.map((instruction, index) => (
+                               {editedRecipe.instructions.map((instruction, index) => (
                                    <li 
                                        key={index} 
                                        className={`flex items-start group p-2 rounded-md transition-shadow ${draggedIndex === index ? 'shadow-lg bg-[var(--color-primary-light)]' : ''}`}
@@ -1056,6 +1108,16 @@ const Recipes: React.FC = () => {
                                ))}
                             </ol>
                         </div>
+                        {isDirty && (
+                            <div className="mt-auto p-4 md:p-6 border-t border-[var(--color-border)] bg-[var(--color-card)] flex justify-between items-center">
+                                <span className="text-sm font-semibold text-[var(--color-primary)]">You have unsaved changes.</span>
+                                <div className="flex space-x-2">
+                                <button onClick={handleCancelChanges} className="ican-btn ican-btn-secondary">Discard</button>
+                                <button onClick={handleSaveChanges} className="ican-btn ican-btn-primary">Save Changes</button>
+                                </div>
+                            </div>
+                        )}
+                        </>
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full text-[var(--color-text-muted)] p-8 text-center">
                             <FileText size={48} className="mb-4 text-[var(--color-border)]" />

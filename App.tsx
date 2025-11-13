@@ -1,4 +1,5 @@
 
+
 import React, { useState, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import { DataProvider } from './hooks/useDataContext';
@@ -8,6 +9,7 @@ import BusinessSelector from './components/BusinessSelector';
 import { Menu as MenuIcon, CheckCircle, LoaderCircle } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
 import { AuthProvider, useAuth } from './hooks/useAuthContext';
+import { NotificationProvider } from './hooks/useNotificationContext';
 
 
 // Lazy-load page components for better performance
@@ -178,7 +180,9 @@ const AppContainer: React.FC = () => {
     return (
         <DataProvider>
             <CurrencyProvider>
-                <AppContent />
+                <NotificationProvider>
+                    <AppContent />
+                </NotificationProvider>
             </CurrencyProvider>
         </DataProvider>
     );

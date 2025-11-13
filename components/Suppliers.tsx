@@ -1,7 +1,5 @@
 
 
-
-
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -12,9 +10,11 @@ import ActionsDropdown from './common/ActionsDropdown';
 import ImportModal from './common/ImportModal';
 import { convertToCSV, downloadCSV } from '../utils/csvHelper';
 import ConfirmationModal from './common/ConfirmationModal';
+import { useNotification } from '../hooks/useNotificationContext';
 
 const Suppliers: React.FC = () => {
     const { suppliers, addSupplier, updateSupplier, deleteSupplier, bulkAddSuppliers } = useData();
+    const { addNotification } = useNotification();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
@@ -61,12 +61,14 @@ const Suppliers: React.FC = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!validate()) return;
         if (currentSupplier) {
-            updateSupplier({ ...formData, id: currentSupplier.id, businessId: currentSupplier.businessId });
+            await updateSupplier({ ...formData, id: currentSupplier.id, businessId: currentSupplier.businessId });
+            addNotification('Supplier updated successfully!', 'success');
         } else {
-            addSupplier(formData);
+            await addSupplier(formData);
+            addNotification('Supplier added successfully!', 'success');
         }
         handleCloseModal();
     };
@@ -80,7 +82,9 @@ const Suppliers: React.FC = () => {
         if (!supplierToDelete) return;
         const result = await deleteSupplier(supplierToDelete.id);
         if (!result.success) {
-            alert(result.message);
+            addNotification(result.message || 'Failed to delete supplier.', 'error');
+        } else {
+            addNotification('Supplier deleted.', 'info');
         }
         setIsConfirmOpen(false);
         setSupplierToDelete(null);

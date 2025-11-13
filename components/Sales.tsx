@@ -1,7 +1,5 @@
 
 
-
-
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -9,6 +7,7 @@ import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
 import { PlusCircle, Trash2, TrendingUp, DollarSign, Receipt, BarChart } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { useNotification } from '../hooks/useNotificationContext';
 
 type SaleItemForm = {
     id: number;
@@ -19,6 +18,7 @@ type SaleItemForm = {
 const Sales: React.FC = () => {
     const { sales, menuItems, addSale } = useData();
     const { formatCurrency } = useCurrency();
+    const { addNotification } = useNotification();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [saleItems, setSaleItems] = useState<SaleItemForm[]>([
@@ -86,14 +86,15 @@ const Sales: React.FC = () => {
         }, 0);
     }, [saleItems, menuItems]);
 
-    const handleRecordSale = () => {
+    const handleRecordSale = async () => {
         if (saleItems.some(item => !item.menuItemId || item.quantity <= 0)) {
             alert('Please select a valid menu item and quantity for all entries.');
             return;
         }
         
         const itemsToSubmit = saleItems.map(({menuItemId, quantity}) => ({menuItemId, quantity}));
-        addSale(itemsToSubmit);
+        await addSale(itemsToSubmit);
+        addNotification('Sale recorded successfully!', 'success');
         setIsModalOpen(false);
     };
 
