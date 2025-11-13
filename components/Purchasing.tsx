@@ -281,7 +281,7 @@ const Purchasing: React.FC = () => {
                 title="Confirm Action"
                 message={`Are you sure you want to mark this order as ${confirmationAction?.status}? ${confirmationAction?.status === 'Completed' ? 'This will update your inventory stock levels.' : ''}`}
                 confirmText="Yes, Confirm"
-                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'ican-btn bg-green-600 text-white hover:bg-green-700' : confirmationAction?.status === 'Cancelled' ? 'ican-btn ican-btn-danger' : 'ican-btn ican-btn-primary' }
+                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'ican-btn bg-[var(--color-success)] text-white hover:opacity-90' : confirmationAction?.status === 'Cancelled' ? 'ican-btn ican-btn-danger' : 'ican-btn ican-btn-primary' }
             />
         </>
     );
