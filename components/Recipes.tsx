@@ -740,13 +740,15 @@ const Recipes: React.FC = () => {
         if (!editedRecipe) return;
 
         const business = businesses.find(b => b.id === activeBusinessId);
+        const totalCost = calculateRecipeCost(editedRecipe);
         
         const ingredientsWithDetails = editedRecipe.ingredients.map(ing => {
             const item = getInventoryItemById(ing.itemId);
-            if (!item) return { name: 'Unknown', quantity: ing.quantity, unit: ing.unit, cost: 0 };
+            if (!item) return { name: 'Unknown', quantity: ing.quantity, unit: ing.unit, cost: 0, percentage: 0 };
             const conversionFactor = getConversionFactor(ing.unit, item.unit) || 1;
             const cost = item.unitCost * ing.quantity * conversionFactor;
-            return { name: item.name, quantity: ing.quantity, unit: ing.unit, cost };
+            const percentage = totalCost > 0 ? (cost / totalCost) * 100 : 0;
+            return { name: item.name, quantity: ing.quantity, unit: ing.unit, cost, percentage };
         });
 
         const dataUrl = generateCostingSheetSVG({

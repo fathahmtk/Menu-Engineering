@@ -5,6 +5,7 @@ interface IngredientDetail {
     quantity: number;
     unit: string;
     cost: number;
+    percentage: number;
 }
 
 interface CostingSheetData {
@@ -50,6 +51,7 @@ export const generateCostingSheetSVG = ({
             <td style="padding: 8px 12px; text-align: left;">${ing.quantity}</td>
             <td style="padding: 8px 12px; text-align: left;">${escapeHTML(ing.unit)}</td>
             <td style="padding: 8px 12px; text-align: right;">${formatCurrency(ing.cost)}</td>
+            <td style="padding: 8px 12px; text-align: right;">${ing.percentage.toFixed(1)}%</td>
         </tr>
     `).join('');
 
@@ -105,7 +107,8 @@ export const generateCostingSheetSVG = ({
                             <th style="padding: 10px 12px; text-align: left; font-weight: 600; border-top-left-radius: 6px;">Ingredient</th>
                             <th style="padding: 10px 12px; text-align: left; font-weight: 600;">Quantity</th>
                             <th style="padding: 10px 12px; text-align: left; font-weight: 600;">Unit</th>
-                            <th style="padding: 10px 12px; text-align: right; font-weight: 600; border-top-right-radius: 6px;">Cost</th>
+                            <th style="padding: 10px 12px; text-align: right; font-weight: 600;">Cost</th>
+                            <th style="padding: 10px 12px; text-align: right; font-weight: 600; border-top-right-radius: 6px;">Cost %</th>
                         </tr>
                     </thead>
                     <tbody>
