@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import { DataProvider } from './hooks/useDataContext';
@@ -10,6 +11,7 @@ import { Menu as MenuIcon, CheckCircle, LoaderCircle } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
 import { AuthProvider, useAuth } from './hooks/useAuthContext';
 import { NotificationProvider } from './hooks/useNotificationContext';
+import { UnsavedChangesProvider } from './hooks/useUnsavedChangesContext';
 
 
 // Lazy-load page components for better performance
@@ -128,37 +130,39 @@ const AppContent: React.FC = () => {
     }
 
     return (
-        <div className="flex min-h-screen text-[var(--color-text-primary)] bg-[var(--color-background)]">
-            <Sidebar 
-                currentView={currentView} 
-                setCurrentView={setCurrentView}
-                isOpen={isSidebarOpen}
-                setIsOpen={setIsSidebarOpen}
-            />
-            <main className="flex-1 flex flex-col h-screen">
-                <header className="bg-[var(--color-card)]/80 border-b border-[var(--color-border)] p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
-                    <div className="flex items-center min-w-0">
-                        <button 
-                            className="lg:hidden mr-2 md:mr-4 text-[var(--color-text-muted)]"
-                            onClick={() => setIsSidebarOpen(true)}
-                            aria-label="Open sidebar"
-                        >
-                            <MenuIcon size={24} />
-                        </button>
-                        <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)] truncate">{viewTitles[currentView]}</h2>
+        <UnsavedChangesProvider>
+            <div className="flex min-h-screen text-[var(--color-text-primary)] bg-[var(--color-background)]">
+                <Sidebar 
+                    currentView={currentView} 
+                    setCurrentView={setCurrentView}
+                    isOpen={isSidebarOpen}
+                    setIsOpen={setIsSidebarOpen}
+                />
+                <main className="flex-1 flex flex-col h-screen">
+                    <header className="bg-[var(--color-card)]/80 border-b border-[var(--color-border)] p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
+                        <div className="flex items-center min-w-0">
+                            <button 
+                                className="lg:hidden mr-2 md:mr-4 text-[var(--color-text-muted)]"
+                                onClick={() => setIsSidebarOpen(true)}
+                                aria-label="Open sidebar"
+                            >
+                                <MenuIcon size={24} />
+                            </button>
+                            <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)] truncate">{viewTitles[currentView]}</h2>
+                        </div>
+                        <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
+                            <BusinessSelector />
+                            <CurrencySelector />
+                        </div>
+                    </header>
+                    <div className="flex-1 p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                        <Suspense fallback={<GlobalLoading message="Loading Content..." />}>
+                            <CurrentViewComponent />
+                        </Suspense>
                     </div>
-                    <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
-                        <BusinessSelector />
-                        <CurrencySelector />
-                    </div>
-                </header>
-                <div className="flex-1 p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
-                    <Suspense fallback={<GlobalLoading message="Loading Content..." />}>
-                        <CurrentViewComponent />
-                    </Suspense>
-                </div>
-            </main>
-        </div>
+                </main>
+            </div>
+        </UnsavedChangesProvider>
     );
 };
 

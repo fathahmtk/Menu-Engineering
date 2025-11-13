@@ -2,6 +2,7 @@
 import React from 'react';
 import { LayoutDashboard, ShoppingCart, BookOpen, Truck, Utensils, BarChart2, X, ClipboardList, Receipt, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuthContext';
+import { useUnsavedChanges } from '../hooks/useUnsavedChangesContext';
 
 
 type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'sales' | 'reports';
@@ -43,6 +44,7 @@ const NavItem: React.FC<{
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, setIsOpen }) => {
   const { signOut } = useAuth();
+  const { promptNavigation } = useUnsavedChanges();
   
   const navItems: { id: View; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
@@ -56,10 +58,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
   ];
 
   const handleNavigation = (view: View) => {
-    setCurrentView(view);
-    if (window.innerWidth < 1024) {
-      setIsOpen(false);
-    }
+    promptNavigation(() => {
+        setCurrentView(view);
+        if (window.innerWidth < 1024) {
+            setIsOpen(false);
+        }
+    });
   };
 
   return (

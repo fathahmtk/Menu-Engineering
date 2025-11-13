@@ -208,17 +208,124 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: true };
   };
   
+  const recordRecipeCostHistory = async (recipeId: string) => {
+    const recipe = recipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+    
+    const currentCost = calculateRecipeCost(recipe);
+    const lastCostEntry = recipe.costHistory?.[recipe.costHistory.length - 1];
+
+    if (!lastCostEntry || Math.abs(lastCostEntry.cost - currentCost) > 0.01) { 
+        const newHistoryEntry = { date: new Date().toISOString(), cost: currentCost };
+        const newHistory = [...(recipe.costHistory || []), newHistoryEntry];
+        
+        setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, costHistory: newHistory } : r));
+    }
+  };
+
+  const duplicateRecipe = async (id: string, includeHistory: boolean): Promise<Recipe | undefined> => {
+    const recipeToDuplicate = recipes.find(r => r.id === id);
+    if (!recipeToDuplicate) return undefined;
+
+    const newRecipe: Recipe = {
+        ...recipeToDuplicate,
+        id: crypto.randomUUID(),
+        name: `${recipeToDuplicate.name} (Copy)`,
+        costHistory: includeHistory ? [...(recipeToDuplicate.costHistory || [])] : [{ date: new Date().toISOString(), cost: calculateRecipeCost(recipeToDuplicate) }],
+    };
+
+    setRecipes(prev => [...prev, newRecipe]);
+    return newRecipe;
+  };
+  
+  const bulkAddRecipes = async (newRecipes: Omit<Recipe, 'id' | 'businessId'>[]) => {
+    if (!activeBusinessId) return { successCount: 0, duplicateCount: 0 };
+    const existingNames = new Set(recipes.map(r => r.name.toLowerCase()));
+    const toAdd = newRecipes.filter(r => !existingNames.has(r.name.toLowerCase()));
+    const duplicateCount = newRecipes.length - toAdd.length;
+
+    if (toAdd.length === 0) return { successCount: 0, duplicateCount };
+    
+    const data = toAdd.map(r => ({
+      ...r,
+      id: crypto.randomUUID(),
+      businessId: activeBusinessId,
+      costHistory: [{ date: new Date().toISOString(), cost: calculateRecipeCost(r as Recipe) }]
+    }));
+
+    const newCategories = [...new Set(data.map(r => r.category))];
+    for (const catName of newCategories) {
+        await addCategory(catName);
+    }
+    
+    setRecipes(prev => [...prev, ...data]);
+    return { successCount: data.length, duplicateCount };
+  };
+
   const addCategory = async (name: string) => {
-      if(!activeBusinessId || categories.some(c => c.name.toLowerCase() === name.toLowerCase() && c.businessId === activeBusinessId)) return;
+      if(!activeBusinessId || !name || categories.some(c => c.name.toLowerCase() === name.toLowerCase() && c.businessId === activeBusinessId)) return;
       const newCategory = { name, id: crypto.randomUUID(), businessId: activeBusinessId };
       setCategories(prev => [...prev, newCategory]);
+  };
+  
+  const updateCategory = async (id: string, name: string) => {
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, name } : c));
+  };
+
+  const deleteCategory = async (id: string) => {
+    const categoryToDelete = categories.find(c => c.id === id);
+    if (!categoryToDelete) return { success: false, message: 'Category not found.'};
+
+    const isUsed = recipes.some(r => r.category.toLowerCase() === categoryToDelete.name.toLowerCase());
+    if (isUsed) {
+        return { success: false, message: 'Cannot delete category. It is used in one or more recipes.' };
+    }
+    setCategories(prev => prev.filter(c => c.id !== id));
+    return { success: true };
+  };
+
+  const addUnit = async (name: string) => {
+      if(!activeBusinessId || !name || ingredientUnits.some(u => u.name.toLowerCase() === name.toLowerCase() && u.businessId === activeBusinessId)) return;
+      const newUnit = { name, id: crypto.randomUUID(), businessId: activeBusinessId };
+      setIngredientUnits(prev => [...prev, newUnit]);
   }
 
-  // FIX: Update placeholder functions to accept any arguments to match type definitions.
-  const placeholder = async (..._args: any[]) => { console.warn("Function not implemented"); return { success: false } as any; };
-  const placeholderCounts = async (..._args: any[]) => { console.warn("Function not implemented"); return { successCount: 0, duplicateCount: 0 }; };
+  const updateUnit = async (id: string, name: string) => {
+    setIngredientUnits(prev => prev.map(u => u.id === id ? { ...u, name } : u));
+  };
 
-  // FIX: Add explicit Promise<void> return type to match the DataContextType interface.
+  const deleteUnit = async (id: string) => {
+    const unitToDelete = ingredientUnits.find(u => u.id === id);
+    if (!unitToDelete) return { success: false, message: 'Unit not found.' };
+
+    const isUsed = recipes.some(r => r.ingredients.some(i => i.unit.toLowerCase() === unitToDelete.name.toLowerCase()));
+    if (isUsed) {
+        return { success: false, message: 'Cannot delete unit. It is used in one or more recipes.' };
+    }
+    setIngredientUnits(prev => prev.filter(u => u.id !== id));
+    return { success: true };
+  };
+  
+  const addMenuItem = async (item: Omit<MenuItem, 'id' | 'businessId'>) => {
+    if(!activeBusinessId) return;
+    const newMenuItem = { ...item, id: crypto.randomUUID(), businessId: activeBusinessId };
+    setMenuItems(prev => [...prev, newMenuItem]);
+  };
+  
+  const updateMenuItem = async (item: MenuItem) => {
+    setMenuItems(prev => prev.map(m => m.id === item.id ? item : m));
+  };
+  
+  const deleteMenuItem = async (id: string) => {
+    setMenuItems(prev => prev.filter(m => m.id !== id));
+  };
+
+  const addRecipeTemplate = async (template: Omit<RecipeTemplate, 'id' | 'businessId'>) => {
+    if(!activeBusinessId) return;
+    const newTemplate = { ...template, id: crypto.randomUUID(), businessId: activeBusinessId };
+    setRecipeTemplates(prev => [...prev, newTemplate]);
+  };
+  
   const uploadRecipeImage = async (recipeId: string, file: File): Promise<void> => {
     return new Promise<void>((resolve) => {
         const reader = new FileReader();
@@ -282,7 +389,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let totalRevenue = 0;
     let totalCost = 0;
 
-// FIX: Explicitly type Maps to ensure correct type inference for menuItem and invItem.
     const inventoryMap = new Map<string, InventoryItem>(inventory.map(i => [i.id, {...i}]));
     const menuItemsMap = new Map<string, MenuItem>(menuItems.map(m => [m.id, {...m}]));
 
@@ -368,25 +474,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addRecipe,
     updateRecipe,
     deleteRecipe,
-    recordRecipeCostHistory: placeholder,
-    duplicateRecipe: placeholder,
+    recordRecipeCostHistory,
+    duplicateRecipe,
     uploadRecipeImage,
     removeRecipeImage,
-    bulkAddRecipes: placeholderCounts,
+    bulkAddRecipes,
 
-    addMenuItem: placeholder,
-    updateMenuItem: placeholder,
-    deleteMenuItem: placeholder,
+    addMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
 
     addCategory,
-    updateCategory: placeholder,
-    deleteCategory: placeholder,
+    updateCategory,
+    deleteCategory,
 
-    addUnit: placeholder,
-    updateUnit: placeholder,
-    deleteUnit: placeholder,
+    addUnit,
+    updateUnit,
+    deleteUnit,
 
-    addRecipeTemplate: placeholder,
+    addRecipeTemplate,
 
     addPurchaseOrder,
     updatePurchaseOrderStatus,

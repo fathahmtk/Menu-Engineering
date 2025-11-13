@@ -1,14 +1,17 @@
 
 
+
 import React, { useState } from 'react';
 import { useData } from '../hooks/useDataContext';
 import { Building, ChevronDown, PlusCircle } from 'lucide-react';
 import Modal from './common/Modal';
 import { useNotification } from '../hooks/useNotificationContext';
+import { useUnsavedChanges } from '../hooks/useUnsavedChangesContext';
 
 const BusinessSelector: React.FC = () => {
     const { businesses, activeBusinessId, setActiveBusinessId, addBusiness } = useData();
     const { addNotification } = useNotification();
+    const { promptNavigation } = useUnsavedChanges();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newBusinessName, setNewBusinessName] = useState('');
@@ -16,8 +19,10 @@ const BusinessSelector: React.FC = () => {
     const activeBusiness = businesses.find(b => b.id === activeBusinessId);
 
     const handleSelectBusiness = (id: string) => {
-        setActiveBusinessId(id);
-        setIsDropdownOpen(false);
+        promptNavigation(() => {
+            setActiveBusinessId(id);
+            setIsDropdownOpen(false);
+        });
     };
     
     const handleAddBusiness = async () => {

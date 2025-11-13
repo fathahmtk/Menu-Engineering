@@ -30,8 +30,12 @@ const AuthPage: React.FC = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-[var(--color-background)] p-4 sm:p-6 md:p-8">
-            <div className="w-full max-w-md mx-auto">
+        <div 
+            className="flex items-center justify-center min-h-screen p-4 sm:p-6 md:p-8 bg-cover bg-center relative"
+            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop')" }}
+        >
+            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
+            <div className="w-full max-w-md mx-auto z-10">
                 <div className="text-center mb-8">
                     <ICanLogo />
                     <h1 className="text-3xl font-bold mt-4 text-[var(--color-text-primary)]">

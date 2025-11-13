@@ -1,18 +1,21 @@
 
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Lightbulb, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download } from 'lucide-react';
 import { Recipe, Ingredient, RecipeCategory, RecipeTemplate, IngredientUnit } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import ActionsDropdown from './common/ActionsDropdown';
 import ImportModal from './common/ImportModal';
 import { convertToCSV, downloadCSV } from '../utils/csvHelper';
 import { useNotification } from '../hooks/useNotificationContext';
+import { useUnsavedChanges } from '../hooks/useUnsavedChangesContext';
+import { generateCostingSheetSVG } from '../utils/costingSheetGenerator';
 
 const DEFAULT_UNITS: string[] = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
 
@@ -61,8 +64,11 @@ const RecipeFormModal: React.FC<{
     }, [categories]);
 
     useEffect(() => {
-        if(isOpen) resetForm();
+        if(isOpen) {
+            resetForm();
+        }
     }, [isOpen, resetForm]);
+
 
     const handleTemplateSelect = (templateId: string) => {
         const template = templates.find(t => t.id === templateId);
@@ -80,7 +86,6 @@ const RecipeFormModal: React.FC<{
     };
 
     const handleClose = () => {
-        resetForm();
         onClose();
     };
 
@@ -184,7 +189,14 @@ const RecipeFormModal: React.FC<{
                            </div>
                        ))}
                     </div>
-                    <button onClick={handleAddIngredient} className="text-sm text-[var(--color-primary)] mt-2 flex items-center font-semibold"><PlusCircle size={16} className="mr-1"/> Add Ingredient</button>
+                    <button
+                        onClick={handleAddIngredient}
+                        disabled={inventory.length === 0}
+                        className={`ican-btn ican-btn-secondary py-1.5 px-3 mt-2 text-sm ${inventory.length === 0 ? 'ican-btn-disabled' : ''}`}
+                        title={inventory.length === 0 ? "Add items to your inventory first" : ""}
+                    >
+                        <PlusCircle size={16} className="mr-1.5"/> Add Ingredient
+                    </button>
                 </div>
 
                 <div className="bg-[var(--color-input)] p-3 rounded-lg text-sm mt-4 border border-[var(--color-border)]">
@@ -381,16 +393,15 @@ const UnitManagerModal: React.FC<{
     );
 }
 
-
 const Recipes: React.FC = () => {
-    const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes } = useData();
+    const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes, businesses } = useData();
     const { formatCurrency } = useCurrency();
     const { addNotification } = useNotification();
+    const { setIsDirty, promptNavigation } = useUnsavedChanges();
 
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [editedRecipe, setEditedRecipe] = useState<Recipe | null>(null);
-    const [isDirty, setIsDirty] = useState(false);
-
+    
     const [isNewRecipeModalOpen, setIsNewRecipeModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -416,19 +427,31 @@ const Recipes: React.FC = () => {
     }, [recipes, filterCategory, searchTerm]);
 
     const handleSelectRecipe = (recipe: Recipe) => {
-        if (isDirty) {
-            if (!window.confirm("You have unsaved changes that will be lost. Are you sure you want to switch?")) {
-                return;
-            }
-        }
-        setSelectedRecipe(recipe);
-        setEditedRecipe(JSON.parse(JSON.stringify(recipe))); // Deep copy for editing
-        setIsHistoryVisible(false);
+        promptNavigation(() => {
+            setSelectedRecipe(recipe);
+            setEditedRecipe(JSON.parse(JSON.stringify(recipe))); // Deep copy for editing
+            setIsHistoryVisible(false);
+        });
     }
     
+    const editedRecipeRef = useRef(editedRecipe);
     useEffect(() => {
-      setIsDirty(JSON.stringify(selectedRecipe) !== JSON.stringify(editedRecipe));
-    }, [editedRecipe, selectedRecipe]);
+        editedRecipeRef.current = editedRecipe;
+    }, [editedRecipe]);
+
+    const handleSaveChanges = useCallback(async () => {
+        const recipeToSave = editedRecipeRef.current;
+        if (!recipeToSave) return;
+        await updateRecipe(recipeToSave);
+        setSelectedRecipe(recipeToSave);
+        addNotification('Recipe saved successfully!', 'success');
+    }, [updateRecipe, addNotification]);
+    
+    const isDirty = useMemo(() => JSON.stringify(selectedRecipe) !== JSON.stringify(editedRecipe), [selectedRecipe, editedRecipe]);
+
+    useEffect(() => {
+      setIsDirty(isDirty, isDirty ? handleSaveChanges : undefined);
+    }, [isDirty, setIsDirty, handleSaveChanges]);
 
     useEffect(() => {
         if (selectedRecipe && !filteredRecipes.some(r => r.id === selectedRecipe.id)) {
@@ -460,21 +483,14 @@ const Recipes: React.FC = () => {
         if (selectedRecipe) {
             const updatedRecipeFromContext = recipes.find(r => r.id === selectedRecipe.id);
             if (updatedRecipeFromContext && JSON.stringify(updatedRecipeFromContext) !== JSON.stringify(selectedRecipe)) {
-                setSelectedRecipe(updatedRecipeFromContext);
                 // Only reset editedRecipe if not currently dirty, to avoid wiping user changes
                 if(!isDirty) {
+                    setSelectedRecipe(updatedRecipeFromContext);
                     setEditedRecipe(JSON.parse(JSON.stringify(updatedRecipeFromContext)));
                 }
             }
         }
     }, [recipes, selectedRecipe, isDirty]);
-    
-    const handleSaveChanges = async () => {
-        if (!editedRecipe) return;
-        await updateRecipe(editedRecipe);
-        setSelectedRecipe(editedRecipe);
-        addNotification('Recipe saved successfully!', 'success');
-    };
 
     const handleCancelChanges = () => {
         if (selectedRecipe) {
@@ -720,6 +736,36 @@ const Recipes: React.FC = () => {
         return bulkAddRecipes(data);
     };
 
+    const handleDownloadCostingSheet = () => {
+        if (!editedRecipe) return;
+
+        const business = businesses.find(b => b.id === activeBusinessId);
+        
+        const ingredientsWithDetails = editedRecipe.ingredients.map(ing => {
+            const item = getInventoryItemById(ing.itemId);
+            if (!item) return { name: 'Unknown', quantity: ing.quantity, unit: ing.unit, cost: 0 };
+            const conversionFactor = getConversionFactor(ing.unit, item.unit) || 1;
+            const cost = item.unitCost * ing.quantity * conversionFactor;
+            return { name: item.name, quantity: ing.quantity, unit: ing.unit, cost };
+        });
+
+        const dataUrl = generateCostingSheetSVG({
+            recipe: editedRecipe,
+            ingredientsWithDetails,
+            business,
+            formatCurrency,
+            calculateRecipeCost,
+        });
+        
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        const safeFilename = editedRecipe.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        link.download = `costing-sheet-${safeFilename}.svg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        addNotification('Costing sheet download started!', 'success');
+    };
 
     const editedRecipeCost = editedRecipe ? calculateRecipeCost(editedRecipe) : 0;
     const editedCostPerServing = (editedRecipe && editedRecipe.servings > 0) ? editedRecipeCost / editedRecipe.servings : 0;
@@ -748,7 +794,13 @@ const Recipes: React.FC = () => {
 
     return (
         <>
-        <RecipeFormModal isOpen={isNewRecipeModalOpen} onClose={() => setIsNewRecipeModalOpen(false)} onSave={addRecipe} categories={categories} templates={recipeTemplates} />
+        <RecipeFormModal 
+            isOpen={isNewRecipeModalOpen} 
+            onClose={() => { setIsNewRecipeModalOpen(false); }} 
+            onSave={addRecipe} 
+            categories={categories} 
+            templates={recipeTemplates}
+        />
         <CategoryManagerModal isOpen={modalState.type === 'manageCategories'} onClose={() => setModalState({ type: null })} />
         <UnitManagerModal isOpen={modalState.type === 'manageUnits'} onClose={() => setModalState({ type: null })} />
         <ImportModal
@@ -813,7 +865,7 @@ const Recipes: React.FC = () => {
                         <h2 className="text-xl font-bold">Recipes</h2>
                         <div className="flex items-center space-x-1">
                             <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
-                            <button onClick={() => setIsNewRecipeModalOpen(true)} className="flex items-center text-[var(--color-primary)] hover:opacity-80 p-2 rounded-lg" title="New Recipe">
+                            <button onClick={() => { setIsNewRecipeModalOpen(true); }} className="flex items-center text-[var(--color-primary)] hover:opacity-80 p-2 rounded-lg" title="New Recipe">
                                 <PlusCircle size={22} />
                             </button>
                         </div>
@@ -875,11 +927,10 @@ const Recipes: React.FC = () => {
                         <div className="flex-1 overflow-y-auto p-4 md:p-6">
                             <button 
                                 onClick={() => {
-                                    if(isDirty) {
-                                        if(!window.confirm("You have unsaved changes. Are you sure you want to go back?")) return;
-                                    }
-                                    setEditedRecipe(null);
-                                    setSelectedRecipe(null);
+                                    promptNavigation(() => {
+                                        setEditedRecipe(null);
+                                        setSelectedRecipe(null);
+                                    });
                                 }}
                                 className="lg:hidden flex items-center text-sm text-[var(--color-primary)] hover:opacity-80 font-semibold mb-3 -ml-1"
                             >
@@ -889,6 +940,9 @@ const Recipes: React.FC = () => {
                             <div className="flex justify-between items-start mb-4">
                                  <h2 className="text-2xl font-bold">{editedRecipe.name}</h2>
                                  <div className="flex items-center space-x-2">
+                                     <button onClick={handleDownloadCostingSheet} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Download Costing Sheet">
+                                        <Download size={20} className="text-[var(--color-text-muted)]" />
+                                    </button>
                                     <button onClick={() => setModalState({ type: 'saveTemplate'})} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Save as Template">
                                         <FileText size={20} className="text-[var(--color-text-muted)]" />
                                     </button>
@@ -933,7 +987,9 @@ const Recipes: React.FC = () => {
 
                             {suggestedSalePrice > 0 && (
                                 <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)]/20 p-4 rounded-lg mb-6 flex items-center">
-                                    <Lightbulb className="text-[var(--color-primary)] mr-4 flex-shrink-0" size={24} />
+                                    <div className="text-[var(--color-primary)] mr-4 flex-shrink-0">
+                                        💡
+                                    </div>
                                     <div>
                                         <p className="font-semibold text-[var(--color-primary)]">Suggested Sale Price: {formatCurrency(suggestedSalePrice)}</p>
                                         <p className="text-sm text-[var(--color-text-secondary)]">This suggestion is based on a 30% food cost target, a common industry benchmark for profitability.</p>
@@ -986,8 +1042,13 @@ const Recipes: React.FC = () => {
 
                              <div className="flex justify-between items-center mt-6 mb-2">
                                  <h3 className="text-lg font-semibold">Ingredients</h3>
-                                 <button onClick={handleAddIngredientToRecipe} className="flex items-center text-sm text-[var(--color-primary)] hover:opacity-80 font-semibold">
-                                    <Plus size={16} className="mr-1" /> Add Ingredient
+                                 <button
+                                    onClick={handleAddIngredientToRecipe}
+                                    disabled={inventory.length === 0}
+                                    className={`ican-btn ican-btn-secondary py-1.5 px-3 text-sm ${inventory.length === 0 ? 'ican-btn-disabled' : ''}`}
+                                    title={inventory.length === 0 ? "Add items to your inventory first" : ""}
+                                >
+                                    <Plus size={16} className="mr-1.5" /> Add Ingredient
                                 </button>
                             </div>
                             <div className="border border-[var(--color-border)] rounded-lg">
@@ -1123,7 +1184,7 @@ const Recipes: React.FC = () => {
                             <FileText size={48} className="mb-4 text-[var(--color-border)]" />
                             <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">No Recipe Selected</h3>
                             <p className="max-w-xs mt-1">Select a recipe from the list to view its details, or create a new one to get started.</p>
-                             <button onClick={() => setIsNewRecipeModalOpen(true)} className="mt-4 ican-btn ican-btn-primary">
+                             <button onClick={() => { setIsNewRecipeModalOpen(true); }} className="mt-4 ican-btn ican-btn-primary">
                                 <PlusCircle size={20} className="mr-2" />
                                 Create Recipe
                             </button>
