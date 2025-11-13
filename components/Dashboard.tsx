@@ -2,7 +2,7 @@ import React from 'react';
 import Card from './common/Card';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { DollarSign, AlertTriangle, BookCheck, PieChart } from 'lucide-react';
+import { DollarSign, AlertTriangle, BookCheck, PieChart, Utensils } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { useAppSettings } from '../hooks/useAppSettings';
 
@@ -94,25 +94,33 @@ const Dashboard: React.FC = () => {
             }
             <Card className="col-span-1 md:col-span-2 lg:col-span-4">
                 <h3 className="text-lg font-semibold mb-4 text-[var(--color-text-primary)]">Top 5 Most Profitable Menu Items</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={menuProfitabilityData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                        <XAxis dataKey="name" tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} />
-                        <YAxis tick={{ fill: 'var(--color-text-muted)' }} tickFormatter={(value) => formatCurrency(value)} />
-                        <Tooltip
-                          formatter={(value: number, name: string) => [formatCurrency(value), name.charAt(0).toUpperCase() + name.slice(1)]}
-                          contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', color: 'var(--color-text-primary)', boxShadow: 'var(--shadow-md)' }}
-                          labelStyle={{ color: 'var(--color-text-primary)', fontWeight: '600' }}
-                          cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                        />
-                        <Legend wrapperStyle={{ color: 'var(--color-text-muted)' }} />
-                        <Bar dataKey="profit" name="Profit" fill="var(--color-primary)">
-                            {menuProfitabilityData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                        </Bar>
-                         <Bar dataKey="revenue" name="Revenue" fill="var(--color-border)" />
-                    </BarChart>
-                </ResponsiveContainer>
+                {menuProfitabilityData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={menuProfitabilityData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <XAxis dataKey="name" tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} />
+                            <YAxis tick={{ fill: 'var(--color-text-muted)' }} tickFormatter={(value) => formatCurrency(value)} />
+                            <Tooltip
+                              formatter={(value: number, name: string) => [formatCurrency(value), name.charAt(0).toUpperCase() + name.slice(1)]}
+                              contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', color: 'var(--color-text-primary)', boxShadow: 'var(--shadow-md)' }}
+                              labelStyle={{ color: 'var(--color-text-primary)', fontWeight: '600' }}
+                              cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                            />
+                            <Legend wrapperStyle={{ color: 'var(--color-text-muted)' }} />
+                            <Bar dataKey="profit" name="Profit" fill="var(--color-primary)">
+                                {menuProfitabilityData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Bar>
+                             <Bar dataKey="revenue" name="Revenue" fill="var(--color-border)" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="h-[300px] flex flex-col items-center justify-center text-center text-[var(--color-text-muted)]">
+                        <Utensils size={40} className="mb-4 text-[var(--color-border)]"/>
+                        <p className="font-semibold">No menu data available</p>
+                        <p className="text-sm">Add menu items to see profitability insights.</p>
+                    </div>
+                )}
             </Card>
         </div>
     );

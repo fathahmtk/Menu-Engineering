@@ -97,6 +97,7 @@ export const mockRecipeTemplates: RecipeTemplate[] = [];
 export const mockPurchaseOrders: PurchaseOrder[] = [
     {
         id: 'po1',
+        poNumber: 'PO-0001',
         supplierId: 's4',
         items: [{ itemId: 'i1', quantity: 100, cost: 18 }],
         status: 'Completed',
@@ -107,6 +108,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     },
     {
         id: 'po2',
+        poNumber: 'PO-0002',
         supplierId: 's2',
         items: [{ itemId: 'i7', quantity: 1000, cost: 0.75 }],
         status: 'Pending',

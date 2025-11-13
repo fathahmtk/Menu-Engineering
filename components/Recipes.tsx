@@ -4,7 +4,7 @@ import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download, Sparkles, Bot } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download, Sparkles, Bot, Info, DollarSign } from 'lucide-react';
 import { Recipe, Ingredient, RecipeCategory, RecipeTemplate } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import ActionsDropdown from './common/ActionsDropdown';
@@ -258,7 +258,7 @@ const Recipes: React.FC = () => {
     const [filterCategory, setFilterCategory] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+    const [isHistoryVisible, setIsHistoryVisible] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [initialRecipeData, setInitialRecipeData] = useState<Partial<Omit<Recipe, 'id' | 'businessId'>> | undefined>();
 
@@ -300,6 +300,12 @@ const Recipes: React.FC = () => {
     const handleSaveChanges = useCallback(async () => {
         const recipeToSave = editedRecipeRef.current;
         if (!recipeToSave) return;
+        
+        if (recipeToSave.servings <= 0) {
+            addNotification("Servings must be a positive number.", "error", true);
+            return;
+        }
+
         await updateRecipe(recipeToSave);
         setSelectedRecipe(recipeToSave);
         addNotification('Recipe saved successfully!', 'success');
@@ -663,32 +669,19 @@ const Recipes: React.FC = () => {
         setInitialRecipeData(undefined); // Reset on close
     };
 
-    const foodCostTarget = settings.foodCostTarget > 0 ? settings.foodCostTarget / 100 : 0.3;
+    const handleDetailChange = (field: 'servings' | 'targetSalePricePerServing', value: string) => {
+        if (!editedRecipe) return;
+        setEditedRecipe({
+            ...editedRecipe,
+            [field]: Math.max(0, parseFloat(value) || 0)
+        });
+    };
+
     const editedRecipeCost = editedRecipe ? calculateRecipeCost(editedRecipe) : 0;
     const editedCostPerServing = (editedRecipe && editedRecipe.servings > 0) ? editedRecipeCost / editedRecipe.servings : 0;
-    const suggestedSalePrice = editedCostPerServing > 0 ? editedCostPerServing / foodCostTarget : 0;
-
-    const costAnalysisData = useMemo(() => {
-        if (!editedRecipe || !editedRecipeCost) return [];
-        
-        return editedRecipe.ingredients
-            .map(ing => {
-                const item = getInventoryItemById(ing.itemId);
-                if (!item) return { name: 'Unknown Ingredient', cost: 0, percentage: 0 };
-                
-                const costConversionFactor = getConversionFactor(ing.unit, item.unit) || 1;
-                const ingredientCost = item.unitCost * ing.quantity * costConversionFactor;
-                const percentage = editedRecipeCost > 0 ? (ingredientCost / editedRecipeCost) * 100 : 0;
-                
-                return {
-                    name: item.name,
-                    cost: ingredientCost,
-                    percentage: percentage,
-                };
-            })
-            .sort((a, b) => b.cost - a.cost);
-    }, [editedRecipe, getInventoryItemById, getConversionFactor, editedRecipeCost]);
-
+    const foodCostPercentage = (editedRecipe?.targetSalePricePerServing && editedRecipe.targetSalePricePerServing > 0) ? (editedCostPerServing / editedRecipe.targetSalePricePerServing) * 100 : 0;
+    const potentialProfit = (editedRecipe?.targetSalePricePerServing || 0) - editedCostPerServing;
+    
     return (
         <>
         <RecipeFormModal 
@@ -894,7 +887,7 @@ const Recipes: React.FC = () => {
                                  </div>
                             </div>
 
-                            <div className="relative group w-full h-48 bg-[var(--color-input)] rounded-lg mb-4 flex items-center justify-center overflow-hidden border border-dashed border-[var(--color-border)]">
+                             <div className="relative group w-full h-48 bg-[var(--color-input)] rounded-lg mb-6 flex items-center justify-center overflow-hidden border border-dashed border-[var(--color-border)]">
                                 {isUploading ? (
                                     <div className="flex flex-col items-center text-[var(--color-primary)]">
                                         <Loader2 size={32} className="animate-spin"/>
@@ -922,65 +915,53 @@ const Recipes: React.FC = () => {
                                     </label>
                                 )}
                             </div>
-
-
-                            {suggestedSalePrice > 0 && (
-                                <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)]/20 p-4 rounded-lg mb-6 flex items-center">
-                                    <div className="text-[var(--color-primary)] mr-4 flex-shrink-0">
-                                        💡
+                            
+                            {/* NEW: Interactive Costing Details Dashboard */}
+                            <div className="bg-[var(--color-input)] p-4 rounded-lg border border-[var(--color-border)] mb-6">
+                                <h3 className="text-lg font-semibold mb-4 text-[var(--color-text-primary)]">Costing Details</h3>
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                    <div className="bg-[var(--color-background)] p-3 rounded-md">
+                                        <label className="text-xs text-[var(--color-text-muted)]">Total Recipe Cost</label>
+                                        <p className="text-lg font-bold text-[var(--color-primary)]">{formatCurrency(editedRecipeCost)}</p>
                                     </div>
-                                    <div>
-                                        <p className="font-semibold text-[var(--color-primary)]">Suggested Sale Price: {formatCurrency(suggestedSalePrice)}</p>
-                                        <p className="text-sm text-[var(--color-text-secondary)]">This suggestion is based on a {settings.foodCostTarget}% food cost target, a common industry benchmark for profitability.</p>
+                                     <div className="bg-[var(--color-background)] p-3 rounded-md">
+                                        <label className="text-xs text-[var(--color-text-muted)]">Cost / Serving</label>
+                                        <p className="text-lg font-bold">{formatCurrency(editedCostPerServing)}</p>
+                                    </div>
+                                    <div className="bg-[var(--color-background)] p-3 rounded-md">
+                                        <label className="text-xs text-[var(--color-text-muted)] flex items-center">
+                                            Food Cost %
+                                            <span className="group relative ml-1.5">
+                                                <Info size={12} />
+                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 text-xs text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                    (Cost per Serving / Target Price) * 100
+                                                </span>
+                                            </span>
+                                        </label>
+                                        <p className={`text-lg font-bold ${foodCostPercentage > settings.foodCostTarget ? 'text-[var(--color-danger)]' : 'text-[var(--color-success)]'}`}>{foodCostPercentage.toFixed(1)}%</p>
+                                    </div>
+                                    <div className="bg-[var(--color-background)] p-3 rounded-md">
+                                        <label className="text-xs text-[var(--color-text-muted)]">Potential Profit</label>
+                                        <p className={`text-lg font-bold ${potentialProfit > 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{formatCurrency(potentialProfit)}</p>
                                     </div>
                                 </div>
-                            )}
-
-                            <div className="mt-6">
-                                <button
-                                    onClick={() => setIsHistoryVisible(!isHistoryVisible)}
-                                    className="flex items-center justify-between w-full p-3 bg-[var(--color-input)] hover:bg-[var(--color-border)] rounded-lg border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                                    aria-expanded={isHistoryVisible}
-                                >
-                                    <div className="flex items-center">
-                                        <TrendingUp className="mr-2 text-[var(--color-primary)]" size={20} />
-                                        <h3 className="text-lg font-semibold">Cost History</h3>
-                                    </div>
-                                    {isHistoryVisible ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                                </button>
-                                {isHistoryVisible && (
-                                    <div className="mt-4 p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-background)]">
-                                        {editedRecipe.costHistory && editedRecipe.costHistory.length > 1 ? (
-                                            <ResponsiveContainer width="100%" height={250}>
-                                                <LineChart data={editedRecipe.costHistory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                                                    <XAxis 
-                                                        dataKey="date" 
-                                                        tickFormatter={(dateStr) => new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                                        tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }}
-                                                    />
-                                                    <YAxis 
-                                                        tickFormatter={(value) => formatCurrency(value)}
-                                                        domain={['dataMin - 5', 'dataMax + 5']}
-                                                        tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }}
-                                                    />
-                                                    <Tooltip 
-                                                        formatter={(value: number) => [formatCurrency(value), 'Total Cost']}
-                                                        labelFormatter={(dateStr) => new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                                        contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
-                                                    />
-                                                    <Line type="monotone" dataKey="cost" stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 4, fill: 'var(--color-primary)' }} activeDot={{ r: 6, fill: 'var(--color-primary)' }} />
-                                                </LineChart>
-                                            </ResponsiveContainer>
-                                        ) : (
-                                            <p className="text-center text-[var(--color-text-muted)] py-4">Not enough data to display cost history chart.</p>
-                                        )}
-                                    </div>
-                                )}
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                     <div>
+                                        <label htmlFor="servings" className="block text-sm font-medium text-[var(--color-text-muted)]">Servings</label>
+                                        <input type="number" id="servings" value={editedRecipe.servings} onChange={(e) => handleDetailChange('servings', e.target.value)} min="1" className="ican-input mt-1" />
+                                     </div>
+                                      <div>
+                                        <label htmlFor="targetPrice" className="block text-sm font-medium text-[var(--color-text-muted)]">Target Sale Price</label>
+                                        <div className="relative">
+                                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] text-sm">{useCurrency().currency}</span>
+                                           <input type="number" id="targetPrice" value={editedRecipe.targetSalePricePerServing || ''} onChange={(e) => handleDetailChange('targetSalePricePerServing', e.target.value)} min="0" step="0.01" className="ican-input mt-1 pl-10" />
+                                        </div>
+                                     </div>
+                                 </div>
                             </div>
-
-                             <div className="flex justify-between items-center mt-6 mb-2">
-                                 <h3 className="text-lg font-semibold">Ingredients</h3>
+                            
+                            <div className="flex justify-between items-center mt-6 mb-2">
+                                 <h3 className="text-lg font-semibold">Ingredients ({editedRecipe.ingredients.length})</h3>
                                  <button
                                     onClick={handleAddIngredientToRecipe}
                                     disabled={inventory.length === 0}
@@ -1003,11 +984,8 @@ const Recipes: React.FC = () => {
                                         const item = getInventoryItemById(ing.itemId);
                                         const costConversionFactor = item ? getConversionFactor(ing.unit, item.unit) || 1 : 1;
                                         const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
-                                        const costPercentage = editedRecipeCost > 0 ? (ingredientCost / editedRecipeCost) * 100 : 0;
-                                        const isHighCost = costPercentage >= 25;
-                                        
                                         return (
-                                            <div key={`${ing.itemId}-${index}`} className={`p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0 transition-colors ${isHighCost ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''}`}>
+                                            <div key={`${ing.itemId}-${index}`} className={`p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0 transition-colors`}>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Ingredient</label>
                                                     <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select text-sm">
@@ -1026,14 +1004,7 @@ const Recipes: React.FC = () => {
                                                 </div>
                                                 <div className="flex justify-between items-center md:block md:text-right">
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Cost</label>
-                                                    {item ? (
-                                                        <div className="flex flex-col items-end">
-                                                            <span className="font-medium text-sm">{formatCurrency(ingredientCost)}</span>
-                                                            <span className="text-xs text-[var(--color-text-muted)]">
-                                                                ({costPercentage.toFixed(1)}% of total)
-                                                            </span>
-                                                        </div>
-                                                    ) : <span className="text-[var(--color-danger)] text-xs">Item not found</span>}
+                                                    {item ? <span className="font-medium text-sm">{formatCurrency(ingredientCost)}</span> : <span className="text-[var(--color-danger)] text-xs">Item not found</span>}
                                                 </div>
                                                 <div className="flex justify-end md:justify-center">
                                                     <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-[var(--color-text-muted)]/70 hover:text-[var(--color-danger)]"><XCircle size={18} /></button>
@@ -1041,38 +1012,6 @@ const Recipes: React.FC = () => {
                                             </div>
                                         );
                                     })}
-                                </div>
-                                <div className="font-semibold border-t-2 border-[var(--color-border)]">
-                                    <div className="flex justify-between items-center p-3">
-                                        <span className="text-right text-lg">Total Recipe Cost:</span>
-                                        <span className="text-right text-lg">{formatCurrency(editedRecipeCost)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-3 bg-[var(--color-primary-light)]">
-                                        <span className="text-right text-[var(--color-primary)] text-lg">Cost per Serving:</span>
-                                        <span className="text-right text-[var(--color-primary)] text-lg">{formatCurrency(editedCostPerServing)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="mt-6">
-                                <h3 className="text-lg font-semibold">Cost Contribution Analysis</h3>
-                                <p className="text-sm text-[var(--color-text-muted)] mb-3">Breakdown of ingredients sorted by their impact on the total recipe cost.</p>
-                                <div className="space-y-3 border border-[var(--color-border)] rounded-lg p-4 bg-[var(--color-background)]">
-                                    {costAnalysisData.length > 0 ? costAnalysisData.map((data, index) => (
-                                        <div key={index}>
-                                            <div className="flex justify-between items-center text-sm mb-1">
-                                                <span className="font-medium text-[var(--color-text-primary)]">{data.name}</span>
-                                                <span className="font-semibold text-[var(--color-text-secondary)]">{formatCurrency(data.cost)} ({data.percentage.toFixed(1)}%)</span>
-                                            </div>
-                                            <div className="w-full bg-[var(--color-input)] rounded-full h-2">
-                                                <div
-                                                    className="bg-[var(--color-primary)] h-2 rounded-full transition-width duration-500"
-                                                    style={{ width: `${data.percentage}%` }}
-                                                    title={`${data.percentage.toFixed(1)}% of total cost`}
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    )) : <p className="text-center text-sm text-[var(--color-text-muted)] py-4">No ingredients to analyze.</p>}
                                 </div>
                             </div>
                             

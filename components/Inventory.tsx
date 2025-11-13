@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -16,6 +14,30 @@ import { useNotification } from '../hooks/useNotificationContext';
 
 const ITEM_CATEGORIES: InventoryItem['category'][] = ['Produce', 'Meat', 'Dairy', 'Pantry', 'Bakery', 'Beverages', 'Seafood'];
 const DEFAULT_UNITS = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
+
+const StockLevelIndicator: React.FC<{ item: InventoryItem }> = ({ item }) => {
+    const { quantity, lowStockThreshold } = item;
+    const safeThreshold = lowStockThreshold * 2;
+    const percentage = Math.min((quantity / safeThreshold) * 100, 100);
+
+    let colorClass = 'bg-[var(--color-success)]';
+    let statusText = 'In Stock';
+    if (quantity <= lowStockThreshold) {
+        colorClass = 'bg-[var(--color-danger)]';
+        statusText = 'Low Stock';
+    } else if (quantity <= lowStockThreshold * 1.5) {
+        colorClass = 'bg-[var(--color-warning)]';
+        statusText = 'Nearing Low';
+    }
+
+    return (
+        <div className="w-full md:w-32" title={`${statusText}: ${quantity} / ${lowStockThreshold}`}>
+            <div className="w-full bg-[var(--color-input)] rounded-full h-2.5">
+                <div className={`${colorClass} h-2.5 rounded-full`} style={{ width: `${percentage}%` }}></div>
+            </div>
+        </div>
+    );
+};
 
 
 const Inventory: React.FC = () => {
@@ -135,7 +157,7 @@ const Inventory: React.FC = () => {
             addNotification(`${result.deletedCount} items deleted successfully.`, 'success');
         }
         if (result.failedItems.length > 0) {
-            addNotification(`${result.failedItems.length} items could not be deleted as they are in use.`, 'error');
+            addNotification(`${result.failedItems.length} items could not be deleted as they are in use.`, 'error', true);
         }
         setSelectedItems(new Set());
         setIsConfirmDeleteOpen(false);
@@ -300,7 +322,6 @@ const Inventory: React.FC = () => {
                     <tbody>
                         {inventory.length > 0 ? inventory.map(item => {
                             const supplier = getSupplierById(item.supplierId);
-                            const isLowStock = item.quantity <= item.lowStockThreshold;
                             const isEditing = editingItemId === item.id;
 
                             return (
@@ -323,25 +344,19 @@ const Inventory: React.FC = () => {
                                     </td>
                                     <td data-label="Supplier" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{supplier?.name || 'N/A'}</td>
                                     <td data-label="Status" className="p-4">
-                                        {isLowStock ? (
-                                            <span className="flex items-center text-[var(--color-danger)] bg-red-100 px-2 py-1 rounded-full text-xs font-semibold">
-                                                <AlertTriangle size={14} className="mr-1" />Low Stock
-                                            </span>
-                                        ) : (
-                                            <span className="text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs font-semibold">In Stock</span>
-                                        )}
+                                        <StockLevelIndicator item={item} />
                                     </td>
                                     <td data-label="Actions" className="p-4">
                                         <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
                                             {isEditing ? (
                                                 <>
-                                                    <button onClick={() => handleSave(item.id)} className="text-green-500 hover:text-green-600" aria-label="Save cost"><Save size={20} /></button>
-                                                    <button onClick={handleCancel} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" aria-label="Cancel edit"><XCircle size={20} /></button>
+                                                    <button onClick={() => handleSave(item.id)} className="text-green-500 hover:text-green-600" title="Save cost"><Save size={20} /></button>
+                                                    <button onClick={handleCancel} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" title="Cancel edit"><XCircle size={20} /></button>
                                                 </>
                                             ) : (
-                                                <button onClick={() => handleEdit(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]" aria-label="Edit item cost"><Edit size={20} /></button>
+                                                <button onClick={() => handleEdit(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]" title="Edit item cost"><Edit size={20} /></button>
                                             )}
-                                            <button onClick={() => handleDelete(item.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]" aria-label="Delete item"><Trash2 size={20} /></button>
+                                            <button onClick={() => handleDelete(item.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]" title="Delete item"><Trash2 size={20} /></button>
                                         </div>
                                     </td>
                                 </tr>

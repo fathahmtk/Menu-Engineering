@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -7,7 +5,7 @@ import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
 import { PlusCircle, Eye, CheckCircle, XCircle, Trash2, Plus, Package } from 'lucide-react';
-import { PurchaseOrder, PurchaseOrderItem } from '../types';
+import { PurchaseOrder, PurchaseOrderItem, Supplier } from '../types';
 import { useNotification } from '../hooks/useNotificationContext';
 
 const StatusBadge: React.FC<{ status: PurchaseOrder['status'] }> = ({ status }) => {
@@ -42,12 +40,23 @@ const Purchasing: React.FC = () => {
     
     const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
     const [confirmationAction, setConfirmationAction] = useState<{ id: string, status: PurchaseOrder['status'] } | null>(null);
+    const [statusFilter, setStatusFilter] = useState('All');
+    const [supplierFilter, setSupplierFilter] = useState('All');
 
     const [newPoData, setNewPoData] = useState<{ supplierId: string; items: NewPOItem[], dueDate: string }>({
         supplierId: suppliers[0]?.id || '',
         items: [{ itemId: null, quantity: 1, cost: 0 }],
         dueDate: getDefaultDueDate(),
     });
+    
+    const filteredOrders = useMemo(() => {
+        return purchaseOrders.filter(order => {
+            const statusMatch = statusFilter === 'All' || order.status === statusFilter;
+            const supplierMatch = supplierFilter === 'All' || order.supplierId === supplierFilter;
+            return statusMatch && supplierMatch;
+        });
+    }, [purchaseOrders, statusFilter, supplierFilter]);
+
 
     const handleOpenFormModal = () => {
         setNewPoData({
@@ -131,12 +140,32 @@ const Purchasing: React.FC = () => {
     return (
         <>
             <Card>
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-4">
                     <h2 className="text-xl font-bold">Purchase Orders</h2>
-                    <button onClick={handleOpenFormModal} className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
-                        <PlusCircle size={20} className="md:mr-2" />
-                        <span className="hidden md:inline">Create PO</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                         <button onClick={handleOpenFormModal} className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
+                            <PlusCircle size={20} className="md:mr-2" />
+                            <span className="hidden md:inline">Create PO</span>
+                        </button>
+                    </div>
+                </div>
+                <div className="flex flex-col md:flex-row gap-4 mb-4 p-4 bg-[var(--color-input)] rounded-lg">
+                    <div className="flex-1">
+                        <label htmlFor="statusFilter" className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">Status</label>
+                        <select id="statusFilter" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="ican-select">
+                            <option value="All">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                     <div className="flex-1">
+                        <label htmlFor="supplierFilter" className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">Supplier</label>
+                        <select id="supplierFilter" value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)} className="ican-select">
+                            <option value="All">All Suppliers</option>
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                    </div>
                 </div>
                 <div className="overflow-x-auto md:overflow-visible">
                     <table className="w-full text-left responsive-table">
@@ -152,14 +181,14 @@ const Purchasing: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {purchaseOrders.map(order => {
+                            {filteredOrders.map(order => {
                                 const today = new Date();
                                 today.setHours(0, 0, 0, 0);
                                 const isOverdue = order.status === 'Pending' && order.dueDate && new Date(order.dueDate) < today;
 
                                 return (
                                 <tr key={order.id} className={`border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input)] ${isOverdue ? 'bg-red-500/10' : ''}`}>
-                                    <td data-label="PO #" className="p-4 font-medium text-[var(--color-primary)] whitespace-nowrap">#{order.id.slice(-6).toUpperCase()}</td>
+                                    <td data-label="PO #" className="p-4 font-medium text-[var(--color-primary)] whitespace-nowrap">{order.poNumber}</td>
                                     <td data-label="Supplier" className="p-4 text-[var(--color-text-primary)] whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
                                     <td data-label="Order Date" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
                                     <td data-label="Due Date" className={`p-4 text-[var(--color-text-muted)] whitespace-nowrap ${isOverdue ? 'font-bold text-[var(--color-danger)]' : ''}`}>
@@ -182,10 +211,10 @@ const Purchasing: React.FC = () => {
                             )})}
                         </tbody>
                     </table>
-                    {purchaseOrders.length === 0 && (
+                    {filteredOrders.length === 0 && (
                         <div className="text-center py-10 text-[var(--color-text-muted)]">
                             <Package size={40} className="mx-auto mb-2 text-[var(--color-border)]"/>
-                            <p>No purchase orders found. Create one to get started.</p>
+                            <p>No purchase orders found. Create one or adjust your filters.</p>
                         </div>
                     )}
                 </div>
@@ -247,7 +276,7 @@ const Purchasing: React.FC = () => {
                 </div>
             </Modal>
 
-            <Modal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} title={`Details for PO #${selectedOrder?.id.slice(-6).toUpperCase()}`}>
+            <Modal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} title={`Details for PO #${selectedOrder?.poNumber}`}>
                 {selectedOrder && (
                     <div className="space-y-4">
                         <p><strong>Supplier:</strong> {getSupplierById(selectedOrder.supplierId)?.name}</p>

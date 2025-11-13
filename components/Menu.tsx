@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -167,92 +165,116 @@ const Menu: React.FC = () => {
 
 
     return (
-        <>
-            <Card>
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">Menu Engineering</h2>
-                    <button onClick={() => handleOpenModal()} className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
-                        <PlusCircle size={20} className="md:mr-2" />
-                        <span className="hidden md:inline">Add Menu Item</span>
-                    </button>
-                </div>
-                <div className="overflow-x-auto">
-                <table className="w-full text-left responsive-table">
-                    <thead className="ican-table-header">
-                        <tr>
-                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Menu Item</th>
-                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Classification</th>
-                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Sales Count</th>
-                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Sale Price</th>
-                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Cost</th>
-                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Profit</th>
-                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Food Cost %</th>
-                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {menuPerformance.length > 0 ? menuPerformance.map(item => {
-                            const classification = getClassification(item.profit, item.salesCount);
-                            const isEditing = editingItemId === item.id;
-                            return (
-                                <tr key={item.id} className="border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input)] group">
-                                    <td data-label="Menu Item" className="p-4 font-medium whitespace-nowrap">{item.name}</td>
-                                    <td data-label="Classification" className="p-4"><ClassificationBadge classification={classification} /></td>
-                                    <td data-label="Sales Count" className="p-4">
-                                        {isEditing ? (
-                                            <div className="flex items-center space-x-2 w-full md:w-32">
-                                                <input
-                                                    type="number"
-                                                    value={editedSales}
-                                                    onChange={(e) => setEditedSales(parseInt(e.target.value) || 0)}
-                                                    className="ican-input w-full py-1"
-                                                    autoFocus
-                                                    min="0"
-                                                />
-                                                <button onClick={() => handleSaveSales(item.id)} className="text-green-500 hover:text-green-600"><Save size={18} /></button>
-                                                <button onClick={handleCancelSalesEdit} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"><XCircle size={18} /></button>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3">
+                <Card>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold">Menu Engineering</h2>
+                        <button onClick={() => handleOpenModal()} className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
+                            <PlusCircle size={20} className="md:mr-2" />
+                            <span className="hidden md:inline">Add Menu Item</span>
+                        </button>
+                    </div>
+                    <div className="overflow-x-auto">
+                    <table className="w-full text-left responsive-table">
+                        <thead className="ican-table-header">
+                            <tr>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Menu Item</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Classification</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Sales Count</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Sale Price</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Cost</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Profit</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Food Cost %</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {menuPerformance.length > 0 ? menuPerformance.map(item => {
+                                const classification = getClassification(item.profit, item.salesCount);
+                                const isEditing = editingItemId === item.id;
+                                return (
+                                    <tr key={item.id} className="border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input)] group">
+                                        <td data-label="Menu Item" className="p-4 font-medium whitespace-nowrap">{item.name}</td>
+                                        <td data-label="Classification" className="p-4"><ClassificationBadge classification={classification} /></td>
+                                        <td data-label="Sales Count" className="p-4">
+                                            {isEditing ? (
+                                                <div className="flex items-center space-x-2 w-full md:w-32">
+                                                    <input
+                                                        type="number"
+                                                        value={editedSales}
+                                                        onChange={(e) => setEditedSales(parseInt(e.target.value) || 0)}
+                                                        className="ican-input w-full py-1"
+                                                        autoFocus
+                                                        min="0"
+                                                    />
+                                                    <button onClick={() => handleSaveSales(item.id)} className="text-green-500 hover:text-green-600"><Save size={18} /></button>
+                                                    <button onClick={handleCancelSalesEdit} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"><XCircle size={18} /></button>
+                                                </div>
+                                            ) : (
+                                                 <div className="flex items-center space-x-2 text-[var(--color-text-muted)]">
+                                                    <span>{item.salesCount}</span>
+                                                    <button onClick={() => handleEditSales(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] opacity-0 group-hover:opacity-100" aria-label="Edit sales count">
+                                                        <Edit size={16} />
+                                                    </button>
+                                                 </div>
+                                            )}
+                                        </td>
+                                        <td data-label="Sale Price" className="p-4 text-[var(--color-text-primary)] font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
+                                        <td data-label="Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(item.costPerServing)}</td>
+                                        <td data-label="Profit" className="p-4">
+                                            <span className={`font-bold ${item.profit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+                                                {formatCurrency(item.profit)}
+                                            </span>
+                                        </td>
+                                        <td data-label="Food Cost %" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.foodCostPercentage.toFixed(1)}%</td>
+                                        <td data-label="Actions" className="p-4">
+                                            <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
+                                                <button onClick={() => handleOpenModal(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit size={20} /></button>
+                                                <button onClick={() => handleDelete(item.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={20} /></button>
                                             </div>
-                                        ) : (
-                                             <div className="flex items-center space-x-2 text-[var(--color-text-muted)]">
-                                                <span>{item.salesCount}</span>
-                                                <button onClick={() => handleEditSales(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] opacity-0 group-hover:opacity-100" aria-label="Edit sales count">
-                                                    <Edit size={16} />
-                                                </button>
-                                             </div>
-                                        )}
-                                    </td>
-                                    <td data-label="Sale Price" className="p-4 text-[var(--color-text-primary)] font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
-                                    <td data-label="Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(item.costPerServing)}</td>
-                                    <td data-label="Profit" className="p-4">
-                                        <span className={`font-bold ${item.profit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-                                            {formatCurrency(item.profit)}
-                                        </span>
-                                    </td>
-                                    <td data-label="Food Cost %" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.foodCostPercentage.toFixed(1)}%</td>
-                                    <td data-label="Actions" className="p-4">
-                                        <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
-                                            <button onClick={() => handleOpenModal(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit size={20} /></button>
-                                            <button onClick={() => handleDelete(item.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={20} /></button>
-                                        </div>
+                                        </td>
+                                    </tr>
+                                );
+                            }) : (
+                                <tr>
+                                    <td colSpan={8} className="text-center py-10">
+                                         <div className="flex flex-col items-center text-[var(--color-text-muted)]">
+                                            <Utensils size={40} className="mb-2 text-[var(--color-border)]"/>
+                                            <p className="font-semibold">No menu items yet</p>
+                                            <p className="text-sm">Add your first menu item to get started.</p>
+                                            <button onClick={() => handleOpenModal()} className="mt-4 ican-btn ican-btn-primary">Add Menu Item</button>
+                                         </div>
                                     </td>
                                 </tr>
-                            );
-                        }) : (
-                            <tr>
-                                <td colSpan={8} className="text-center py-10">
-                                     <div className="flex flex-col items-center text-[var(--color-text-muted)]">
-                                        <Utensils size={40} className="mb-2 text-[var(--color-border)]"/>
-                                        <p className="font-semibold">No menu items yet</p>
-                                        <p className="text-sm">Add your first menu item to get started.</p>
-                                        <button onClick={() => handleOpenModal()} className="mt-4 ican-btn ican-btn-primary">Add Menu Item</button>
-                                     </div>
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-                </div>
-            </Card>
+                            )}
+                        </tbody>
+                    </table>
+                    </div>
+                </Card>
+            </div>
+            <div className="lg:col-span-1">
+                <Card>
+                    <h3 className="text-lg font-semibold mb-3 flex items-center">
+                        <Info size={16} className="mr-2 text-[var(--color-primary)]"/>
+                        Menu Benchmarks
+                    </h3>
+                    <p className="text-xs text-[var(--color-text-muted)] mb-4">
+                        These averages are used to classify your menu items. Items are compared against these values for profitability and popularity.
+                    </p>
+                    <div className="space-y-3">
+                        <div className="bg-[var(--color-input)] p-3 rounded-lg">
+                            <p className="text-sm font-medium text-[var(--color-text-secondary)]">Average Profit</p>
+                            <p className="text-xl font-bold text-[var(--color-text-primary)]">{formatCurrency(averageProfit)}</p>
+                        </div>
+                        <div className="bg-[var(--color-input)] p-3 rounded-lg">
+                            <p className="text-sm font-medium text-[var(--color-text-secondary)]">Average Sales Count</p>
+                            <p className="text-xl font-bold text-[var(--color-text-primary)]">{averageSales.toFixed(1)}</p>
+                        </div>
+                    </div>
+                </Card>
+            </div>
+
 
              <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={currentItem ? 'Edit Menu Item' : 'Add New Menu Item'}>
                 <div className="space-y-4">
@@ -287,7 +309,7 @@ const Menu: React.FC = () => {
                     </div>
                 </div>
             </Modal>
-        </>
+        </div>
     );
 };
 

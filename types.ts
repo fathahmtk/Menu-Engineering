@@ -86,6 +86,7 @@ export interface PurchaseOrderItem {
 
 export interface PurchaseOrder {
   id: string;
+  poNumber: string;
   supplierId: string;
   items: PurchaseOrderItem[];
   status: 'Pending' | 'Completed' | 'Cancelled';
@@ -118,10 +119,11 @@ export interface Notification {
   id: number;
   message: string;
   type: 'success' | 'error' | 'info';
+  persistent?: boolean;
 }
 
 export interface NotificationContextType {
-  addNotification: (message: string, type: Notification['type']) => void;
+  addNotification: (message: string, type: Notification['type'], persistent?: boolean) => void;
 }
 
 export type Theme = 'light' | 'dark';

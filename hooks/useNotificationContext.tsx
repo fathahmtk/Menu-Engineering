@@ -16,13 +16,16 @@ const SingleNotification: React.FC<{ notification: Notification; onDismiss: (id:
   const [isExiting, setIsExiting] = useState(false);
 
   React.useEffect(() => {
+    if (notification.persistent) {
+      return;
+    }
     const timer = setTimeout(() => {
       setIsExiting(true);
       setTimeout(() => onDismiss(notification.id), 300); // Allow time for exit animation
     }, NOTIFICATION_TIMEOUT);
 
     return () => clearTimeout(timer);
-  }, [notification.id, onDismiss]);
+  }, [notification.id, notification.persistent, onDismiss]);
 
   const handleDismiss = () => {
     setIsExiting(true);
@@ -53,11 +56,12 @@ const SingleNotification: React.FC<{ notification: Notification; onDismiss: (id:
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const addNotification = useCallback((message: string, type: Notification['type']) => {
+  const addNotification = useCallback((message: string, type: Notification['type'], persistent: boolean = false) => {
     const newNotification: Notification = {
       id: Date.now(),
       message,
       type,
+      persistent,
     };
     setNotifications(prev => [newNotification, ...prev]);
   }, []);

@@ -100,7 +100,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const filteredCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
   const filteredIngredientUnits = useMemo(() => ingredientUnits.filter(u => u.businessId === activeBusinessId), [ingredientUnits, activeBusinessId]);
   const filteredRecipeTemplates = useMemo(() => recipeTemplates.filter(t => t.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
-  const filteredPurchaseOrders = useMemo(() => purchaseOrders.filter(p => p.businessId === activeBusinessId).sort((a,b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()), [purchaseOrders, activeBusinessId]);
+  const filteredPurchaseOrders = useMemo(() => purchaseOrders.filter(p => p.businessId === activeBusinessId).sort((a,b) => (b.poNumber || '').localeCompare(a.poNumber || '')), [purchaseOrders, activeBusinessId]);
   const filteredSales = useMemo(() => sales.filter(s => s.businessId === activeBusinessId), [sales, activeBusinessId]);
 
   // CRUD functions
@@ -353,10 +353,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const totalCost = po.items.reduce((sum, item) => {
         return sum + (item.quantity * item.cost);
     }, 0);
+    
+    const businessPOs = purchaseOrders.filter(p => p.businessId === activeBusinessId);
+    const lastPoNumber = businessPOs.reduce((max, p) => {
+        const num = parseInt(p.poNumber.split('-')[1]);
+        return num > max ? num : max;
+    }, 0);
+    const newPoNumber = `PO-${String(lastPoNumber + 1).padStart(4, '0')}`;
 
     const newPO: PurchaseOrder = {
         ...po,
         id: crypto.randomUUID(),
+        poNumber: newPoNumber,
         businessId: activeBusinessId,
         status: 'Pending',
         orderDate: new Date().toISOString(),
