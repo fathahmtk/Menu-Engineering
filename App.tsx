@@ -1,17 +1,15 @@
-
-
-
 import React, { useState, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import { DataProvider } from './hooks/useDataContext';
 import { CurrencyProvider } from './hooks/useCurrencyContext';
-import CurrencySelector from './components/CurrencySelector';
 import BusinessSelector from './components/BusinessSelector';
-import { Menu as MenuIcon, CheckCircle, LoaderCircle } from 'lucide-react';
+import { Menu as MenuIcon, LoaderCircle } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
 import { AuthProvider, useAuth } from './hooks/useAuthContext';
 import { NotificationProvider } from './hooks/useNotificationContext';
 import { UnsavedChangesProvider } from './hooks/useUnsavedChangesContext';
+import { ThemeProvider } from './hooks/useTheme';
+import { AppSettingsProvider } from './hooks/useAppSettings';
 
 
 // Lazy-load page components for better performance
@@ -24,9 +22,10 @@ const Purchasing = lazy(() => import('./components/Purchasing'));
 const Menu = lazy(() => import('./components/Menu'));
 const Sales = lazy(() => import('./components/Sales'));
 const Reports = lazy(() => import('./components/Reports'));
+const Settings = lazy(() => import('./components/Settings'));
 
 
-type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'sales' | 'reports';
+type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'sales' | 'reports' | 'settings';
 
 const viewComponents: Record<View, React.LazyExoticComponent<React.FC<{}>>> = {
     dashboard: Dashboard,
@@ -37,6 +36,7 @@ const viewComponents: Record<View, React.LazyExoticComponent<React.FC<{}>>> = {
     menu: Menu,
     sales: Sales,
     reports: Reports,
+    settings: Settings,
 };
 
 const viewTitles: Record<View, string> = {
@@ -48,6 +48,7 @@ const viewTitles: Record<View, string> = {
     menu: 'Menu Engineering',
     sales: 'Sales Analytics',
     reports: 'Reports & Insights',
+    settings: 'Application Settings',
 };
 
 const GlobalLoading: React.FC<{ message?: string }> = ({ message = 'Loading Application...' }) => (
@@ -152,7 +153,6 @@ const AppContent: React.FC = () => {
                         </div>
                         <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
                             <BusinessSelector />
-                            <CurrencySelector />
                         </div>
                     </header>
                     <div className="flex-1 p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
@@ -185,7 +185,11 @@ const AppContainer: React.FC = () => {
         <DataProvider>
             <CurrencyProvider>
                 <NotificationProvider>
-                    <AppContent />
+                    <ThemeProvider>
+                        <AppSettingsProvider>
+                            <AppContent />
+                        </AppSettingsProvider>
+                    </ThemeProvider>
                 </NotificationProvider>
             </CurrencyProvider>
         </DataProvider>

@@ -1,11 +1,10 @@
-
 import React from 'react';
-import { LayoutDashboard, ShoppingCart, BookOpen, Truck, Utensils, BarChart2, X, ClipboardList, Receipt, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, BookOpen, Truck, Utensils, BarChart2, X, ClipboardList, Receipt, LogOut, SlidersHorizontal } from 'lucide-react';
 import { useAuth } from '../hooks/useAuthContext';
 import { useUnsavedChanges } from '../hooks/useUnsavedChangesContext';
 
 
-type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'sales' | 'reports';
+type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'sales' | 'reports' | 'settings';
 
 interface SidebarProps {
   currentView: View;
@@ -56,6 +55,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
     { id: 'sales', label: 'Sales', icon: <Receipt size={20} /> },
     { id: 'reports', label: 'Reports', icon: <BarChart2 size={20} /> },
   ];
+  
+  const bottomNavItems: { id: View; label: string; icon: React.ReactNode }[] = [
+      { id: 'settings', label: 'Settings', icon: <SlidersHorizontal size={20} /> },
+  ];
+
 
   const handleNavigation = (view: View) => {
     promptNavigation(() => {
@@ -91,6 +95,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
         </nav>
         
         <div className="mt-auto">
+             <div className="border-t border-[var(--color-border)] pt-2">
+                {bottomNavItems.map((item) => (
+                    <NavItem
+                        key={item.id}
+                        icon={item.icon}
+                        label={item.label}
+                        isActive={currentView === item.id}
+                        onClick={() => handleNavigation(item.id)}
+                    />
+                ))}
+             </div>
              <button
                 onClick={signOut}
                 className="w-full flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)]"

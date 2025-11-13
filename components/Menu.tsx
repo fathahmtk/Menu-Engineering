@@ -5,32 +5,34 @@ import Card from './common/Card';
 import Modal from './common/Modal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Edit, Trash2, Star, Puzzle, ThumbsDown, Grip, Save, XCircle, Utensils } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Star, Puzzle, ThumbsDown, Grip, Save, XCircle, Utensils, Info } from 'lucide-react';
 import { MenuItem } from '../types';
 import { useNotification } from '../hooks/useNotificationContext';
 
 type Classification = 'Star' | 'Plowhorse' | 'Puzzle' | 'Dog';
 
+const CLASSIFICATION_INFO: Record<Classification, { icon: React.ReactNode; label: string; description: string; className: string }> = {
+    Star: { icon: <Star size={14} />, label: 'Star', description: 'High Profit, High Popularity. Promote these items and maintain their quality.', className: 'bg-green-100 text-green-700' },
+    Plowhorse: { icon: <Grip size={14} />, label: 'Plowhorse', description: 'Low Profit, High Popularity. Consider slightly increasing the price or reducing costs.', className: 'bg-blue-100 text-blue-700' },
+    Puzzle: { icon: <Puzzle size={14} />, label: 'Puzzle', description: 'High Profit, Low Popularity. Consider promoting this item more or repositioning it on the menu.', className: 'bg-yellow-100 text-yellow-700' },
+    Dog: { icon: <ThumbsDown size={14} />, label: 'Dog', description: 'Low Profit, Low Popularity. Consider removing this item from the menu.', className: 'bg-red-100 text-red-700' },
+};
+
 const ClassificationBadge: React.FC<{ classification: Classification }> = ({ classification }) => {
-    const config = {
-        Star: { icon: <Star size={14} />, label: 'Star' },
-        Plowhorse: { icon: <Grip size={14} />, label: 'Plowhorse' },
-        Puzzle: { icon: <Puzzle size={14} />, label: 'Puzzle' },
-        Dog: { icon: <ThumbsDown size={14} />, label: 'Dog' },
-    };
-    const { icon, label } = config[classification];
-    const colorClasses = {
-        Star: 'bg-green-100 text-green-700',
-        Plowhorse: 'bg-blue-100 text-blue-700',
-        Puzzle: 'bg-yellow-100 text-yellow-700',
-        Dog: 'bg-red-100 text-red-700',
-    };
+    const { icon, label, description, className } = CLASSIFICATION_INFO[classification];
 
     return (
-        <span className={`flex items-center text-xs font-semibold px-2 py-1 rounded-full ${colorClasses[classification]}`}>
-            {icon}
-            <span className="ml-1">{label}</span>
-        </span>
+        <div className="relative group flex items-center cursor-help">
+            <span className={`flex items-center text-xs font-semibold px-2 py-1 rounded-full ${className}`}>
+                {icon}
+                <span className="ml-1">{label}</span>
+            </span>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 text-xs text-white bg-gray-800 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                <p className="font-bold mb-1">{label} Insight:</p>
+                {description}
+                <svg className="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+            </div>
+        </div>
     );
 };
 

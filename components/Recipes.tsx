@@ -1,14 +1,11 @@
-
-
-
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download } from 'lucide-react';
-import { Recipe, Ingredient, RecipeCategory, RecipeTemplate, IngredientUnit } from '../types';
+import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download, Sparkles, Bot } from 'lucide-react';
+import { Recipe, Ingredient, RecipeCategory, RecipeTemplate } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import ActionsDropdown from './common/ActionsDropdown';
 import ImportModal from './common/ImportModal';
@@ -16,6 +13,8 @@ import { convertToCSV, downloadCSV } from '../utils/csvHelper';
 import { useNotification } from '../hooks/useNotificationContext';
 import { useUnsavedChanges } from '../hooks/useUnsavedChangesContext';
 import { generateCostingSheetSVG } from '../utils/costingSheetGenerator';
+import { generateRecipeSuggestions, AI_RecipeSuggestion } from '../services/geminiService';
+import { useAppSettings } from '../hooks/useAppSettings';
 
 const DEFAULT_UNITS: string[] = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
 
@@ -26,9 +25,11 @@ const RecipeFormModal: React.FC<{
     onSave: (recipe: Omit<Recipe, 'id' | 'businessId'>) => void;
     categories: RecipeCategory[];
     templates: RecipeTemplate[];
-}> = ({ isOpen, onClose, onSave, categories, templates }) => {
+    initialData?: Partial<Omit<Recipe, 'id' | 'businessId'>>;
+}> = ({ isOpen, onClose, onSave, categories, templates, initialData }) => {
     const { inventory, getInventoryItemById, getConversionFactor, ingredientUnits } = useData();
     const { formatCurrency } = useCurrency();
+    const { settings } = useAppSettings();
     const [name, setName] = useState('');
     const [category, setCategory] = useState('');
     const [servings, setServings] = useState(1);
@@ -51,7 +52,8 @@ const RecipeFormModal: React.FC<{
     }, [ingredients, getInventoryItemById, getConversionFactor]);
 
     const costPerServing = servings > 0 ? recipeCost / servings : 0;
-    const suggestedPrice = costPerServing > 0 ? costPerServing / 0.30 : 0; // Standard 30% food cost target
+    const foodCostTarget = settings.foodCostTarget > 0 ? settings.foodCostTarget / 100 : 0.3;
+    const suggestedPrice = costPerServing > 0 ? costPerServing / foodCostTarget : 0;
 
     const resetForm = useCallback(() => {
         setName('');
@@ -65,9 +67,19 @@ const RecipeFormModal: React.FC<{
 
     useEffect(() => {
         if(isOpen) {
-            resetForm();
+            if (initialData) {
+                setName(initialData.name || '');
+                setCategory(initialData.category || (categories.length > 0 ? categories[0].name : ''));
+                setServings(initialData.servings || 1);
+                setTargetSalePrice(initialData.targetSalePricePerServing || 0);
+                setInstructions(initialData.instructions?.join('\n') || '');
+                setIngredients(initialData.ingredients || []);
+                setErrors({});
+            } else {
+                resetForm();
+            }
         }
-    }, [isOpen, resetForm]);
+    }, [isOpen, initialData, resetForm, categories]);
 
 
     const handleTemplateSelect = (templateId: string) => {
@@ -211,7 +223,7 @@ const RecipeFormModal: React.FC<{
                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-[var(--color-border)]">
                          <div className="text-[var(--color-text-muted)]">
                             <span className="font-medium text-[var(--color-text-secondary)]">Suggested Sale Price</span>
-                            <p className="text-xs">Based on a 30% food cost target.</p>
+                            <p className="text-xs">Based on a {settings.foodCostTarget}% food cost target.</p>
                         </div>
                         <span className="font-bold text-lg text-[var(--color-primary)]">{formatCurrency(suggestedPrice)}</span>
                     </div>
@@ -230,174 +242,13 @@ const RecipeFormModal: React.FC<{
     );
 };
 
-const CategoryManagerModal: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-}> = ({ isOpen, onClose }) => {
-    const { categories, addCategory, updateCategory, deleteCategory } = useData();
-    const { addNotification } = useNotification();
-    const [newCategoryName, setNewCategoryName] = useState('');
-    const [editingCategory, setEditingCategory] = useState<{ id: string, name: string} | null>(null);
-
-    const handleAdd = async () => {
-        if (newCategoryName.trim()) {
-            await addCategory(newCategoryName.trim());
-            addNotification('Category added successfully', 'success');
-            setNewCategoryName('');
-        }
-    };
-
-    const handleUpdate = async () => {
-        if (editingCategory && editingCategory.name.trim()) {
-            await updateCategory(editingCategory.id, editingCategory.name.trim());
-            addNotification('Category updated', 'success');
-            setEditingCategory(null);
-        }
-    };
-    
-    const handleDelete = async (id: string) => {
-        const result = await deleteCategory(id);
-        if(!result.success) {
-            addNotification(result.message || 'Failed to delete category', 'error');
-        } else {
-            addNotification('Category deleted', 'success');
-        }
-    };
-
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Manage Recipe Categories">
-            <div className="space-y-4">
-                <div>
-                    <h3 className="text-md font-semibold mb-2 text-[var(--color-text-muted)]">Add New Category</h3>
-                    <div className="flex space-x-2">
-                        <input
-                            type="text"
-                            value={newCategoryName}
-                            onChange={(e) => setNewCategoryName(e.target.value)}
-                            placeholder="e.g., Desserts"
-                            className="ican-input flex-grow"
-                        />
-                        <button onClick={handleAdd} className={`ican-btn ican-btn-primary ${!newCategoryName.trim() ? 'ican-btn-disabled' : ''}`} disabled={!newCategoryName.trim()}>Add</button>
-                    </div>
-                </div>
-                <div>
-                    <h3 className="text-md font-semibold mb-2 text-[var(--color-text-muted)]">Existing Categories</h3>
-                    <ul className="space-y-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-input)]">
-                        {categories.map(cat => (
-                            <li key={cat.id} className="flex items-center justify-between p-2 hover:bg-[var(--color-border)] rounded">
-                                {editingCategory?.id === cat.id ? (
-                                    <input
-                                        type="text"
-                                        value={editingCategory.name}
-                                        onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                                        onBlur={handleUpdate}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
-                                        className="ican-input p-1 w-full"
-                                        autoFocus
-                                    />
-                                ) : (
-                                    <span>{cat.name}</span>
-                                )}
-                                <div className="space-x-2">
-                                     <button onClick={() => setEditingCategory(cat)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit3 size={16} /></button>
-                                     <button onClick={() => handleDelete(cat.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={16} /></button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-        </Modal>
-    );
-}
-
-const UnitManagerModal: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-}> = ({ isOpen, onClose }) => {
-    const { ingredientUnits, addUnit, updateUnit, deleteUnit } = useData();
-    const { addNotification } = useNotification();
-    const [newUnitName, setNewUnitName] = useState('');
-    const [editingUnit, setEditingUnit] = useState<IngredientUnit | null>(null);
-
-    const handleAdd = async () => {
-        if (newUnitName.trim()) {
-            await addUnit(newUnitName.trim());
-            addNotification('Unit added successfully', 'success');
-            setNewUnitName('');
-        }
-    };
-
-    const handleUpdate = async () => {
-        if (editingUnit && editingUnit.name.trim()) {
-            await updateUnit(editingUnit.id, editingUnit.name.trim());
-            addNotification('Unit updated', 'success');
-            setEditingUnit(null);
-        }
-    };
-    
-    const handleDelete = async (id: string) => {
-        const result = await deleteUnit(id);
-        if(!result.success) {
-            addNotification(result.message || 'Failed to delete unit', 'error');
-        } else {
-            addNotification('Unit deleted', 'success');
-        }
-    };
-
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Manage Ingredient Units">
-            <div className="space-y-4">
-                <div>
-                    <h3 className="text-md font-semibold mb-2 text-[var(--color-text-muted)]">Add New Unit</h3>
-                    <div className="flex space-x-2">
-                        <input
-                            type="text"
-                            value={newUnitName}
-                            onChange={(e) => setNewUnitName(e.target.value)}
-                            placeholder="e.g., pinch, bunch"
-                            className="ican-input flex-grow"
-                        />
-                        <button onClick={handleAdd} className={`ican-btn ican-btn-primary ${!newUnitName.trim() ? 'ican-btn-disabled' : ''}`} disabled={!newUnitName.trim()}>Add</button>
-                    </div>
-                </div>
-                <div>
-                    <h3 className="text-md font-semibold mb-2 text-[var(--color-text-muted)]">Custom Units</h3>
-                    <ul className="space-y-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-input)]">
-                        {ingredientUnits.map(unit => (
-                            <li key={unit.id} className="flex items-center justify-between p-2 hover:bg-[var(--color-border)] rounded">
-                                {editingUnit?.id === unit.id ? (
-                                    <input
-                                        type="text"
-                                        value={editingUnit.name}
-                                        onChange={(e) => setEditingUnit({ ...editingUnit, name: e.target.value })}
-                                        onBlur={handleUpdate}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
-                                        className="ican-input p-1 w-full"
-                                        autoFocus
-                                    />
-                                ) : (
-                                    <span>{unit.name}</span>
-                                )}
-                                <div className="space-x-2">
-                                     <button onClick={() => setEditingUnit(unit)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit3 size={16} /></button>
-                                     <button onClick={() => handleDelete(unit.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={16} /></button>
-                                </div>
-                            </li>
-                        ))}
-                         {ingredientUnits.length === 0 && <li className="text-center text-[var(--color-text-muted)] py-2">No custom units created yet.</li>}
-                    </ul>
-                </div>
-            </div>
-        </Modal>
-    );
-}
-
 const Recipes: React.FC = () => {
     const { recipes, getInventoryItemById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes, businesses } = useData();
     const { formatCurrency } = useCurrency();
     const { addNotification } = useNotification();
     const { setIsDirty, promptNavigation } = useUnsavedChanges();
+    const { settings } = useAppSettings();
+
 
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [editedRecipe, setEditedRecipe] = useState<Recipe | null>(null);
@@ -409,8 +260,15 @@ const Recipes: React.FC = () => {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [isHistoryVisible, setIsHistoryVisible] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [initialRecipeData, setInitialRecipeData] = useState<Partial<Omit<Recipe, 'id' | 'businessId'>> | undefined>();
+
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [aiSuggestions, setAiSuggestions] = useState<AI_RecipeSuggestion[]>([]);
+    const [aiCuisine, setAiCuisine] = useState('Any');
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState<string | null>(null);
     
-    const [modalState, setModalState] = useState<{ type: null | 'delete' | 'duplicate' | 'saveTemplate' | 'manageCategories' | 'manageUnits' } >({ type: null });
+    const [modalState, setModalState] = useState<{ type: null | 'delete' | 'duplicate' | 'saveTemplate' } >({ type: null });
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const dragItem = React.useRef<any>(null);
@@ -759,19 +617,56 @@ const Recipes: React.FC = () => {
             calculateRecipeCost,
         });
         
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        const safeFilename = editedRecipe.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        link.download = `costing-sheet-${safeFilename}.svg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        addNotification('Costing sheet download started!', 'success');
+        const printWindow = window.open('', '_blank');
+        printWindow?.document.write(`<html><head><title>Print Costing Sheet</title><style>body{margin:0;}@page{size:auto;margin:0;}</style></head><body><img src="${dataUrl}" style="width:100%;"></body></html>`);
+        printWindow?.document.close();
+        setTimeout(() => {
+            printWindow?.focus();
+            printWindow?.print();
+            printWindow?.close();
+        }, 250);
+        
+        addNotification('Costing sheet is ready to print/save as PDF!', 'success');
     };
 
+    const handleGenerateSuggestions = async () => {
+        setAiLoading(true);
+        setAiError(null);
+        setAiSuggestions([]);
+        try {
+            const availableIngredients = inventory.map(i => i.name);
+            if (availableIngredients.length === 0) {
+                setAiError("You need at least one inventory item to get suggestions.");
+                return;
+            }
+            const suggestions = await generateRecipeSuggestions(availableIngredients, aiCuisine);
+            setAiSuggestions(suggestions);
+        } catch (error) {
+            setAiError(error instanceof Error ? error.message : "An unknown error occurred.");
+        } finally {
+            setAiLoading(false);
+        }
+    };
+    
+    const handleUseSuggestion = (suggestion: AI_RecipeSuggestion) => {
+        setInitialRecipeData({
+            name: suggestion.recipeName,
+            instructions: [suggestion.description], // Use description as a starting instruction
+            ingredients: [], 
+        });
+        setIsAiModalOpen(false);
+        setIsNewRecipeModalOpen(true);
+    };
+
+    const handleCloseNewRecipeModal = () => {
+        setIsNewRecipeModalOpen(false);
+        setInitialRecipeData(undefined); // Reset on close
+    };
+
+    const foodCostTarget = settings.foodCostTarget > 0 ? settings.foodCostTarget / 100 : 0.3;
     const editedRecipeCost = editedRecipe ? calculateRecipeCost(editedRecipe) : 0;
     const editedCostPerServing = (editedRecipe && editedRecipe.servings > 0) ? editedRecipeCost / editedRecipe.servings : 0;
-    const suggestedSalePrice = editedCostPerServing > 0 ? editedCostPerServing / 0.30 : 0;
+    const suggestedSalePrice = editedCostPerServing > 0 ? editedCostPerServing / foodCostTarget : 0;
 
     const costAnalysisData = useMemo(() => {
         if (!editedRecipe || !editedRecipeCost) return [];
@@ -798,13 +693,12 @@ const Recipes: React.FC = () => {
         <>
         <RecipeFormModal 
             isOpen={isNewRecipeModalOpen} 
-            onClose={() => { setIsNewRecipeModalOpen(false); }} 
+            onClose={handleCloseNewRecipeModal} 
             onSave={addRecipe} 
             categories={categories} 
             templates={recipeTemplates}
+            initialData={initialRecipeData}
         />
-        <CategoryManagerModal isOpen={modalState.type === 'manageCategories'} onClose={() => setModalState({ type: null })} />
-        <UnitManagerModal isOpen={modalState.type === 'manageUnits'} onClose={() => setModalState({ type: null })} />
         <ImportModal
             isOpen={isImportModalOpen}
             onClose={() => setIsImportModalOpen(false)}
@@ -820,6 +714,52 @@ const Recipes: React.FC = () => {
                 </div>
             )}
         />
+        <Modal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} title="✨ AI Recipe Ideation">
+            <div className="space-y-4">
+                <p className="text-sm text-[var(--color-text-muted)]">Get recipe ideas based on your available inventory. Specify a cuisine or theme, or leave it as "Any" for broad suggestions.</p>
+                <div className="flex items-center space-x-2">
+                    <input
+                        type="text"
+                        value={aiCuisine}
+                        onChange={(e) => setAiCuisine(e.target.value)}
+                        placeholder="e.g., Italian, Quick Snacks"
+                        className="ican-input"
+                    />
+                    <button onClick={handleGenerateSuggestions} disabled={aiLoading} className={`ican-btn ican-btn-primary ${aiLoading ? 'ican-btn-disabled' : ''}`}>
+                        {aiLoading ? <Loader2 size={20} className="animate-spin" /> : 'Generate'}
+                    </button>
+                </div>
+
+                {aiError && <p className="text-[var(--color-danger)] text-sm">{aiError}</p>}
+
+                {aiSuggestions.length > 0 && (
+                    <div className="space-y-3 pt-4 max-h-80 overflow-y-auto pr-2">
+                        {aiSuggestions.map((suggestion, index) => (
+                            <div key={index} className="p-4 rounded-lg bg-[var(--color-input)] border border-[var(--color-border)]">
+                                <h4 className="font-bold text-md text-[var(--color-primary)]">{suggestion.recipeName}</h4>
+                                <p className="text-sm text-[var(--color-text-secondary)] mt-1">{suggestion.description}</p>
+                                <p className="text-xs text-[var(--color-text-muted)] mt-3 mb-1 font-semibold">Key Ingredients:</p>
+                                <ul className="list-disc list-inside text-sm text-[var(--color-text-muted)]">
+                                    {suggestion.ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
+                                </ul>
+                                <div className="flex justify-end mt-3">
+                                    <button onClick={() => handleUseSuggestion(suggestion)} className="ican-btn ican-btn-secondary py-1 px-3 text-sm">Use this Idea</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {aiLoading && (
+                    <div className="text-center py-8">
+                         <div className="flex flex-col items-center text-[var(--color-text-muted)]">
+                            <Bot size={40} className="mb-2 text-[var(--color-primary)]"/>
+                            <p className="font-semibold">Our AI Chef is thinking...</p>
+                            <p className="text-sm">This can take a few moments.</p>
+                         </div>
+                    </div>
+                )}
+            </div>
+        </Modal>
 
 
         {editedRecipe && <>
@@ -867,6 +807,9 @@ const Recipes: React.FC = () => {
                         <h2 className="text-xl font-bold">Recipes</h2>
                         <div className="flex items-center space-x-1">
                             <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
+                            <button onClick={() => setIsAiModalOpen(true)} className="flex items-center text-[var(--color-primary)] hover:opacity-80 p-2 rounded-lg" title="Get AI Recipe Ideas">
+                                <Sparkles size={22} />
+                            </button>
                             <button onClick={() => { setIsNewRecipeModalOpen(true); }} className="flex items-center text-[var(--color-primary)] hover:opacity-80 p-2 rounded-lg" title="New Recipe">
                                 <PlusCircle size={22} />
                             </button>
@@ -895,12 +838,6 @@ const Recipes: React.FC = () => {
                                 <option value="all">All Categories</option>
                                 {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
                             </select>
-                            <button onClick={() => setModalState({ type: 'manageCategories' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-input)] flex-shrink-0" title="Manage Categories">
-                               <ListChecks size={20} className="text-[var(--color-text-muted)]"/>
-                            </button>
-                             <button onClick={() => setModalState({ type: 'manageUnits' })} className="p-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] hover:bg-[var(--color-input)] flex-shrink-0" title="Manage Units">
-                               <Weight size={20} className="text-[var(--color-text-muted)]"/>
-                            </button>
                         </div>
                     </div>
                     <ul className="space-y-2 max-h-[calc(65vh-120px)] overflow-y-auto">
@@ -942,7 +879,7 @@ const Recipes: React.FC = () => {
                             <div className="flex justify-between items-start mb-4">
                                  <h2 className="text-2xl font-bold">{editedRecipe.name}</h2>
                                  <div className="flex items-center space-x-2">
-                                     <button onClick={handleDownloadCostingSheet} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Download Costing Sheet">
+                                     <button onClick={handleDownloadCostingSheet} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Download Costing Sheet as PDF">
                                         <Download size={20} className="text-[var(--color-text-muted)]" />
                                     </button>
                                     <button onClick={() => setModalState({ type: 'saveTemplate'})} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Save as Template">
@@ -994,7 +931,7 @@ const Recipes: React.FC = () => {
                                     </div>
                                     <div>
                                         <p className="font-semibold text-[var(--color-primary)]">Suggested Sale Price: {formatCurrency(suggestedSalePrice)}</p>
-                                        <p className="text-sm text-[var(--color-text-secondary)]">This suggestion is based on a 30% food cost target, a common industry benchmark for profitability.</p>
+                                        <p className="text-sm text-[var(--color-text-secondary)]">This suggestion is based on a {settings.foodCostTarget}% food cost target, a common industry benchmark for profitability.</p>
                                     </div>
                                 </div>
                             )}

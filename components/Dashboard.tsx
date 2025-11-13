@@ -4,10 +4,13 @@ import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
 import { DollarSign, AlertTriangle, BookCheck, PieChart } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { useAppSettings } from '../hooks/useAppSettings';
+
 
 const Dashboard: React.FC = () => {
     const { inventory, menuItems, recipes, getRecipeById, calculateRecipeCost } = useData();
     const { formatCurrency } = useCurrency();
+    const { settings } = useAppSettings();
 
     const totalInventoryValue = inventory.reduce((acc, item) => acc + item.quantity * item.unitCost, 0);
     const lowStockItems = inventory.filter(item => item.quantity <= item.lowStockThreshold).length;
@@ -37,51 +40,58 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="col-span-1">
-                <div className="flex items-center">
-                    <div className="p-3 bg-[var(--color-primary-light)] rounded-full">
-                        <DollarSign className="text-[var(--color-primary)]" />
+            {settings.dashboard.inventoryValue &&
+                <Card className="col-span-1">
+                    <div className="flex items-center">
+                        <div className="p-3 bg-[var(--color-primary-light)] rounded-full">
+                            <DollarSign className="text-[var(--color-primary)]" />
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm text-[var(--color-text-muted)]">Total Inventory Value</p>
+                            <p className="text-2xl font-bold text-[var(--color-text-primary)]">{formatCurrency(totalInventoryValue)}</p>
+                        </div>
                     </div>
-                    <div className="ml-4">
-                        <p className="text-sm text-[var(--color-text-muted)]">Total Inventory Value</p>
-                        <p className="text-2xl font-bold text-[var(--color-text-primary)]">{formatCurrency(totalInventoryValue)}</p>
+                </Card>
+            }
+            {settings.dashboard.lowStockItems &&
+                <Card className="col-span-1">
+                    <div className="flex items-center">
+                        <div className="p-3 bg-red-500/10 rounded-full">
+                            <AlertTriangle className="text-[var(--color-danger)]" />
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm text-[var(--color-text-muted)]">Low Stock Items</p>
+                            <p className="text-2xl font-bold text-[var(--color-text-primary)]">{lowStockItems}</p>
+                        </div>
                     </div>
-                </div>
-            </Card>
-            <Card className="col-span-1">
-                <div className="flex items-center">
-                    <div className="p-3 bg-red-500/10 rounded-full">
-                        <AlertTriangle className="text-[var(--color-danger)]" />
+                </Card>
+            }
+            {settings.dashboard.totalRecipes &&
+                <Card className="col-span-1">
+                    <div className="flex items-center">
+                        <div className="p-3 bg-sky-500/10 rounded-full">
+                            <BookCheck className="text-sky-400" />
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm text-[var(--color-text-muted)]">Total Recipes</p>
+                            <p className="text-2xl font-bold text-[var(--color-text-primary)]">{recipes.length}</p>
+                        </div>
                     </div>
-                    <div className="ml-4">
-                        <p className="text-sm text-[var(--color-text-muted)]">Low Stock Items</p>
-                        <p className="text-2xl font-bold text-[var(--color-text-primary)]">{lowStockItems}</p>
+                </Card>
+            }
+            {settings.dashboard.avgMenuProfit &&
+                <Card className="col-span-1">
+                    <div className="flex items-center">
+                        <div className="p-3 bg-amber-500/10 rounded-full">
+                            <PieChart className="text-amber-400" />
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm text-[var(--color-text-muted)]">Avg. Menu Profit</p>
+                            <p className="text-2xl font-bold text-[var(--color-text-primary)]">{formatCurrency(totalMenuProfitability / menuItems.length || 0)}</p>
+                        </div>
                     </div>
-                </div>
-            </Card>
-            <Card className="col-span-1">
-                <div className="flex items-center">
-                    <div className="p-3 bg-sky-500/10 rounded-full">
-                        <BookCheck className="text-sky-400" />
-                    </div>
-                    <div className="ml-4">
-                        <p className="text-sm text-[var(--color-text-muted)]">Total Recipes</p>
-                        <p className="text-2xl font-bold text-[var(--color-text-primary)]">{recipes.length}</p>
-                    </div>
-                </div>
-            </Card>
-            <Card className="col-span-1">
-                 <div className="flex items-center">
-                    <div className="p-3 bg-amber-500/10 rounded-full">
-                        <PieChart className="text-amber-400" />
-                    </div>
-                    <div className="ml-4">
-                        <p className="text-sm text-[var(--color-text-muted)]">Avg. Menu Profit</p>
-                        <p className="text-2xl font-bold text-[var(--color-text-primary)]">{formatCurrency(totalMenuProfitability / menuItems.length || 0)}</p>
-                    </div>
-                </div>
-            </Card>
-
+                </Card>
+            }
             <Card className="col-span-1 md:col-span-2 lg:col-span-4">
                 <h3 className="text-lg font-semibold mb-4 text-[var(--color-text-primary)]">Top 5 Most Profitable Menu Items</h3>
                 <ResponsiveContainer width="100%" height={300}>

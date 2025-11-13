@@ -62,6 +62,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const updateBusiness = async (updatedBusiness: Business) => {
+    setBusinesses(prev => prev.map(b => b.id === updatedBusiness.id ? updatedBusiness : b));
+  };
+
+
   const getInventoryItemById = useCallback((id: string) => inventory.find(item => item.id === id), [inventory]);
   const getRecipeById = useCallback((id: string) => recipes.find(r => r.id === id), [recipes]);
   const getSupplierById = useCallback((id: string) => suppliers.find(s => s.id === id), [suppliers]);
@@ -448,6 +453,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     activeBusinessId,
     setActiveBusinessId,
     addBusiness,
+    updateBusiness,
     
     suppliers: filteredSuppliers,
     inventory: filteredInventory,

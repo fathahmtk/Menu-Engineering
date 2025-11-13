@@ -1,11 +1,12 @@
-
-
 import type { Dispatch, SetStateAction } from 'react';
 
 export interface Business {
   id: string;
   name: string;
   userId: string;
+  address?: string;
+  contactPhone?: string;
+  taxId?: string;
 }
 
 export interface Supplier {
@@ -123,6 +124,28 @@ export interface NotificationContextType {
   addNotification: (message: string, type: Notification['type']) => void;
 }
 
+export type Theme = 'light' | 'dark';
+
+export interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+}
+
+export interface AppSettings {
+  foodCostTarget: number;
+  dashboard: {
+    inventoryValue: boolean;
+    lowStockItems: boolean;
+    totalRecipes: boolean;
+    avgMenuProfit: boolean;
+  };
+}
+
+export interface AppSettingsContextType {
+  settings: AppSettings;
+  updateSettings: (newSettings: Partial<AppSettings>) => void;
+}
+
 
 export interface DataContextType {
   loading: boolean;
@@ -131,6 +154,7 @@ export interface DataContextType {
   activeBusinessId: string | null;
   setActiveBusinessId: (id: string) => void;
   addBusiness: (name: string) => Promise<void>;
+  updateBusiness: (business: Business) => Promise<void>;
   
   // Scoped Data (filtered by activeBusinessId)
   suppliers: Supplier[];
