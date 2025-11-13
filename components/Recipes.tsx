@@ -27,7 +27,7 @@ const RecipeFormModal: React.FC<{
     templates: RecipeTemplate[];
     initialData?: Partial<Omit<Recipe, 'id' | 'businessId'>>;
 }> = ({ isOpen, onClose, onSave, categories, templates, initialData }) => {
-    const { inventory, getInventoryItemById, getConversionFactor, ingredientUnits } = useData();
+    const { inventory, calculateRecipeCost, ingredientUnits } = useData();
     const { formatCurrency } = useCurrency();
     const { settings } = useAppSettings();
     const [name, setName] = useState('');
@@ -43,13 +43,10 @@ const RecipeFormModal: React.FC<{
     }, [ingredientUnits]);
 
     const recipeCost = useMemo(() => {
-        return ingredients.reduce((total, ingredient) => {
-            const item = getInventoryItemById(ingredient.itemId);
-            if (!item) return total;
-            const conversionFactor = getConversionFactor(ingredient.unit, item.unit) || 1;
-            return total + (item.unitCost * ingredient.quantity * conversionFactor);
-        }, 0);
-    }, [ingredients, getInventoryItemById, getConversionFactor]);
+        // We create a temporary recipe object to pass to the central calculation function
+        const tempRecipe: Recipe = { id: '', name, category, servings, ingredients, instructions: [], businessId: '' };
+        return calculateRecipeCost(tempRecipe);
+    }, [ingredients, name, category, servings, calculateRecipeCost]);
 
     const costPerServing = servings > 0 ? recipeCost / servings : 0;
     const foodCostTarget = settings.foodCostTarget > 0 ? settings.foodCostTarget / 100 : 0.3;
@@ -103,14 +100,13 @@ const RecipeFormModal: React.FC<{
 
     const handleAddIngredient = () => {
         if (inventory.length > 0) {
-            setIngredients([...ingredients, { itemId: inventory[0].id, quantity: 0, unit: 'g' }]);
+            setIngredients([...ingredients, { itemId: inventory[0].id, quantity: 1, unit: 'g', prepWastePercentage: 0 }]);
         }
     };
     
-    const handleIngredientChange = (index: number, field: keyof Ingredient, value: string) => {
+    const handleIngredientChange = (index: number, field: keyof Ingredient, value: string | number) => {
         const newIngredients = [...ingredients];
-        const isQuantity = field === 'quantity';
-        newIngredients[index] = { ...newIngredients[index], [field]: isQuantity ? parseFloat(value) || 0 : value };
+        newIngredients[index] = { ...newIngredients[index], [field]: value };
         setIngredients(newIngredients);
     };
 
@@ -189,14 +185,15 @@ const RecipeFormModal: React.FC<{
                     {errors.ingredients && <p className="text-[var(--color-danger)] text-xs mb-2">{errors.ingredients}</p>}
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                        {ingredients.map((ing, index) => (
-                           <div key={index} className="grid grid-cols-[1fr,100px,80px,auto] gap-2 items-center">
+                           <div key={index} className="grid grid-cols-[1fr,80px,80px,80px,auto] gap-2 items-center">
                                <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select">
                                    {inventory.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
                                </select>
-                               <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="ican-input" />
+                               <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', parseFloat(e.target.value) || 0)} className="ican-input" placeholder="Qty"/>
                                <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="ican-select">
                                    {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                                </select>
+                               <input type="number" value={ing.prepWastePercentage || 0} onChange={e => handleIngredientChange(index, 'prepWastePercentage', parseFloat(e.target.value) || 0)} className="ican-input" placeholder="Waste %" title="Preparation Waste %"/>
                                <button onClick={() => handleRemoveIngredient(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)]"><X size={18} /></button>
                            </div>
                        ))}
@@ -420,21 +417,16 @@ const Recipes: React.FC = () => {
         addNotification('Recipe saved as template.', 'success');
     };
 
-    const handleIngredientChange = (ingIndex: number, field: keyof Ingredient, value: string) => {
+    const handleIngredientChange = (ingIndex: number, field: keyof Ingredient, value: string | number) => {
         if (!editedRecipe) return;
         const newIngredients = [...editedRecipe.ingredients];
-        const isQuantity = field === 'quantity';
-        const updatedIngredient = {
-            ...newIngredients[ingIndex],
-            [field]: isQuantity ? parseFloat(value) || 0 : value,
-        };
-        newIngredients[ingIndex] = updatedIngredient;
+        newIngredients[ingIndex] = { ...newIngredients[ingIndex], [field]: value };
         setEditedRecipe({ ...editedRecipe, ingredients: newIngredients });
     };
 
     const handleAddIngredientToRecipe = () => {
         if (!editedRecipe || inventory.length === 0) return;
-        const newIngredient: Ingredient = { itemId: inventory[0].id, quantity: 1, unit: 'unit' };
+        const newIngredient: Ingredient = { itemId: inventory[0].id, quantity: 1, unit: 'unit', prepWastePercentage: 0 };
         setEditedRecipe({ ...editedRecipe, ingredients: [...editedRecipe.ingredients, newIngredient] });
     };
 
@@ -608,11 +600,18 @@ const Recipes: React.FC = () => {
         
         const ingredientsWithDetails = editedRecipe.ingredients.map(ing => {
             const item = getInventoryItemById(ing.itemId);
-            if (!item) return { name: 'Unknown', quantity: ing.quantity, unit: ing.unit, cost: 0, percentage: 0 };
-            const conversionFactor = getConversionFactor(ing.unit, item.unit) || 1;
-            const cost = item.unitCost * ing.quantity * conversionFactor;
+            if (!item) return { name: 'Unknown', quantity: ing.quantity, unit: ing.unit, cost: 0, percentage: 0, yieldPercentage: 100, prepWastePercentage: 0 };
+            const cost = calculateRecipeCost({ ...editedRecipe, ingredients: [ing] });
             const percentage = totalCost > 0 ? (cost / totalCost) * 100 : 0;
-            return { name: item.name, quantity: ing.quantity, unit: ing.unit, cost, percentage };
+            return {
+                name: item.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                cost,
+                percentage,
+                yieldPercentage: item.yieldPercentage || 100,
+                prepWastePercentage: ing.prepWastePercentage || 0
+            };
         });
 
         const dataUrl = generateCostingSheetSVG({
@@ -972,20 +971,20 @@ const Recipes: React.FC = () => {
                                 </button>
                             </div>
                             <div className="border border-[var(--color-border)] rounded-lg">
-                                <div className="hidden md:grid md:grid-cols-[1fr,100px,120px,100px,40px] gap-x-2 px-3 py-2 text-sm bg-[var(--color-input)] text-[var(--color-text-muted)] font-semibold">
+                                <div className="hidden md:grid md:grid-cols-[1fr,80px,80px,80px,80px,40px] gap-x-2 px-3 py-2 text-sm bg-[var(--color-input)] text-[var(--color-text-muted)] font-semibold">
                                     <span>Ingredient</span>
                                     <span>Quantity</span>
                                     <span>Unit</span>
+                                    <span>Waste %</span>
                                     <span className="text-right">Cost</span>
                                     <span></span>
                                 </div>
                                 <div className="divide-y md:divide-y-0 divide-[var(--color-border)]">
                                     {editedRecipe.ingredients.map((ing, index) => {
                                         const item = getInventoryItemById(ing.itemId);
-                                        const costConversionFactor = item ? getConversionFactor(ing.unit, item.unit) || 1 : 1;
-                                        const ingredientCost = item ? item.unitCost * ing.quantity * costConversionFactor : 0;
+                                        const ingredientCost = item ? calculateRecipeCost({ ...editedRecipe, ingredients: [ing] }) : 0;
                                         return (
-                                            <div key={`${ing.itemId}-${index}`} className={`p-3 md:p-2 md:grid md:grid-cols-[1fr,100px,120px,100px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0 transition-colors`}>
+                                            <div key={`${ing.itemId}-${index}`} className={`p-3 md:p-2 md:grid md:grid-cols-[1fr,80px,80px,80px,80px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0 transition-colors`}>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Ingredient</label>
                                                     <select value={ing.itemId} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select text-sm">
@@ -994,13 +993,17 @@ const Recipes: React.FC = () => {
                                                 </div>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Quantity</label>
-                                                    <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', e.target.value)} className="ican-input text-sm" />
+                                                    <input type="number" value={ing.quantity} min="0" onChange={e => handleIngredientChange(index, 'quantity', parseFloat(e.target.value) || 0)} className="ican-input text-sm" />
                                                 </div>
                                                 <div>
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Unit</label>
                                                     <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="ican-select text-sm">
                                                         {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                                                     </select>
+                                                </div>
+                                                 <div>
+                                                    <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Waste %</label>
+                                                    <input type="number" value={ing.prepWastePercentage || 0} min="0" max="99" onChange={e => handleIngredientChange(index, 'prepWastePercentage', parseFloat(e.target.value) || 0)} className="ican-input text-sm" title="Preparation Waste: loss from cooking, chopping, etc."/>
                                                 </div>
                                                 <div className="flex justify-between items-center md:block md:text-right">
                                                     <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Cost</label>

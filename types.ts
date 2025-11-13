@@ -29,12 +29,14 @@ export interface InventoryItem {
   supplierId: string;
   lowStockThreshold: number;
   businessId: string;
+  yieldPercentage?: number;
 }
 
 export interface Ingredient {
   itemId: string;
   quantity: number;
   unit: string;
+  prepWastePercentage?: number;
 }
 
 export interface Recipe {

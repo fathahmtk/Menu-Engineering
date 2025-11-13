@@ -88,8 +88,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return recipe.ingredients.reduce((total, ingredient) => {
         const item = getInventoryItemById(ingredient.itemId);
         if (!item) return total;
+        
         const costConversionFactor = getConversionFactor(ingredient.unit, item.unit) || 1;
-        return total + (item.unitCost * ingredient.quantity * costConversionFactor);
+        
+        // New logic for yield and waste
+        const yieldFactor = (item.yieldPercentage || 100) / 100;
+        const wasteFactor = 1 - ((ingredient.prepWastePercentage || 0) / 100);
+        
+        let ingredientCost = 0;
+        if (yieldFactor > 0 && wasteFactor > 0) {
+            // Adjust unit cost based on yield (As-Purchased cost vs Edible-Portion cost)
+            const trueUnitCost = item.unitCost / yieldFactor;
+            // Adjust quantity needed based on prep waste
+            const requiredQuantity = ingredient.quantity / wasteFactor;
+            
+            ingredientCost = trueUnitCost * requiredQuantity * costConversionFactor;
+        } else {
+            // Fallback for invalid percentages
+            ingredientCost = item.unitCost * ingredient.quantity * costConversionFactor;
+        }
+
+        return total + ingredientCost;
     }, 0);
   }, [getInventoryItemById, getConversionFactor]);
 

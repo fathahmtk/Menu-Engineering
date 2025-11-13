@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { AlertTriangle, PlusCircle, Edit, Save, XCircle, Trash2, Edit2, DollarSign, Truck, ShoppingCart } from 'lucide-react';
+import { AlertTriangle, PlusCircle, Save, XCircle, Trash2, Edit2, DollarSign, Truck, ShoppingCart, Info } from 'lucide-react';
 import { InventoryItem } from '../types';
 import ActionsDropdown from './common/ActionsDropdown';
 import ImportModal from './common/ImportModal';
@@ -45,22 +45,11 @@ const Inventory: React.FC = () => {
     const { formatCurrency, currency } = useCurrency();
     const { addNotification } = useNotification();
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newItem, setNewItem] = useState<Omit<InventoryItem, 'id' | 'businessId'>>({
-        name: '',
-        category: 'Produce',
-        quantity: 0,
-        unit: 'kg',
-        unitCost: 0,
-        unitPrice: 0,
-        supplierId: suppliers[0]?.id || '',
-        lowStockThreshold: 0,
-    });
-    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
 
-    const [editingItemId, setEditingItemId] = useState<string | null>(null);
-    const [editedCost, setEditedCost] = useState<number>(0);
-    const [editedPrice, setEditedPrice] = useState<number>(0);
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -76,59 +65,23 @@ const Inventory: React.FC = () => {
         return [...new Set([...DEFAULT_UNITS, ...customUnits])];
     }, [ingredientUnits]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        const isNumberField = ['quantity', 'unitCost', 'unitPrice', 'lowStockThreshold'].includes(name);
-        setNewItem({
-            ...newItem,
-            [name]: isNumberField ? parseFloat(value) || 0 : value,
-        });
+    const handleOpenAddModal = () => {
+        setItemToEdit(null);
+        setIsAddModalOpen(true);
     };
 
-    const handleAddItem = async () => {
-        const newErrors: { [key: string]: string } = {};
-        if (!newItem.name.trim()) newErrors.name = 'Item name is required.';
-        if (newItem.unitCost <= 0) newErrors.unitCost = 'Unit cost must be a positive number.';
-        if (newItem.unitPrice <= 0) newErrors.unitPrice = 'Unit price must be a positive number.';
-        if (newItem.quantity < 0) newErrors.quantity = 'Quantity cannot be negative.';
-        if (newItem.lowStockThreshold < 0) newErrors.lowStockThreshold = 'Low stock threshold cannot be negative.';
-        if (!newItem.supplierId) newErrors.supplierId = 'Please select a supplier.';
-        if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
-        await addInventoryItem(newItem);
-        addNotification('Inventory item added successfully!', 'success');
-        handleCloseModal();
+    const handleOpenEditModal = (item: InventoryItem) => {
+        setItemToEdit(JSON.parse(JSON.stringify(item))); // Deep copy
+        setIsEditModalOpen(true);
     };
     
-    const handleOpenModal = () => {
-      setErrors({});
-      setNewItem({ name: '', category: 'Produce', quantity: 0, unit: 'kg', unitCost: 0, unitPrice: 0, supplierId: suppliers[0]?.id || '', lowStockThreshold: 0 });
-      setIsModalOpen(true);
-    };
-
     const handleCloseModal = () => {
-        setIsModalOpen(false);
+        setIsAddModalOpen(false);
+        setIsEditModalOpen(false);
+        setItemToEdit(null);
         setErrors({});
     }
     
-    const handleEdit = (item: InventoryItem) => {
-        setEditingItemId(item.id);
-        setEditedCost(item.unitCost);
-        setEditedPrice(item.unitPrice);
-    };
-
-    const handleCancel = () => setEditingItemId(null);
-
-    const handleSave = async (itemId: string) => {
-        if (editedCost <= 0) { alert("Unit cost must be a positive number."); return; }
-        if (editedPrice <= 0) { alert("Unit price must be a positive number."); return; }
-        const itemToUpdate = inventory.find(i => i.id === itemId);
-        if (itemToUpdate) {
-            await updateInventoryItem({ ...itemToUpdate, unitCost: editedCost, unitPrice: editedPrice });
-            addNotification('Item updated successfully!', 'success');
-        }
-        setEditingItemId(null);
-    };
-
     const handleDelete = (itemId: string) => {
         if (window.confirm('Are you sure you want to delete this item?')) {
           deleteInventoryItem(itemId);
@@ -210,7 +163,7 @@ const Inventory: React.FC = () => {
     const isAllSelected = inventory.length > 0 && selectedItems.size === inventory.length;
 
     const handleExport = () => {
-        const headers = ['name', 'category', 'quantity', 'unit', 'unitCost', 'unitPrice', 'supplierName', 'lowStockThreshold'];
+        const headers = ['name', 'category', 'quantity', 'unit', 'unitCost', 'unitPrice', 'supplierName', 'lowStockThreshold', 'yieldPercentage'];
         const dataToExport = inventory.map(item => {
             const supplier = getSupplierById(item.supplierId);
             return {
@@ -222,6 +175,7 @@ const Inventory: React.FC = () => {
                 unitPrice: item.unitPrice,
                 supplierName: supplier ? supplier.name : 'N/A',
                 lowStockThreshold: item.lowStockThreshold,
+                yieldPercentage: item.yieldPercentage || 100
             };
         });
         const csvString = convertToCSV(dataToExport, headers);
@@ -262,6 +216,7 @@ const Inventory: React.FC = () => {
                 unitPrice: parseFloat(item.unitPrice) || 0,
                 supplierId: supplierId || '',
                 lowStockThreshold: parseFloat(item.lowStockThreshold) || 0,
+                yieldPercentage: parseFloat(item.yieldPercentage) || 100,
             };
         }).filter(item => item.name && item.supplierId);
         
@@ -282,7 +237,7 @@ const Inventory: React.FC = () => {
                     <div className="flex items-center space-x-2">
                         <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
                         <button 
-                            onClick={handleOpenModal}
+                            onClick={handleOpenAddModal}
                             className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
                             <PlusCircle size={20} className="md:mr-2" />
                             <span className="hidden md:inline">Add Item</span>
@@ -312,8 +267,8 @@ const Inventory: React.FC = () => {
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Name</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Category</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Stock</th>
+                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Yield</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Unit Cost</th>
-                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Unit Price</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Supplier</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Status</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
@@ -322,8 +277,6 @@ const Inventory: React.FC = () => {
                     <tbody>
                         {inventory.length > 0 ? inventory.map(item => {
                             const supplier = getSupplierById(item.supplierId);
-                            const isEditing = editingItemId === item.id;
-
                             return (
                                 <tr key={item.id} className={`border-b border-[var(--color-border)] last:border-b-0 transition-colors hover:bg-[var(--color-input)] ${selectedItems.has(item.id) ? 'bg-[var(--color-primary-light)]' : ''}`}>
                                     <td className="p-4 checkbox-cell">
@@ -332,30 +285,15 @@ const Inventory: React.FC = () => {
                                     <td data-label="Name" className="p-4 font-medium text-[var(--color-text-primary)] whitespace-nowrap">{item.name}</td>
                                     <td data-label="Category" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.category}</td>
                                     <td data-label="Stock" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.quantity} {item.unit}</td>
-                                    <td data-label="Unit Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">
-                                        {isEditing ? (
-                                            <input type="number" value={editedCost} onChange={(e) => setEditedCost(parseFloat(e.target.value) || 0)} className="ican-input w-full md:w-24 py-1" autoFocus step="0.01" min="0.01" />
-                                        ) : ( formatCurrency(item.unitCost) )}
-                                    </td>
-                                    <td data-label="Unit Price" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">
-                                        {isEditing ? (
-                                            <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(parseFloat(e.target.value) || 0)} className="ican-input w-full md:w-24 py-1" step="0.01" min="0.01" />
-                                        ) : ( formatCurrency(item.unitPrice) )}
-                                    </td>
+                                    <td data-label="Yield" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.yieldPercentage || 100}%</td>
+                                    <td data-label="Unit Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(item.unitCost)}</td>
                                     <td data-label="Supplier" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{supplier?.name || 'N/A'}</td>
                                     <td data-label="Status" className="p-4">
                                         <StockLevelIndicator item={item} />
                                     </td>
                                     <td data-label="Actions" className="p-4">
                                         <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
-                                            {isEditing ? (
-                                                <>
-                                                    <button onClick={() => handleSave(item.id)} className="text-green-500 hover:text-green-600" title="Save cost"><Save size={20} /></button>
-                                                    <button onClick={handleCancel} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" title="Cancel edit"><XCircle size={20} /></button>
-                                                </>
-                                            ) : (
-                                                <button onClick={() => handleEdit(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]" title="Edit item cost"><Edit size={20} /></button>
-                                            )}
+                                            <button onClick={() => handleOpenEditModal(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]" title="Edit item"><Edit2 size={20} /></button>
                                             <button onClick={() => handleDelete(item.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]" title="Delete item"><Trash2 size={20} /></button>
                                         </div>
                                     </td>
@@ -368,7 +306,7 @@ const Inventory: React.FC = () => {
                                         <ShoppingCart size={40} className="mb-2 text-[var(--color-border)]"/>
                                         <p className="font-semibold">No inventory items yet</p>
                                         <p className="text-sm">Add your first item to get started.</p>
-                                        <button onClick={handleOpenModal} className="mt-4 ican-btn ican-btn-primary">Add Item</button>
+                                        <button onClick={handleOpenAddModal} className="mt-4 ican-btn ican-btn-primary">Add Item</button>
                                      </div>
                                 </td>
                             </tr>
@@ -381,7 +319,7 @@ const Inventory: React.FC = () => {
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
                 title="Import Inventory Items"
-                templateUrl="data:text/csv;charset=utf-8,name,category,quantity,unit,unitCost,unitPrice,supplierName,lowStockThreshold%0AExample%20Item,Produce,10,kg,5,8,Example%20Supplier,2"
+                templateUrl="data:text/csv;charset=utf-8,name,category,quantity,unit,unitCost,unitPrice,supplierName,lowStockThreshold,yieldPercentage%0AExample%20Item,Produce,10,kg,5,8,Example%20Supplier,2,95"
                 templateFilename="inventory_template.csv"
                 parseFile={parseInventoryFile}
                 onImport={handleImport}
@@ -398,71 +336,23 @@ const Inventory: React.FC = () => {
                     </div>
                 )}
             />
-            <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Add New Inventory Item">
-                <div className="space-y-4">
-                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text-muted)]">Item Name</label>
-                        <input type="text" name="name" id="name" value={newItem.name} onChange={handleInputChange} className={`ican-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
-                        {errors.name && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.name}</p>}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <div>
-                            <label htmlFor="category" className="block text-sm font-medium text-[var(--color-text-muted)]">Category</label>
-                            <select name="category" id="category" value={newItem.category} onChange={handleInputChange} className="ican-select mt-1">
-                                {ITEM_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
-                        </div>
-                         <div>
-                            <label htmlFor="supplierId" className="block text-sm font-medium text-[var(--color-text-muted)]">Supplier</label>
-                            <select name="supplierId" id="supplierId" value={newItem.supplierId} onChange={handleInputChange} className={`ican-select mt-1 ${errors.supplierId ? 'border-[var(--color-danger)]' : ''}`}>
-                                <option value="" disabled>Select a supplier</option>
-                                {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
-                            </select>
-                            {errors.supplierId && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.supplierId}</p>}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="quantity" className="block text-sm font-medium text-[var(--color-text-muted)]">Quantity</label>
-                            <input type="number" min="0" name="quantity" id="quantity" value={newItem.quantity} onChange={handleInputChange} className={`ican-input mt-1 ${errors.quantity ? 'border-[var(--color-danger)]' : ''}`} />
-                            {errors.quantity && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.quantity}</p>}
-                        </div>
-                        <div>
-                            <label htmlFor="unit" className="block text-sm font-medium text-[var(--color-text-muted)]">Unit</label>
-                            <select name="unit" id="unit" value={newItem.unit} onChange={handleInputChange} className="ican-select mt-1">
-                                {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="unitCost" className="block text-sm font-medium text-[var(--color-text-muted)]">Unit Cost ({currency})</label>
-                            <input type="number" min="0" step="0.01" name="unitCost" id="unitCost" value={newItem.unitCost} onChange={handleInputChange} className={`ican-input mt-1 ${errors.unitCost ? 'border-[var(--color-danger)]' : ''}`} />
-                            {errors.unitCost && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.unitCost}</p>}
-                        </div>
-                        <div>
-                            <label htmlFor="unitPrice" className="block text-sm font-medium text-[var(--color-text-muted)]">Unit Price ({currency})</label>
-                            <input type="number" min="0" step="0.01" name="unitPrice" id="unitPrice" value={newItem.unitPrice} onChange={handleInputChange} className={`ican-input mt-1 ${errors.unitPrice ? 'border-[var(--color-danger)]' : ''}`} />
-                            {errors.unitPrice && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.unitPrice}</p>}
-                        </div>
-                    </div>
-                     <div className="grid grid-cols-1">
-                        <div>
-                            <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-[var(--color-text-muted)]">Low Stock Threshold</label>
-                            <input type="number" min="0" name="lowStockThreshold" id="lowStockThreshold" value={newItem.lowStockThreshold} onChange={handleInputChange} className={`ican-input mt-1 ${errors.lowStockThreshold ? 'border-[var(--color-danger)]' : ''}`} />
-                            {errors.lowStockThreshold && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.lowStockThreshold}</p>}
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
-                        <button onClick={handleCloseModal} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
-                        <button onClick={handleAddItem} className="ican-btn ican-btn-primary w-full md:w-auto">Add Item</button>
-                    </div>
-                </div>
-            </Modal>
+             <ItemFormModal 
+                isOpen={isAddModalOpen || isEditModalOpen}
+                onClose={handleCloseModal}
+                item={itemToEdit}
+                onSave={async (itemData, isEditing) => {
+                    if (isEditing) {
+                        await updateInventoryItem(itemData as InventoryItem);
+                        addNotification('Inventory item updated!', 'success');
+                    } else {
+                        await addInventoryItem(itemData as Omit<InventoryItem, 'id' | 'businessId'>);
+                        addNotification('Inventory item added!', 'success');
+                    }
+                    handleCloseModal();
+                }}
+                suppliers={suppliers}
+                allUnits={allUnits}
+             />
             <Modal isOpen={isBulkModalOpen} onClose={closeBulkModal} title={`Bulk Update ${selectedItems.size} Items`}>
                 <div className="space-y-4">
                     {bulkActionType === 'cost' && (
@@ -522,6 +412,132 @@ const Inventory: React.FC = () => {
                 )}
             </Modal>
         </>
+    );
+};
+
+// Form Modal Component for Add/Edit
+interface ItemFormModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    item: InventoryItem | null;
+    onSave: (item: Omit<InventoryItem, 'id' | 'businessId'> | InventoryItem, isEditing: boolean) => void;
+    suppliers: { id: string, name: string }[];
+    allUnits: string[];
+}
+
+const ItemFormModal: React.FC<ItemFormModalProps> = ({ isOpen, onClose, item, onSave, suppliers, allUnits }) => {
+    const { currency } = useCurrency();
+    const [formData, setFormData] = useState<Omit<InventoryItem, 'id' | 'businessId'>>({
+        name: '', category: 'Produce', quantity: 0, unit: 'kg', unitCost: 0, unitPrice: 0, supplierId: '', lowStockThreshold: 0, yieldPercentage: 100
+    });
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const isEditing = !!item;
+
+    useEffect(() => {
+        if (isOpen) {
+            if (item) {
+                setFormData(item);
+            } else {
+                setFormData({ name: '', category: 'Produce', quantity: 0, unit: 'kg', unitCost: 0, unitPrice: 0, supplierId: suppliers[0]?.id || '', lowStockThreshold: 0, yieldPercentage: 100 });
+            }
+            setErrors({});
+        }
+    }, [isOpen, item, suppliers]);
+    
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        const isNumberField = ['quantity', 'unitCost', 'unitPrice', 'lowStockThreshold', 'yieldPercentage'].includes(name);
+        setFormData(prev => ({ ...prev, [name]: isNumberField ? parseFloat(value) || 0 : value }));
+    };
+
+    const handleSubmit = () => {
+        const newErrors: { [key: string]: string } = {};
+        if (!formData.name.trim()) newErrors.name = 'Item name is required.';
+        if (formData.unitCost <= 0) newErrors.unitCost = 'Unit cost must be a positive number.';
+        if (formData.quantity < 0) newErrors.quantity = 'Quantity cannot be negative.';
+        if (formData.lowStockThreshold < 0) newErrors.lowStockThreshold = 'Low stock threshold cannot be negative.';
+        if (!formData.supplierId) newErrors.supplierId = 'Please select a supplier.';
+        if ((formData.yieldPercentage || 0) <= 0 || (formData.yieldPercentage || 0) > 100) newErrors.yieldPercentage = 'Yield must be between 1 and 100.';
+
+        if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
+        
+        onSave(isEditing ? { ...item, ...formData } as InventoryItem : formData, isEditing);
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title={isEditing ? 'Edit Inventory Item' : 'Add New Inventory Item'}>
+             <div className="space-y-4">
+                     <div>
+                        <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text-muted)]">Item Name</label>
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className={`ican-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
+                        {errors.name && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.name}</p>}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                            <label htmlFor="category" className="block text-sm font-medium text-[var(--color-text-muted)]">Category</label>
+                            <select name="category" id="category" value={formData.category} onChange={handleChange} className="ican-select mt-1">
+                                {ITEM_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                            </select>
+                        </div>
+                         <div>
+                            <label htmlFor="supplierId" className="block text-sm font-medium text-[var(--color-text-muted)]">Supplier</label>
+                            <select name="supplierId" id="supplierId" value={formData.supplierId} onChange={handleChange} className={`ican-select mt-1 ${errors.supplierId ? 'border-[var(--color-danger)]' : ''}`}>
+                                <option value="" disabled>Select a supplier</option>
+                                {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
+                            </select>
+                            {errors.supplierId && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.supplierId}</p>}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="quantity" className="block text-sm font-medium text-[var(--color-text-muted)]">Quantity</label>
+                            <input type="number" min="0" name="quantity" id="quantity" value={formData.quantity} onChange={handleChange} className={`ican-input mt-1 ${errors.quantity ? 'border-[var(--color-danger)]' : ''}`} />
+                            {errors.quantity && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.quantity}</p>}
+                        </div>
+                        <div>
+                            <label htmlFor="unit" className="block text-sm font-medium text-[var(--color-text-muted)]">Unit</label>
+                            <select name="unit" id="unit" value={formData.unit} onChange={handleChange} className="ican-select mt-1">
+                                {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="unitCost" className="block text-sm font-medium text-[var(--color-text-muted)]">Unit Cost ({currency})</label>
+                            <input type="number" min="0" step="0.01" name="unitCost" id="unitCost" value={formData.unitCost} onChange={handleChange} className={`ican-input mt-1 ${errors.unitCost ? 'border-[var(--color-danger)]' : ''}`} />
+                            {errors.unitCost && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.unitCost}</p>}
+                        </div>
+                        <div>
+                            <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-[var(--color-text-muted)]">Low Stock Threshold</label>
+                            <input type="number" min="0" name="lowStockThreshold" id="lowStockThreshold" value={formData.lowStockThreshold} onChange={handleChange} className={`ican-input mt-1 ${errors.lowStockThreshold ? 'border-[var(--color-danger)]' : ''}`} />
+                            {errors.lowStockThreshold && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.lowStockThreshold}</p>}
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1">
+                        <div>
+                            <label htmlFor="yieldPercentage" className="flex items-center text-sm font-medium text-[var(--color-text-muted)]">
+                                Yield %
+                                <span className="group relative ml-1.5">
+                                    <Info size={14} className="cursor-help" />
+                                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 text-xs text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                        The usable percentage of the item after trimming, peeling, or de-boning. E.g., Onions might have a 90% yield. This affects the true cost.
+                                    </span>
+                                </span>
+                            </label>
+                            <input type="number" min="1" max="100" name="yieldPercentage" id="yieldPercentage" value={formData.yieldPercentage || 100} onChange={handleChange} className={`ican-input mt-1 ${errors.yieldPercentage ? 'border-[var(--color-danger)]' : ''}`} />
+                            {errors.yieldPercentage && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.yieldPercentage}</p>}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
+                        <button onClick={onClose} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+                        <button onClick={handleSubmit} className="ican-btn ican-btn-primary w-full md:w-auto">{isEditing ? 'Save Changes' : 'Add Item'}</button>
+                    </div>
+                </div>
+        </Modal>
     );
 };
 
