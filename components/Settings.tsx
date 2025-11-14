@@ -525,13 +525,35 @@ const ManageListsTab: React.FC = () => {
     };
 
     const handleAddConversion = async () => {
-        if (newConversion.fromUnit.trim() && newConversion.toUnit.trim() && newConversion.factor > 0) {
-            await addUnitConversion(newConversion);
-            addNotification('Conversion added!', 'success');
-            setNewConversion({ fromUnit: '', toUnit: '', factor: 1, itemId: undefined });
-        } else {
-            addNotification('Please fill all conversion fields correctly.', 'error');
+        const from = newConversion.fromUnit.trim().toLowerCase();
+        const to = newConversion.toUnit.trim().toLowerCase();
+
+        if (!from || !to || newConversion.factor <= 0) {
+            addNotification('Please fill all fields with valid values.', 'error');
+            return;
         }
+
+        if (from === to) {
+            addNotification('Cannot convert a unit to itself.', 'error');
+            return;
+        }
+
+        const conversionExists = unitConversions.some(c => 
+            (c.itemId || null) === (newConversion.itemId || null) &&
+            (
+                (c.fromUnit.toLowerCase() === from && c.toUnit.toLowerCase() === to) ||
+                (c.fromUnit.toLowerCase() === to && c.toUnit.toLowerCase() === from)
+            )
+        );
+
+        if (conversionExists) {
+            addNotification('A similar or inverse conversion already exists for this scope.', 'error', true);
+            return;
+        }
+
+        await addUnitConversion(newConversion);
+        addNotification('Conversion added!', 'success');
+        setNewConversion({ fromUnit: '', toUnit: '', factor: 1, itemId: undefined });
     };
 
     const allUnits = useMemo(() => {
@@ -545,30 +567,67 @@ const ManageListsTab: React.FC = () => {
             {/* Unit Conversions */}
             <div>
                 <h4 className="font-semibold mb-2">Unit Conversions</h4>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3 p-3 bg-[var(--color-input)] rounded-lg">
-                    <input type="text" value={newConversion.fromUnit} onChange={(e) => setNewConversion(p=>({...p, fromUnit: e.target.value}))} placeholder="From Unit (e.g., case)" className="ican-input" list="units-list"/>
-                    <input type="text" value={newConversion.toUnit} onChange={(e) => setNewConversion(p=>({...p, toUnit: e.target.value}))} placeholder="To Unit (e.g., kg)" className="ican-input" list="units-list"/>
-                    <input type="number" value={newConversion.factor} onChange={(e) => setNewConversion(p=>({...p, factor: parseFloat(e.target.value) || 1}))} placeholder="Factor" className="ican-input" />
-                    <datalist id="units-list">{allUnits.map(u => <option key={u} value={u} />)}</datalist>
-                    <select value={newConversion.itemId || ''} onChange={(e) => setNewConversion(p=>({...p, itemId: e.target.value || undefined}))} className="ican-select">
-                        <option value="">Generic (All Items)</option>
-                        {pricedItems.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-                    </select>
+                <div className="p-3 bg-[var(--color-input)] rounded-lg mb-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                        <div className="lg:col-span-2 grid grid-cols-[1fr,auto,1fr] items-center gap-2">
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--color-text-muted)]">1 From Unit</label>
+                                <input type="text" value={newConversion.fromUnit} onChange={(e) => setNewConversion(p=>({...p, fromUnit: e.target.value}))} placeholder="e.g., case" className="ican-input mt-1" list="units-list"/>
+                            </div>
+                            <div className="text-center pt-5 text-[var(--color-text-muted)]">=</div>
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--color-text-muted)]">To Unit</label>
+                                <input type="text" value={newConversion.toUnit} onChange={(e) => setNewConversion(p=>({...p, toUnit: e.target.value}))} placeholder="e.g., unit" className="ican-input mt-1" list="units-list"/>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Factor (X To Units)</label>
+                            <input type="number" value={newConversion.factor} onChange={(e) => setNewConversion(p=>({...p, factor: parseFloat(e.target.value) || 1}))} placeholder="e.g., 24" className="ican-input mt-1" />
+                        </div>
+                        <div className="lg:col-span-1">
+                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Applies To</label>
+                            <select value={newConversion.itemId || ''} onChange={(e) => setNewConversion(p=>({...p, itemId: e.target.value || undefined}))} className="ican-select mt-1">
+                                <option value="">Generic (All Items)</option>
+                                {pricedItems.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                            </select>
+                        </div>
+                        <datalist id="units-list">{allUnits.map(u => <option key={u} value={u} />)}</datalist>
+                        <div>
+                            <button onClick={handleAddConversion} className="ican-btn ican-btn-primary w-full">Add</button>
+                        </div>
+                    </div>
                 </div>
-                 <button onClick={handleAddConversion} className="ican-btn ican-btn-primary">Add Conversion</button>
-                <ul className="space-y-2 max-h-48 overflow-y-auto border border-[var(--color-border)] rounded-md p-2 bg-[var(--color-input)] mt-3">
-                    {unitConversions.map(conv => (
-                        <li key={conv.id} className="flex items-center justify-between p-2 hover:bg-[var(--color-border)] rounded">
-                            <span className="text-sm">
-                                1 {conv.fromUnit} = {conv.factor} {conv.toUnit}
-                                <span className="text-xs text-[var(--color-text-muted)] ml-2">
-                                    ({conv.itemId ? pricedItems.find(i=>i.id===conv.itemId)?.name || 'Specific Item' : 'Generic'})
-                                </span>
-                            </span>
-                             <button onClick={() => deleteUnitConversion(conv.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={16} /></button>
-                        </li>
-                    ))}
-                </ul>
+                
+                <div className="max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-lg">
+                    <table className="w-full text-sm">
+                        <thead className="bg-[var(--color-input)] sticky top-0">
+                            <tr>
+                                <th className="text-left font-semibold p-2 text-[var(--color-text-muted)]">Conversion</th>
+                                <th className="text-left font-semibold p-2 text-[var(--color-text-muted)]">Applies To</th>
+                                <th className="text-right font-semibold p-2 text-[var(--color-text-muted)]">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {unitConversions.length > 0 ? unitConversions.map(conv => (
+                                <tr key={conv.id} className="border-t border-[var(--color-border)]">
+                                    <td className="p-2">
+                                        <span className="font-mono">1 {conv.fromUnit} = {conv.factor} {conv.toUnit}</span>
+                                    </td>
+                                    <td className="p-2 text-[var(--color-text-muted)]">
+                                        {conv.itemId ? (pricedItems.find(i=>i.id===conv.itemId)?.name || 'Specific Item') : 'Generic'}
+                                    </td>
+                                    <td className="p-2 text-right">
+                                        <button onClick={() => deleteUnitConversion(conv.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)] p-1"><Trash2 size={16} /></button>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan={3} className="text-center p-4 text-[var(--color-text-muted)]">No custom conversions defined.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             {/* Recipe Categories */}
             <div>
