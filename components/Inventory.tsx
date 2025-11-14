@@ -4,7 +4,7 @@ import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { AlertTriangle, PlusCircle, Save, XCircle, Trash2, Edit2, DollarSign, Truck, ShoppingCart, Info } from 'lucide-react';
+import { AlertTriangle, PlusCircle, Save, XCircle, Trash2, Edit2, DollarSign, Truck, ShoppingCart, Info, Weight } from 'lucide-react';
 import { InventoryItem } from '../types';
 import ActionsDropdown from './common/ActionsDropdown';
 import ImportModal from './common/ImportModal';
@@ -53,7 +53,7 @@ const Inventory: React.FC = () => {
 
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-    const [bulkActionType, setBulkActionType] = useState<'cost' | 'price' | null>(null);
+    const [bulkActionType, setBulkActionType] = useState<'cost' | 'price' | 'unit' | 'reorder' | null>(null);
     const [bulkValue, setBulkValue] = useState<string | number>('');
     const [bulkError, setBulkError] = useState('');
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
@@ -116,9 +116,13 @@ const Inventory: React.FC = () => {
         setIsConfirmDeleteOpen(false);
     };
 
-    const openBulkModal = (action: 'cost' | 'price') => {
+    const openBulkModal = (action: 'cost' | 'price' | 'unit' | 'reorder') => {
         setBulkActionType(action);
-        setBulkValue(0);
+        if (action === 'unit') {
+            setBulkValue(allUnits[0] || '');
+        } else {
+            setBulkValue(0);
+        }
         setBulkError('');
         setIsBulkModalOpen(true);
     };
@@ -131,19 +135,40 @@ const Inventory: React.FC = () => {
     };
 
     const handleBulkUpdate = async () => {
-        let update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice'>> = {};
+        let update: Partial<InventoryItem> = {};
         let isValid = true;
         setBulkError('');
 
-        if (bulkActionType === 'cost' || bulkActionType === 'price') {
-            const numericValue = Number(bulkValue);
-            if (isNaN(numericValue) || numericValue <= 0) {
-                setBulkError('Value must be a positive number.');
-                isValid = false;
-            } else {
-                update = bulkActionType === 'cost' ? { unitCost: numericValue } : { unitPrice: numericValue };
-            }
+        switch (bulkActionType) {
+            case 'cost':
+            case 'price':
+                const numericValueCP = Number(bulkValue);
+                if (isNaN(numericValueCP) || numericValueCP <= 0) {
+                    setBulkError('Value must be a positive number.');
+                    isValid = false;
+                } else {
+                    update = bulkActionType === 'cost' ? { unitCost: numericValueCP } : { unitPrice: numericValueCP };
+                }
+                break;
+            case 'unit':
+                if (!bulkValue) {
+                    setBulkError('Please select a unit.');
+                    isValid = false;
+                } else {
+                    update = { unit: String(bulkValue) };
+                }
+                break;
+            case 'reorder':
+                const numericValueR = Number(bulkValue);
+                if (isNaN(numericValueR) || numericValueR < 0) {
+                    setBulkError('Value must be a non-negative number.');
+                    isValid = false;
+                } else {
+                    update = { lowStockThreshold: numericValueR };
+                }
+                break;
         }
+
 
         if (isValid) {
             await bulkUpdateInventoryItems(Array.from(selectedItems), update);
@@ -236,6 +261,8 @@ const Inventory: React.FC = () => {
                         <div className="flex items-center space-x-2 flex-wrap gap-2">
                             <button onClick={() => openBulkModal('cost')} className="text-sm flex items-center bg-[var(--color-sidebar)] border border-[var(--color-border)] px-3 py-1.5 rounded-md hover:bg-[var(--color-border)] text-[var(--color-text-secondary)]"><DollarSign size={14} className="mr-1.5" /> Update Cost</button>
                             <button onClick={() => openBulkModal('price')} className="text-sm flex items-center bg-[var(--color-sidebar)] border border-[var(--color-border)] px-3 py-1.5 rounded-md hover:bg-[var(--color-border)] text-[var(--color-text-secondary)]"><DollarSign size={14} className="mr-1.5" /> Update Price</button>
+                            <button onClick={() => openBulkModal('unit')} className="text-sm flex items-center bg-[var(--color-sidebar)] border border-[var(--color-border)] px-3 py-1.5 rounded-md hover:bg-[var(--color-border)] text-[var(--color-text-secondary)]"><Weight size={14} className="mr-1.5" /> Update Unit</button>
+                            <button onClick={() => openBulkModal('reorder')} className="text-sm flex items-center bg-[var(--color-sidebar)] border border-[var(--color-border)] px-3 py-1.5 rounded-md hover:bg-[var(--color-border)] text-[var(--color-text-secondary)]"><AlertTriangle size={14} className="mr-1.5" /> Update Reorder</button>
                             <button onClick={() => setIsConfirmDeleteOpen(true)} className="text-sm flex items-center bg-[var(--color-danger)] text-white px-3 py-1.5 rounded-md hover:bg-opacity-80"><Trash2 size={14} className="mr-1.5" /> Delete</button>
                         </div>
                     </div>
@@ -347,6 +374,21 @@ const Inventory: React.FC = () => {
                             <input type="number" id="bulkPrice" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`ican-input mt-1 ${bulkError ? 'border-[var(--color-danger)]' : ''}`} min="0" step="0.01" autoFocus />
                         </div>
                     )}
+                    {bulkActionType === 'unit' && (
+                         <div>
+                            <label htmlFor="bulkUnit" className="block text-sm font-medium text-[var(--color-text-muted)]">New Unit</label>
+                            <select id="bulkUnit" value={String(bulkValue)} onChange={e => setBulkValue(e.target.value)} className={`ican-select mt-1 ${bulkError ? 'border-[var(--color-danger)]' : ''}`}>
+                                {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                            </select>
+                        </div>
+                    )}
+                    {bulkActionType === 'reorder' && (
+                         <div>
+                            <label htmlFor="bulkReorder" className="block text-sm font-medium text-[var(--color-text-muted)]">New Reorder Level</label>
+                            <input type="number" id="bulkReorder" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`ican-input mt-1 ${bulkError ? 'border-[var(--color-danger)]' : ''}`} min="0" step="1" autoFocus />
+                        </div>
+                    )}
+
                     {bulkError && <p className="text-[var(--color-danger)] text-xs mt-1">{bulkError}</p>}
                     <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
                         <button onClick={closeBulkModal} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>

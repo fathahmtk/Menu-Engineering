@@ -229,7 +229,7 @@ export interface DataContextType {
   addInventoryItem: (item: Omit<InventoryItem, 'id' | 'businessId'>) => Promise<InventoryItem | null>;
   updateInventoryItem: (item: InventoryItem) => Promise<void>;
   deleteInventoryItem: (id: string) => Promise<void>;
-  bulkUpdateInventoryItems: (itemIds: string[], update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice'>>) => Promise<void>;
+  bulkUpdateInventoryItems: (itemIds: string[], update: Partial<InventoryItem>) => Promise<void>;
   bulkDeleteInventoryItems: (itemIds: string[]) => Promise<{ deletedCount: number; failedItems: string[] }>;
   bulkAddInventoryItems: (newItems: Omit<InventoryItem, 'id' | 'businessId'>[]) => Promise<{ successCount: number; duplicateCount: number }>;
 

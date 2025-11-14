@@ -266,7 +266,7 @@ const calculateRecipeCostBreakdown = useCallback((recipe: Recipe | null): Recipe
       setInventory(prev => prev.filter(i => i.id !== id));
   };
     
-  const bulkUpdateInventoryItems = async (itemIds: string[], update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice'>>) => {
+  const bulkUpdateInventoryItems = async (itemIds: string[], update: Partial<InventoryItem>) => {
     setInventory(prev => prev.map(item => itemIds.includes(item.id) ? { ...item, ...update } : item));
   };
 
