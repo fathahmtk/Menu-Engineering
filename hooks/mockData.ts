@@ -34,7 +34,6 @@ export const mockRecipes: Recipe[] = [
         productionUnit: 'kg',
         labourMinutes: 60,
         packagingCostPerServing: 0,
-        wastageFactor: 2,
     },
     { 
         id: 'r1', 
@@ -50,7 +49,6 @@ export const mockRecipes: Recipe[] = [
         businessId: MOCK_BUSINESS_ID,
         labourMinutes: 0.5,
         packagingCostPerServing: 0.05,
-        wastageFactor: 5,
         useCustomLabourCost: true,
         customLabourSalary: 2800,
         customWorkingDays: 24,
@@ -71,7 +69,6 @@ export const mockRecipes: Recipe[] = [
         businessId: MOCK_BUSINESS_ID,
         labourMinutes: 5,
         packagingCostPerServing: 0.40,
-        wastageFactor: 3,
     },
      { 
         id: 'r3', 
@@ -87,7 +84,6 @@ export const mockRecipes: Recipe[] = [
         businessId: MOCK_BUSINESS_ID,
         labourMinutes: 3,
         packagingCostPerServing: 0.25,
-        wastageFactor: 8,
     },
 ];
 

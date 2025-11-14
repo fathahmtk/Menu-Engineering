@@ -173,11 +173,10 @@ const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
 }, [getInventoryItemById, getConversionFactor, recipes]);
 
 const calculateRecipeCostBreakdown = useCallback((recipe: Recipe | null): RecipeCostBreakdown => {
-    const emptyBreakdown: RecipeCostBreakdown = { rawMaterialCost: 0, adjustedRMC: 0, labourCost: 0, variableOverheadCost: 0, fixedOverheadCost: 0, packagingCost: 0, totalCost: 0, costPerServing: 0 };
+    const emptyBreakdown: RecipeCostBreakdown = { rawMaterialCost: 0, labourCost: 0, variableOverheadCost: 0, fixedOverheadCost: 0, packagingCost: 0, totalCost: 0, costPerServing: 0 };
     if (!recipe) return emptyBreakdown;
 
     const rawMaterialCost = calculateRecipeCost(recipe);
-    const adjustedRMC = rawMaterialCost * (1 + (recipe.wastageFactor || 0) / 100);
 
     // Labour Cost Calculation
     let labourCost = 0;
@@ -206,11 +205,10 @@ const calculateRecipeCostBreakdown = useCallback((recipe: Recipe | null): Recipe
     const variableOverheadCost = VOH_per_dish * recipe.servings;
     const fixedOverheadCost = FOH_per_dish * recipe.servings;
     const packagingCost = (recipe.packagingCostPerServing || 0) * recipe.servings;
-    const totalCost = adjustedRMC + labourCost + variableOverheadCost + fixedOverheadCost + packagingCost;
+    const totalCost = rawMaterialCost + labourCost + variableOverheadCost + fixedOverheadCost + packagingCost;
 
     return {
         rawMaterialCost,
-        adjustedRMC,
         labourCost,
         variableOverheadCost,
         fixedOverheadCost,

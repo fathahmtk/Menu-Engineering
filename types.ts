@@ -63,7 +63,6 @@ export interface Recipe {
   productionUnit?: string; // e.g., kg, L, portion
   labourMinutes: number; // in minutes, per serving
   packagingCostPerServing: number;
-  wastageFactor: number; // as a percentage, e.g. 5 for 5%
   useCustomLabourCost?: boolean;
   customLabourSalary?: number;
   customWorkingDays?: number;
@@ -192,7 +191,6 @@ export interface AppSettingsContextType {
 
 export interface RecipeCostBreakdown {
     rawMaterialCost: number;
-    adjustedRMC: number;
     labourCost: number;
     variableOverheadCost: number;
     fixedOverheadCost: number;
