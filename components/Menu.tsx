@@ -3,8 +3,8 @@ import Card from './common/Card';
 import Modal from './common/Modal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Edit, Trash2, Star, Puzzle, ThumbsDown, Grip, Save, XCircle, Utensils, Info } from 'lucide-react';
-import { MenuItem } from '../types';
+import { PlusCircle, Edit, Trash2, Star, Puzzle, ThumbsDown, Grip, Save, XCircle, Utensils, Info, ChevronDown } from 'lucide-react';
+import { MenuItem, Recipe, RecipeCostBreakdown } from '../types';
 import { useNotification } from '../hooks/useNotificationContext';
 
 type Classification = 'Star' | 'Plowhorse' | 'Puzzle' | 'Dog';
@@ -34,6 +34,34 @@ const ClassificationBadge: React.FC<{ classification: Classification }> = ({ cla
     );
 };
 
+const CostBreakdownRow: React.FC<{ breakdown: RecipeCostBreakdown, formatCurrency: (val: number) => string }> = ({ breakdown, formatCurrency }) => {
+    return (
+        <div className="p-4 bg-[var(--color-input)] grid grid-cols-2 md:grid-cols-5 gap-4 rounded-lg">
+            <h4 className="col-span-full font-semibold text-md text-[var(--color-text-primary)] mb-2">True Cost Breakdown</h4>
+             <div className="text-center">
+                <p className="text-xs text-[var(--color-text-muted)]">Raw Materials</p>
+                <p className="font-bold text-sm text-[var(--color-text-primary)]">{formatCurrency(breakdown.rawMaterialCost)}</p>
+            </div>
+             <div className="text-center">
+                <p className="text-xs text-[var(--color-text-muted)]">Direct Labour</p>
+                <p className="font-bold text-sm text-[var(--color-text-primary)]">{formatCurrency(breakdown.labourCost)}</p>
+            </div>
+             <div className="text-center">
+                <p className="text-xs text-[var(--color-text-muted)]">Overheads</p>
+                <p className="font-bold text-sm text-[var(--color-text-primary)]">{formatCurrency(breakdown.variableOverheadCost + breakdown.fixedOverheadCost)}</p>
+            </div>
+             <div className="text-center">
+                <p className="text-xs text-[var(--color-text-muted)]">Packaging</p>
+                <p className="font-bold text-sm text-[var(--color-text-primary)]">{formatCurrency(breakdown.packagingCost)}</p>
+            </div>
+             <div className="text-center bg-[var(--color-background)] p-2 rounded">
+                <p className="text-xs text-[var(--color-primary)]">Total Cost/Serving</p>
+                <p className="font-bold text-lg text-[var(--color-primary)]">{formatCurrency(breakdown.costPerServing)}</p>
+            </div>
+        </div>
+    );
+};
+
 
 const Menu: React.FC = () => {
     const { menuItems, recipes, addMenuItem, updateMenuItem, deleteMenuItem, calculateRecipeCostBreakdown } = useData();
@@ -46,6 +74,7 @@ const Menu: React.FC = () => {
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [editingItemId, setEditingItemId] = useState<string | null>(null);
     const [editedSales, setEditedSales] = useState<number>(0);
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const initialRecipeId = recipes.length > 0 ? recipes[0].id : '';
@@ -64,10 +93,10 @@ const Menu: React.FC = () => {
     const menuPerformance = useMemo(() => {
         return menuItems.map(item => {
             const recipe = recipes.find(r => r.id === item.recipeId);
-            const { costPerServing } = calculateRecipeCostBreakdown(recipe);
-            const profit = item.salePrice - costPerServing;
-            const foodCostPercentage = item.salePrice > 0 ? (costPerServing / item.salePrice) * 100 : 0;
-            return { ...item, costPerServing, profit, foodCostPercentage };
+            const breakdown = calculateRecipeCostBreakdown(recipe);
+            const profit = item.salePrice - breakdown.costPerServing;
+            const foodCostPercentage = item.salePrice > 0 ? (breakdown.costPerServing / item.salePrice) * 100 : 0;
+            return { ...item, recipe, costPerServing: breakdown.costPerServing, profit, foodCostPercentage, breakdown };
         });
     }, [menuItems, recipes, calculateRecipeCostBreakdown]);
 
@@ -91,6 +120,17 @@ const Menu: React.FC = () => {
         return 'Dog';
     };
 
+    const handleToggleRow = (itemId: string) => {
+        setExpandedRows(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(itemId)) {
+                newSet.delete(itemId);
+            } else {
+                newSet.add(itemId);
+            }
+            return newSet;
+        });
+    };
 
     const handleOpenModal = (item: MenuItem | null = null) => {
         setCurrentItem(item);
@@ -176,62 +216,77 @@ const Menu: React.FC = () => {
                     <table className="w-full text-left responsive-table">
                         <thead className="ican-table-header">
                             <tr>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Menu Item</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Classification</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Sales Count</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Sale Price</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Cost</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Profit</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Food Cost %</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
+                                <th className="p-4 whitespace-nowrap">Menu Item</th>
+                                <th className="p-4 whitespace-nowrap">Classification</th>
+                                <th className="p-4 whitespace-nowrap">Sales Count</th>
+                                <th className="p-4 whitespace-nowrap">Sale Price</th>
+                                <th className="p-4 whitespace-nowrap">Cost</th>
+                                <th className="p-4 whitespace-nowrap">Profit</th>
+                                <th className="p-4 whitespace-nowrap">Food Cost %</th>
+                                <th className="p-4 whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {menuPerformance.length > 0 ? menuPerformance.map(item => {
                                 const classification = getClassification(item.profit, item.salesCount);
                                 const isEditing = editingItemId === item.id;
+                                const isExpanded = expandedRows.has(item.id);
                                 return (
-                                    <tr key={item.id} className="border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input)] group">
-                                        <td data-label="Menu Item" className="p-4 font-medium whitespace-nowrap">{item.name}</td>
-                                        <td data-label="Classification" className="p-4"><ClassificationBadge classification={classification} /></td>
-                                        <td data-label="Sales Count" className="p-4">
-                                            {isEditing ? (
-                                                <div className="flex items-center space-x-2 w-full md:w-32">
-                                                    <input
-                                                        type="number"
-                                                        value={editedSales}
-                                                        onChange={(e) => setEditedSales(parseInt(e.target.value) || 0)}
-                                                        className="ican-input w-full py-1"
-                                                        autoFocus
-                                                        min="0"
-                                                    />
-                                                    <button onClick={() => handleSaveSales(item.id)} className="text-green-500 hover:text-green-600"><Save size={18} /></button>
-                                                    <button onClick={handleCancelSalesEdit} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"><XCircle size={18} /></button>
+                                    <React.Fragment key={item.id}>
+                                        <tr className="border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input)] group cursor-pointer" onClick={() => handleToggleRow(item.id)}>
+                                            <td data-label="Menu Item" className="p-4 font-medium whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <span>{item.name}</span>
+                                                    <ChevronDown size={16} className={`ml-2 text-[var(--color-text-muted)] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                                 </div>
-                                            ) : (
-                                                 <div className="flex items-center space-x-2 text-[var(--color-text-muted)]">
-                                                    <span>{item.salesCount}</span>
-                                                    <button onClick={() => handleEditSales(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] opacity-0 group-hover:opacity-100" aria-label="Edit sales count">
-                                                        <Edit size={16} />
-                                                    </button>
-                                                 </div>
-                                            )}
-                                        </td>
-                                        <td data-label="Sale Price" className="p-4 text-[var(--color-text-primary)] font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
-                                        <td data-label="Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(item.costPerServing)}</td>
-                                        <td data-label="Profit" className="p-4">
-                                            <span className={`font-bold ${item.profit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-                                                {formatCurrency(item.profit)}
-                                            </span>
-                                        </td>
-                                        <td data-label="Food Cost %" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.foodCostPercentage.toFixed(1)}%</td>
-                                        <td data-label="Actions" className="p-4">
-                                            <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
-                                                <button onClick={() => handleOpenModal(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit size={20} /></button>
-                                                <button onClick={() => handleDelete(item.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={20} /></button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                            <td data-label="Classification" className="p-4"><ClassificationBadge classification={classification} /></td>
+                                            <td data-label="Sales Count" className="p-4" onClick={e => e.stopPropagation()}>
+                                                {isEditing ? (
+                                                    <div className="flex items-center space-x-2 w-full md:w-32">
+                                                        <input
+                                                            type="number"
+                                                            value={editedSales}
+                                                            onChange={(e) => setEditedSales(parseInt(e.target.value) || 0)}
+                                                            className="ican-input w-full py-1"
+                                                            autoFocus
+                                                            min="0"
+                                                        />
+                                                        <button onClick={() => handleSaveSales(item.id)} className="text-green-500 hover:text-green-600"><Save size={18} /></button>
+                                                        <button onClick={handleCancelSalesEdit} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"><XCircle size={18} /></button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center space-x-2 text-[var(--color-text-muted)]">
+                                                        <span>{item.salesCount}</span>
+                                                        <button onClick={() => handleEditSales(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] opacity-0 group-hover:opacity-100" aria-label="Edit sales count">
+                                                            <Edit size={16} />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td data-label="Sale Price" className="p-4 text-[var(--color-text-primary)] font-semibold whitespace-nowrap">{formatCurrency(item.salePrice)}</td>
+                                            <td data-label="Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(item.costPerServing)}</td>
+                                            <td data-label="Profit" className="p-4">
+                                                <span className={`font-bold ${item.profit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+                                                    {formatCurrency(item.profit)}
+                                                </span>
+                                            </td>
+                                            <td data-label="Food Cost %" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.foodCostPercentage.toFixed(1)}%</td>
+                                            <td data-label="Actions" className="p-4" onClick={e => e.stopPropagation()}>
+                                                <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
+                                                    <button onClick={() => handleOpenModal(item)} className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit size={20} /></button>
+                                                    <button onClick={() => handleDelete(item.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={20} /></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {isExpanded && (
+                                            <tr className="border-b border-[var(--color-border)] last:border-b-0">
+                                                <td colSpan={8} className="p-4 !bg-[var(--color-background)]">
+                                                    <CostBreakdownRow breakdown={item.breakdown} formatCurrency={formatCurrency} />
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 );
                             }) : (
                                 <tr>

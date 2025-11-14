@@ -5,7 +5,7 @@ import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
 import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download, Info, DollarSign } from 'lucide-react';
-import { Recipe, Ingredient, RecipeCategory, RecipeTemplate, IngredientType, InventoryItem } from '../types';
+import { Recipe, Ingredient, RecipeCategory, RecipeTemplate, IngredientType, PricedItem } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import ActionsDropdown from './common/ActionsDropdown';
 import ImportModal from './common/ImportModal';
@@ -26,7 +26,7 @@ const RecipeFormModal: React.FC<{
     templates: RecipeTemplate[];
     initialData?: Partial<Omit<Recipe, 'id' | 'businessId'>>;
 }> = ({ isOpen, onClose, onSave, categories, templates, initialData }) => {
-    const { inventory, recipes, calculateRecipeCost, ingredientUnits } = useData();
+    const { pricedItems, recipes, calculateRecipeCost, ingredientUnits } = useData();
     const { formatCurrency } = useCurrency();
     const { settings } = useAppSettings();
     const [name, setName] = useState('');
@@ -46,7 +46,7 @@ const RecipeFormModal: React.FC<{
     const subRecipes = useMemo(() => recipes, [recipes]);
 
     const recipeCost = useMemo(() => {
-        const tempRecipe: Recipe = { id: '', name, category, servings, ingredients, instructions: [], businessId: '', labourMinutes: 0, packagingCostPerServing: 0 };
+        const tempRecipe: Recipe = { id: '', name, category, servings, ingredients, instructions: [], businessId: '', labourMinutes: 0, packagingCostPerServing: 0, labourCostMethod: 'blended' };
         return calculateRecipeCost(tempRecipe);
     }, [ingredients, name, category, servings, calculateRecipeCost]);
 
@@ -107,8 +107,8 @@ const RecipeFormModal: React.FC<{
     };
 
     const handleAddIngredient = () => {
-        if (inventory.length > 0) {
-            setIngredients([...ingredients, { id: crypto.randomUUID(), type: 'item', itemId: inventory[0].id, quantity: 1, unit: 'g', yieldPercentage: 100 }]);
+        if (pricedItems.length > 0) {
+            setIngredients([...ingredients, { id: crypto.randomUUID(), type: 'item', itemId: pricedItems[0].id, quantity: 1, unit: 'g', yieldPercentage: 100 }]);
         }
     };
     
@@ -142,7 +142,7 @@ const RecipeFormModal: React.FC<{
 
         const instructionSteps = instructions.split('\n').filter(line => line.trim() !== '');
         
-        onSave({ name, category, servings, targetSalePricePerServing, productionYield, productionUnit, ingredients, instructions: instructionSteps, labourMinutes: 0, packagingCostPerServing: 0 });
+        onSave({ name, category, servings, targetSalePricePerServing, productionYield, productionUnit, ingredients, instructions: instructionSteps, labourMinutes: 0, packagingCostPerServing: 0, labourCostMethod: 'blended' });
         handleClose();
     };
 
@@ -213,8 +213,8 @@ const RecipeFormModal: React.FC<{
                        {ingredients.map((ing, index) => (
                            <div key={ing.id} className="grid grid-cols-[1fr,80px,80px,80px,auto] gap-2 items-center">
                                <select value={`${ing.type}::${ing.itemId}`} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select">
-                                   <optgroup label="Inventory Items">
-                                    {inventory.map(item => <option key={item.id} value={`item::${item.id}`}>{item.name}</option>)}
+                                   <optgroup label="Priced Items">
+                                    {pricedItems.map(item => <option key={item.id} value={`item::${item.id}`}>{item.name}</option>)}
                                    </optgroup>
                                    <optgroup label="Sub-Recipes">
                                      {subRecipes.map(item => <option key={item.id} value={`recipe::${item.id}`}>{item.name}</option>)}
@@ -231,9 +231,9 @@ const RecipeFormModal: React.FC<{
                     </div>
                     <button
                         onClick={handleAddIngredient}
-                        disabled={inventory.length === 0}
-                        className={`ican-btn ican-btn-secondary py-1.5 px-3 mt-2 text-sm ${inventory.length === 0 ? 'ican-btn-disabled' : ''}`}
-                        title={inventory.length === 0 ? "Add items to your inventory first" : ""}
+                        disabled={pricedItems.length === 0}
+                        className={`ican-btn ican-btn-secondary py-1.5 px-3 mt-2 text-sm ${pricedItems.length === 0 ? 'ican-btn-disabled' : ''}`}
+                        title={pricedItems.length === 0 ? "Add items to your price list first" : ""}
                     >
                         <PlusCircle size={16} className="mr-1.5"/> Add Ingredient
                     </button>
@@ -271,7 +271,7 @@ const RecipeFormModal: React.FC<{
 };
 
 const Recipes: React.FC = () => {
-    const { recipes, getInventoryItemById, getRecipeById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCostBreakdown, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes, businesses } = useData();
+    const { recipes, getPricedItemById, getRecipeById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCostBreakdown, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, pricedItems, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes, businesses, staffMembers } = useData();
     const { formatCurrency } = useCurrency();
     const { addNotification } = useNotification();
     const { setIsDirty, promptNavigation } = useUnsavedChanges();
@@ -456,8 +456,8 @@ const Recipes: React.FC = () => {
     };
 
     const handleAddIngredientToRecipe = () => {
-        if (!editedRecipe || inventory.length === 0) return;
-        const newIngredient: Ingredient = { id: crypto.randomUUID(), type: 'item', itemId: inventory[0].id, quantity: 1, unit: 'unit', yieldPercentage: 100 };
+        if (!editedRecipe || pricedItems.length === 0) return;
+        const newIngredient: Ingredient = { id: crypto.randomUUID(), type: 'item', itemId: pricedItems[0].id, quantity: 1, unit: 'unit', yieldPercentage: 100 };
         setEditedRecipe({ ...editedRecipe, ingredients: [...editedRecipe.ingredients, newIngredient] });
     };
 
@@ -511,7 +511,7 @@ const Recipes: React.FC = () => {
     };
 
     const handleExport = () => {
-        const headers = ['recipeName', 'category', 'servings', 'instructions', 'targetSalePricePerServing', 'ingredientName', 'ingredientQuantity', 'ingredientUnit'];
+        const headers = ['recipeName', 'category', 'servings', 'instructions', 'targetSalePricePerServing', 'ingredientName', 'ingredientQuantity', 'ingredientUnit', 'yieldPercentage'];
         
         const dataToExport: any[] = [];
         recipes.forEach(recipe => {
@@ -525,19 +525,22 @@ const Recipes: React.FC = () => {
                     ingredientName: '',
                     ingredientQuantity: '',
                     ingredientUnit: '',
+                    yieldPercentage: '',
                 });
             } else {
                 recipe.ingredients.forEach(ing => {
-                    const item = getInventoryItemById(ing.itemId);
+                    const item = ing.type === 'item' ? getPricedItemById(ing.itemId) : getRecipeById(ing.itemId);
+                    const itemName = item ? item.name : 'N/A';
                     dataToExport.push({
                         recipeName: recipe.name,
                         category: recipe.category,
                         servings: recipe.servings,
                         instructions: recipe.instructions.join('|'),
                         targetSalePricePerServing: recipe.targetSalePricePerServing || 0,
-                        ingredientName: item ? item.name : 'N/A',
+                        ingredientName: ing.type === 'recipe' ? `(Sub-Recipe) ${itemName}` : itemName,
                         ingredientQuantity: ing.quantity,
                         ingredientUnit: ing.unit,
+                        yieldPercentage: ing.yieldPercentage || 100,
                     });
                 });
             }
@@ -554,6 +557,9 @@ const Recipes: React.FC = () => {
         instructions: string[];
         targetSalePricePerServing: number;
         ingredients: Ingredient[];
+        labourCostMethod: 'blended',
+        packagingCostPerServing: number,
+        labourMinutes: number,
     };
     
     const parseRecipeFile = async (fileContent: string): Promise<{ data: Omit<Recipe, 'id' | 'businessId'>[]; errors: string[] }> => {
@@ -567,7 +573,7 @@ const Recipes: React.FC = () => {
         });
         if(errors.length > 0) return { data: [], errors };
 
-        const inventoryNameMap = new Map(inventory.map(i => [i.name.toLowerCase(), i.id]));
+        const pricedItemNameMap = new Map(pricedItems.map(i => [i.name.toLowerCase(), i.id]));
         const recipesMap = new Map<string, ParsedRecipeRow>();
 
         lines.slice(1).forEach((line, index) => {
@@ -586,12 +592,15 @@ const Recipes: React.FC = () => {
                     instructions: row.instructions ? row.instructions.split('|') : [],
                     targetSalePricePerServing: parseFloat(row.targetSalePricePerServing) || 0,
                     ingredients: [],
+                    labourCostMethod: 'blended',
+                    packagingCostPerServing: 0,
+                    labourMinutes: 0,
                 });
             }
 
             const ingredientName = String(row.ingredientName || '');
             if (ingredientName) {
-                const itemId = inventoryNameMap.get(ingredientName.toLowerCase());
+                const itemId = pricedItemNameMap.get(ingredientName.toLowerCase());
                 if (itemId) {
                     const recipe = recipesMap.get(recipeName.toLowerCase());
                     if (recipe) {
@@ -601,10 +610,11 @@ const Recipes: React.FC = () => {
                             itemId: itemId,
                             quantity: parseFloat(row.ingredientQuantity) || 0,
                             unit: row.ingredientUnit,
+                            yieldPercentage: parseFloat(row.yieldPercentage) || 100,
                         });
                     }
                 } else {
-                    errors.push(`Row ${index + 2}: Ingredient "${ingredientName}" not found in inventory.`);
+                    errors.push(`Row ${index + 2}: Ingredient "${ingredientName}" not found in price list.`);
                 }
             }
         });
@@ -618,6 +628,7 @@ const Recipes: React.FC = () => {
             ingredients: r.ingredients,
             labourMinutes: 0,
             packagingCostPerServing: 0,
+            labourCostMethod: 'blended' as const,
         }));
         
         return { data, errors };
@@ -634,11 +645,10 @@ const Recipes: React.FC = () => {
         const { rawMaterialCost } = calculateRecipeCostBreakdown(editedRecipe);
         
         const ingredientsWithDetails = editedRecipe.ingredients.map(ing => {
-            let item, name, trimYield = 100;
+            let item, name;
             if (ing.type === 'item') {
-                item = getInventoryItemById(ing.itemId);
+                item = getPricedItemById(ing.itemId);
                 name = item?.name || 'Unknown Item';
-                trimYield = item?.yieldPercentage || 100;
             } else {
                 item = getRecipeById(ing.itemId);
                 name = item?.name ? `(Sub-Recipe) ${item.name}` : 'Unknown Sub-Recipe';
@@ -656,7 +666,6 @@ const Recipes: React.FC = () => {
                 unit: ing.unit,
                 cost: ingredientRMC,
                 percentage,
-                trimYield,
                 prepYield: ing.yieldPercentage || 100,
                 type: ing.type,
             };
@@ -707,7 +716,7 @@ const Recipes: React.FC = () => {
             isOpen={isImportModalOpen}
             onClose={() => setIsImportModalOpen(false)}
             title="Import Recipes"
-            templateUrl="data:text/csv;charset=utf-8,recipeName,category,servings,instructions,targetSalePricePerServing,ingredientName,ingredientQuantity,ingredientUnit%0ASoup,Appetizers,4,Step%201%7CStep%202,10,Carrot,1,kg%0ASoup,Appetizers,4,Step%201%7CStep%202,10,Onion,2,unit"
+            templateUrl="data:text/csv;charset=utf-8,recipeName,category,servings,instructions,targetSalePricePerServing,ingredientName,ingredientQuantity,ingredientUnit,yieldPercentage%0ASoup,Appetizers,4,Step%201%7CStep%202,10,Carrot,1,kg,95%0ASoup,Appetizers,4,Step%201%7CStep%202,10,Onion,2,unit,90"
             templateFilename="recipes_template.csv"
             parseFile={parseRecipeFile}
             onImport={handleImport}
@@ -885,9 +894,9 @@ const Recipes: React.FC = () => {
                  {/* Cost Breakdown */}
                  <Card>
                     <h3 className="text-lg font-bold mb-4">Total True Cost Breakdown</h3>
-                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 text-center">
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
                         <div className="bg-[var(--color-input)] p-3 rounded-lg">
-                            <p className="text-xs text-[var(--color-text-muted)]">Total Material Cost</p>
+                            <p className="text-xs text-[var(--color-text-muted)]">Raw Materials</p>
                             <p className="font-bold text-lg">{formatCurrency(costBreakdown.rawMaterialCost)}</p>
                         </div>
                         <div className="bg-[var(--color-input)] p-3 rounded-lg">
@@ -902,9 +911,13 @@ const Recipes: React.FC = () => {
                             <p className="text-xs text-[var(--color-text-muted)]">Packaging</p>
                             <p className="font-bold text-lg">{formatCurrency(costBreakdown.packagingCost)}</p>
                         </div>
-                        <div className="bg-[var(--color-primary-light)] p-3 rounded-lg col-span-2">
-                            <p className="text-xs text-[var(--color-primary)]/80">Total Cost / Serving</p>
-                            <p className="font-bold text-2xl text-[var(--color-primary)]">{formatCurrency(costBreakdown.costPerServing)}</p>
+                        <div className="bg-[var(--color-primary-light)] p-3 rounded-lg col-span-2 md:col-span-1">
+                            <p className="text-xs text-[var(--color-primary)]/80">Total Cost</p>
+                            <p className="font-bold text-lg text-[var(--color-primary)]">{formatCurrency(costBreakdown.totalCost)}</p>
+                        </div>
+                        <div className="bg-[var(--color-primary-light)] p-3 rounded-lg">
+                            <p className="text-xs text-[var(--color-primary)]/80">Cost / Serving</p>
+                            <p className="font-bold text-lg text-[var(--color-primary)]">{formatCurrency(costBreakdown.costPerServing)}</p>
                         </div>
                     </div>
                  </Card>
@@ -950,19 +963,44 @@ const Recipes: React.FC = () => {
                                 </div>
                             </div>
                              <div className="pt-4 border-t border-[var(--color-border)]">
-                                <div className="flex items-center justify-between">
-                                    <label htmlFor="useCustomLabourCost" className="font-medium text-[var(--color-text-secondary)] cursor-pointer">
-                                        Use Custom Labour Cost
-                                    </label>
-                                    <input
-                                        type="checkbox"
-                                        id="useCustomLabourCost"
-                                        checked={!!editedRecipe.useCustomLabourCost}
-                                        onChange={(e) => handleDetailChange('useCustomLabourCost', e.target.checked)}
-                                        className="h-4 w-4 rounded border-gray-400 text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-                                    />
-                                </div>
-                                {editedRecipe.useCustomLabourCost && (
+                                <label className="block font-medium text-[var(--color-text-secondary)] mb-2">Labour Cost Method</label>
+                                <select
+                                    value={editedRecipe.labourCostMethod || 'blended'}
+                                    onChange={(e) => {
+                                        const method = e.target.value as Recipe['labourCostMethod'];
+                                        const newRecipe = { ...editedRecipe, labourCostMethod: method };
+                                        if (method !== 'staff') newRecipe.assignedStaffId = undefined;
+                                        if (method !== 'custom') {
+                                            newRecipe.customLabourSalary = undefined;
+                                            newRecipe.customWorkingDays = undefined;
+                                            newRecipe.customWorkingHours = undefined;
+                                        }
+                                        setEditedRecipe(newRecipe);
+                                    }}
+                                    className="ican-select w-full"
+                                >
+                                    <option value="blended">Blended Rate (Business Average)</option>
+                                    <option value="staff">Specific Staff Member</option>
+                                    <option value="custom">Custom Values</option>
+                                </select>
+                                
+                                {editedRecipe.labourCostMethod === 'staff' && (
+                                    <div className="mt-4" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+                                         <label className="block text-xs font-medium text-[var(--color-text-muted)]">Select Staff</label>
+                                         <select 
+                                            value={editedRecipe.assignedStaffId || ''} 
+                                            onChange={(e) => handleDetailChange('assignedStaffId', e.target.value)}
+                                            className="ican-select w-full mt-1"
+                                        >
+                                            <option value="" disabled>Choose a staff member...</option>
+                                            {staffMembers.map(staff => (
+                                                <option key={staff.id} value={staff.id}>{staff.name}</option>
+                                            ))}
+                                         </select>
+                                    </div>
+                                )}
+                                
+                                {editedRecipe.labourCostMethod === 'custom' && (
                                     <div className="mt-4 space-y-3 bg-[var(--color-input)] p-3 rounded-lg" style={{ animation: 'fadeIn 0.3s ease-out' }}>
                                         <p className="text-xs text-[var(--color-text-muted)]">Override global financial settings for this recipe's labour calculation.</p>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1024,14 +1062,13 @@ const Recipes: React.FC = () => {
                  <Card>
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-bold">Ingredients</h3>
-                        <button onClick={handleAddIngredientToRecipe} className="ican-btn ican-btn-secondary py-1 px-3 text-sm" disabled={inventory.length === 0}><PlusCircle size={16} className="mr-1.5"/>Add Ingredient</button>
+                        <button onClick={handleAddIngredientToRecipe} className="ican-btn ican-btn-secondary py-1 px-3 text-sm" disabled={pricedItems.length === 0}><PlusCircle size={16} className="mr-1.5"/>Add Ingredient</button>
                     </div>
                      <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
                         {editedRecipe.ingredients.map((ing, index) => {
-                            const item = ing.type === 'item' ? getInventoryItemById(ing.itemId) : getRecipeById(ing.itemId);
+                            const item = ing.type === 'item' ? getPricedItemById(ing.itemId) : getRecipeById(ing.itemId);
                             const tempRecipe: Recipe = { ...editedRecipe, ingredients: [ing] };
                             const { rawMaterialCost: lineCost } = calculateRecipeCostBreakdown(tempRecipe);
-                            const trimYield = (ing.type === 'item' && item) ? (item as InventoryItem).yieldPercentage : null;
                             
                             return (
                                 <div key={ing.id} className="p-3 rounded-lg bg-[var(--color-input)] border border-[var(--color-border)]">
@@ -1039,8 +1076,8 @@ const Recipes: React.FC = () => {
                                         <div className="flex-grow pr-4">
                                             {/* Item Select */}
                                             <select value={`${ing.type}::${ing.itemId}`} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select w-full font-semibold">
-                                                <optgroup label="Inventory Items">
-                                                    {inventory.map(item => <option key={item.id} value={`item::${item.id}`}>{item.name}</option>)}
+                                                <optgroup label="Priced Items">
+                                                    {pricedItems.map(item => <option key={item.id} value={`item::${item.id}`}>{item.name}</option>)}
                                                 </optgroup>
                                                 <optgroup label="Sub-Recipes">
                                                     {subRecipes.map(item => <option key={item.id} value={`recipe::${item.id}`}>{item.name}</option>)}
@@ -1067,8 +1104,8 @@ const Recipes: React.FC = () => {
                                         </div>
                                         {/* Trim Yield */}
                                         <div>
-                                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Trim Yield %</label>
-                                            <p className="font-medium p-1.5 mt-1">{trimYield ? `${trimYield}%` : 'N/A'}</p>
+                                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Item Yield %</label>
+                                            <p className="font-medium p-1.5 mt-1">N/A</p>
                                         </div>
                                          {/* Line Cost */}
                                         <div>

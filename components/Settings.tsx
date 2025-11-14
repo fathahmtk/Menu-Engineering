@@ -51,7 +51,7 @@ const Settings: React.FC = () => {
             <div className="lg:col-span-1">
                 <Card noPadding>
                     <div className="p-4 border-b border-[var(--color-border)]">
-                        <h2 className="text-lg font-bold">Settings</h2>
+                        <h2 className="text-xl font-bold">Settings</h2>
                         <p className="text-sm text-[var(--color-text-muted)]">Manage your application and business settings.</p>
                     </div>
                     <nav className="p-2">
@@ -84,7 +84,7 @@ const Settings: React.FC = () => {
                 onClose={() => setIsResetConfirmOpen(false)}
                 onConfirm={handleResetData}
                 title="Confirm Application Reset"
-                message="Are you sure you want to reset all application data? This action is irreversible and will delete all businesses, inventory, recipes, and other data."
+                message="Are you sure you want to reset all application data? This action is irreversible and will delete all businesses, recipes, and other data."
                 confirmText="Yes, Reset Everything"
             />
         </div>
@@ -468,7 +468,7 @@ const DataManagementTab: React.FC<{onExport: ()=>void, onReset: ()=>void}> = ({o
 );
 
 const ManageListsTab: React.FC = () => {
-    const { categories, addCategory, updateCategory, deleteCategory, ingredientUnits, addUnit, updateUnit, deleteUnit, unitConversions, addUnitConversion, deleteUnitConversion, inventory } = useData();
+    const { categories, addCategory, updateCategory, deleteCategory, ingredientUnits, addUnit, updateUnit, deleteUnit, unitConversions, addUnitConversion, deleteUnitConversion, pricedItems } = useData();
     const { addNotification } = useNotification();
 
     const [newCategoryName, setNewCategoryName] = useState('');
@@ -551,7 +551,7 @@ const ManageListsTab: React.FC = () => {
                     <datalist id="units-list">{allUnits.map(u => <option key={u} value={u} />)}</datalist>
                     <select value={newConversion.itemId || ''} onChange={(e) => setNewConversion(p=>({...p, itemId: e.target.value || undefined}))} className="ican-select">
                         <option value="">Generic (All Items)</option>
-                        {inventory.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        {pricedItems.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
                     </select>
                 </div>
                  <button onClick={handleAddConversion} className="ican-btn ican-btn-primary">Add Conversion</button>
@@ -561,7 +561,7 @@ const ManageListsTab: React.FC = () => {
                             <span className="text-sm">
                                 1 {conv.fromUnit} = {conv.factor} {conv.toUnit}
                                 <span className="text-xs text-[var(--color-text-muted)] ml-2">
-                                    ({conv.itemId ? inventory.find(i=>i.id===conv.itemId)?.name || 'Specific Item' : 'Generic'})
+                                    ({conv.itemId ? pricedItems.find(i=>i.id===conv.itemId)?.name || 'Specific Item' : 'Generic'})
                                 </span>
                             </span>
                              <button onClick={() => deleteUnitConversion(conv.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={16} /></button>

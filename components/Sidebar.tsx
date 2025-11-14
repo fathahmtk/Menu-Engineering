@@ -1,10 +1,10 @@
 import React from 'react';
-import { LayoutDashboard, ShoppingCart, BookOpen, X, SlidersHorizontal, LogOut, BarChart3, Utensils, Truck, Users, DollarSign } from 'lucide-react';
+import { LayoutDashboard, BookOpen, X, SlidersHorizontal, LogOut, BarChart3, Utensils, Users, Tags } from 'lucide-react';
 import { useAuth } from '../hooks/useAuthContext';
 import { useUnsavedChanges } from '../hooks/useUnsavedChangesContext';
 
 
-type View = 'dashboard' | 'inventory' | 'recipes' | 'menu' | 'suppliers' | 'purchasing' | 'sales' | 'reports' | 'settings';
+type View = 'dashboard' | 'pricelist' | 'recipes' | 'menu' | 'suppliers' | 'reports' | 'settings';
 
 interface SidebarProps {
   currentView: View;
@@ -37,7 +37,7 @@ const NavItem: React.FC<{
     onClick={onClick}
   >
     {icon}
-    <span className="ml-4 font-semibold">{label}</span>
+    <span className="ml-4 font-medium">{label}</span>
   </li>
 );
 
@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
       title: 'Menu',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-        { id: 'inventory', label: 'Inventory', icon: <ShoppingCart size={20} /> },
+        { id: 'pricelist', label: 'Price List', icon: <Tags size={20} /> },
         { id: 'recipes', label: 'Recipes', icon: <BookOpen size={20} /> },
         { id: 'menu', label: 'Menu Items', icon: <Utensils size={20} /> },
       ],
@@ -66,8 +66,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
       title: 'Operations',
       items: [
         { id: 'suppliers', label: 'Suppliers', icon: <Users size={20} /> },
-        { id: 'purchasing', label: 'Purchasing', icon: <Truck size={20} /> },
-        { id: 'sales', label: 'Sales', icon: <DollarSign size={20} /> },
       ],
     },
     {
@@ -138,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
                 className="w-full flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors text-[var(--color-text-secondary)] hover:bg-[var(--color-input)] hover:text-[var(--color-text-primary)]"
               >
                 <LogOut size={20} />
-                <span className="ml-4 font-semibold">Logout</span>
+                <span className="ml-4 font-medium">Logout</span>
               </button>
         </div>
 

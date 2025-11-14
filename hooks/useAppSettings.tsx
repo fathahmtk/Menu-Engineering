@@ -10,8 +10,6 @@ const defaultSettings: AppSettings = {
     totalDishesProduced: 10000,
     totalDishesSold: 8000,
     dashboard: {
-        inventoryValue: true,
-        lowStockItems: true,
         totalRecipes: true,
         avgMenuProfit: true,
     },

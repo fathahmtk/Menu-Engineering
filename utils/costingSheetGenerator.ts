@@ -6,7 +6,6 @@ interface IngredientDetail {
     unit: string;
     cost: number;
     percentage: number;
-    trimYield: number;
     prepYield: number;
     type: IngredientType;
 }
@@ -53,7 +52,6 @@ export const generateCostingSheetSVG = ({
         <tr style="border-bottom: 1px solid #e2e8f0;">
             <td style="padding: 8px 12px; text-align: left;">${escapeHTML(ing.name)}</td>
             <td style="padding: 8px 12px; text-align: left;">${ing.quantity} ${escapeHTML(ing.unit)}</td>
-            <td style="padding: 8px 12px; text-align: right;">${ing.type === 'item' ? `${ing.trimYield}%` : 'N/A'}</td>
             <td style="padding: 8px 12px; text-align: right;">${ing.prepYield}%</td>
             <td style="padding: 8px 12px; text-align: right;">${formatCurrency(ing.cost)}</td>
             <td style="padding: 8px 12px; text-align: right;">${ing.percentage.toFixed(1)}%</td>
@@ -111,7 +109,6 @@ export const generateCostingSheetSVG = ({
                         <tr style="background-color: #f1f5f9; color: #475569;">
                             <th style="padding: 10px 12px; text-align: left; font-weight: 600; border-top-left-radius: 6px; border-bottom: 1px solid #e2e8f0;">Ingredient</th>
                             <th style="padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Quantity</th>
-                            <th style="padding: 10px 12px; text-align: right; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Trim Yield %</th>
                             <th style="padding: 10px 12px; text-align: right; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Prep Yield %</th>
                             <th style="padding: 10px 12px; text-align: right; font-weight: 600; border-bottom: 1px solid #e2e8f0;">True Cost</th>
                             <th style="padding: 10px 12px; text-align: right; font-weight: 600; border-top-right-radius: 6px; border-bottom: 1px solid #e2e8f0;">Cost %</th>

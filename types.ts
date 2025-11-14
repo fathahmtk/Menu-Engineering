@@ -24,17 +24,13 @@ export interface Overhead {
   businessId: string;
 }
 
-export interface InventoryItem {
+export interface PricedItem {
   id: string;
-  name:string;
+  name: string;
   category: 'Produce' | 'Meat' | 'Dairy' | 'Pantry' | 'Bakery' | 'Beverages' | 'Seafood';
-  quantity: number;
   unit: string;
   unitCost: number;
-  unitPrice: number;
-  lowStockThreshold: number;
   businessId: string;
-  yieldPercentage?: number; // Trim/peel yield
 }
 
 export type IngredientType = 'item' | 'recipe';
@@ -42,7 +38,7 @@ export type IngredientType = 'item' | 'recipe';
 export interface Ingredient {
   id: string; // Unique ID for the ingredient entry itself
   type: IngredientType;
-  itemId: string; // ID of either InventoryItem or Recipe
+  itemId: string; // ID of either PricedItem or Recipe
   quantity: number;
   unit: string;
   yieldPercentage?: number; // Preparation yield
@@ -63,7 +59,8 @@ export interface Recipe {
   productionUnit?: string; // e.g., kg, L, portion
   labourMinutes: number; // in minutes, per serving
   packagingCostPerServing: number;
-  useCustomLabourCost?: boolean;
+  labourCostMethod: 'blended' | 'staff' | 'custom';
+  assignedStaffId?: string;
   customLabourSalary?: number;
   customWorkingDays?: number;
   customWorkingHours?: number;
@@ -115,42 +112,6 @@ export interface MenuItem {
   businessId: string;
 }
 
-export interface PurchaseOrderItem {
-  itemId: string;
-  quantity: number;
-  cost: number;
-}
-
-export interface PurchaseOrder {
-  id: string;
-  poNumber: string;
-  supplierId: string;
-  orderDate: string; // ISO string
-  dueDate?: string; // ISO string
-  completionDate?: string; // ISO string
-  items: PurchaseOrderItem[];
-  totalCost: number;
-  status: 'Pending' | 'Completed' | 'Cancelled';
-  businessId: string;
-}
-
-export interface SaleItem {
-  menuItemId: string;
-  quantity: number;
-  salePriceAtTime: number;
-  costAtTime: number;
-}
-
-export interface Sale {
-  id: string;
-  saleDate: string; // ISO string
-  items: SaleItem[];
-  totalRevenue: number;
-  totalProfit: number;
-  businessId: string;
-}
-
-
 export interface Notification {
   id: number;
   message: string;
@@ -177,8 +138,6 @@ export interface AppSettings {
   totalDishesProduced: number;
   totalDishesSold: number;
   dashboard: {
-    inventoryValue: boolean;
-    lowStockItems: boolean;
     totalRecipes: boolean;
     avgMenuProfit: boolean;
   };
@@ -210,7 +169,7 @@ export interface DataContextType {
   updateBusiness: (business: Business) => Promise<void>;
   
   // Scoped Data (filtered by activeBusinessId)
-  inventory: InventoryItem[];
+  pricedItems: PricedItem[];
   recipes: Recipe[];
   categories: RecipeCategory[];
   ingredientUnits: IngredientUnit[];
@@ -220,16 +179,9 @@ export interface DataContextType {
   overheads: Overhead[];
   suppliers: Supplier[];
   menuItems: MenuItem[];
-  purchaseOrders: PurchaseOrder[];
-  sales: Sale[];
-  
+
   // CRUD Operations
-  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'businessId'>) => Promise<InventoryItem | null>;
-  updateInventoryItem: (item: InventoryItem) => Promise<void>;
-  deleteInventoryItem: (id: string) => Promise<void>;
-  bulkUpdateInventoryItems: (itemIds: string[], update: Partial<InventoryItem>) => Promise<void>;
-  bulkDeleteInventoryItems: (itemIds: string[]) => Promise<{ deletedCount: number; failedItems: string[] }>;
-  bulkAddInventoryItems: (newItems: Omit<InventoryItem, 'id' | 'businessId'>[]) => Promise<{ successCount: number; duplicateCount: number }>;
+  uploadPriceList: (items: Omit<PricedItem, 'id' | 'businessId'>[]) => Promise<{ successCount: number }>;
 
   addRecipe: (recipe: Omit<Recipe, 'id' | 'businessId'>) => Promise<void>;
   updateRecipe: (recipe: Recipe) => Promise<void>;
@@ -273,15 +225,8 @@ export interface DataContextType {
   updateMenuItem: (item: MenuItem) => Promise<void>;
   deleteMenuItem: (id: string) => Promise<void>;
 
-  // Purchase Orders
-  addPurchaseOrder: (order: Omit<PurchaseOrder, 'id' | 'businessId' | 'poNumber' | 'orderDate' | 'totalCost' | 'status'>) => Promise<void>;
-  updatePurchaseOrderStatus: (id: string, status: PurchaseOrder['status']) => Promise<void>;
-
-  // Sales
-  addSale: (items: { menuItemId: string; quantity: number }[]) => Promise<void>;
-
   // Helper functions
-  getInventoryItemById: (id: string) => InventoryItem | undefined;
+  getPricedItemById: (id: string) => PricedItem | undefined;
   getRecipeById: (id: string) => Recipe | undefined;
   getSupplierById: (id: string) => Supplier | undefined;
   calculateRecipeCost: (recipe: Recipe | null) => number;

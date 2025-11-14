@@ -1,323 +1,209 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import Card from './common/Card';
-import Modal from './common/Modal';
-import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Eye, CheckCircle, XCircle, Trash2, Plus, Package } from 'lucide-react';
-import { PurchaseOrder, PurchaseOrderItem, Supplier } from '../types';
+import { PricedItem } from '../types';
+import { Upload, FileText, CheckCircle, AlertTriangle, Download, Tags } from 'lucide-react';
 import { useNotification } from '../hooks/useNotificationContext';
 
-const StatusBadge: React.FC<{ status: PurchaseOrder['status'] }> = ({ status }) => {
-    const config = {
-        Pending: 'bg-yellow-100 text-yellow-700',
-        Completed: 'bg-green-100 text-green-700',
-        Cancelled: 'bg-red-100 text-red-700',
-    };
-    return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${config[status]}`}>{status}</span>;
-};
+type ImportStatus = 'idle' | 'parsing' | 'preview' | 'importing' | 'complete';
+type PricedItemUpload = Omit<PricedItem, 'id' | 'businessId'>;
 
-type NewPOItem = {
-    itemId: string | null;
-    quantity: number;
-    cost: number;
-};
+const ITEM_CATEGORIES: PricedItem['category'][] = ['Produce', 'Meat', 'Dairy', 'Pantry', 'Bakery', 'Beverages', 'Seafood'];
 
-const getDefaultDueDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() + 7);
-    return date.toISOString().split('T')[0];
-};
-
-const Purchasing: React.FC = () => {
-    const { purchaseOrders, suppliers, inventory, getSupplierById, addPurchaseOrder, updatePurchaseOrderStatus } = useData();
+const PriceList: React.FC = () => {
+    const { pricedItems, uploadPriceList } = useData();
     const { formatCurrency } = useCurrency();
     const { addNotification } = useNotification();
 
-    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-    
-    const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
-    const [confirmationAction, setConfirmationAction] = useState<{ id: string, status: PurchaseOrder['status'] } | null>(null);
-    const [statusFilter, setStatusFilter] = useState('All');
-    const [supplierFilter, setSupplierFilter] = useState('All');
+    const [status, setStatus] = useState<ImportStatus>('idle');
+    const [file, setFile] = useState<File | null>(null);
+    const [parsedData, setParsedData] = useState<PricedItemUpload[]>([]);
+    const [parseErrors, setParseErrors] = useState<string[]>([]);
+    const [dragOver, setDragOver] = useState(false);
 
-    const [newPoData, setNewPoData] = useState<{ supplierId: string; items: NewPOItem[], dueDate: string }>({
-        supplierId: suppliers[0]?.id || '',
-        items: [{ itemId: null, quantity: 1, cost: 0 }],
-        dueDate: getDefaultDueDate(),
-    });
-    
-    const filteredOrders = useMemo(() => {
-        return purchaseOrders.filter(order => {
-            const statusMatch = statusFilter === 'All' || order.status === statusFilter;
-            const supplierMatch = supplierFilter === 'All' || order.supplierId === supplierFilter;
-            return statusMatch && supplierMatch;
+    const resetUploaderState = useCallback(() => {
+        setStatus('idle');
+        setFile(null);
+        setParsedData([]);
+        setParseErrors([]);
+    }, []);
+
+    const parsePriceListFile = async (fileContent: string): Promise<{ data: PricedItemUpload[]; errors: string[] }> => {
+        const lines = fileContent.trim().split('\n');
+        const headers = lines[0].trim().split(',').map(h => h.replace(/"/g, '').trim());
+        const requiredHeaders = ['name', 'category', 'unit', 'unitCost'];
+        const errors: string[] = [];
+        
+        requiredHeaders.forEach(h => {
+            if (!headers.includes(h)) errors.push(`Missing required header: ${h}`);
         });
-    }, [purchaseOrders, statusFilter, supplierFilter]);
 
+        if (errors.length > 0) return { data: [], errors };
 
-    const handleOpenFormModal = () => {
-        setNewPoData({
-            supplierId: suppliers.length > 0 ? suppliers[0].id : '',
-            items: [{ itemId: inventory.length > 0 ? inventory[0].id : null, quantity: 1, cost: inventory.length > 0 ? inventory[0].unitCost : 0 }],
-            dueDate: getDefaultDueDate()
-        });
-        setIsFormModalOpen(true);
+        const data = lines.slice(1).map((line, index) => {
+            const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+            const item: any = {};
+            headers.forEach((header, i) => item[header] = values[i]);
+            
+            const category = item.category as PricedItem['category'];
+            if (!ITEM_CATEGORIES.includes(category)) {
+                errors.push(`Row ${index + 2}: Invalid category "${item.category}".`);
+            }
+            const unitCost = parseFloat(item.unitCost);
+            if (isNaN(unitCost) || unitCost < 0) {
+                 errors.push(`Row ${index + 2}: Invalid unitCost "${item.unitCost}". Must be a non-negative number.`);
+            }
+
+            return {
+                name: item.name,
+                category: ITEM_CATEGORIES.includes(category) ? category : 'Pantry',
+                unit: item.unit,
+                unitCost: unitCost,
+            };
+        }).filter(item => item.name && !isNaN(item.unitCost));
+        
+        return { data, errors };
     };
 
-    const handleCloseFormModal = () => setIsFormModalOpen(false);
-
-    const handleViewDetails = (order: PurchaseOrder) => {
-        setSelectedOrder(order);
-        setIsDetailsModalOpen(true);
+    const handleFileChange = async (selectedFile: File | null) => {
+        if (!selectedFile) return;
+        setFile(selectedFile);
+        setStatus('parsing');
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const text = e.target?.result as string;
+            const { data, errors } = await parsePriceListFile(text);
+            setParsedData(data);
+            setParseErrors(errors);
+            setStatus('preview');
+        };
+        reader.readAsText(selectedFile);
     };
 
-    const handleItemChange = (index: number, field: keyof NewPOItem, value: string) => {
-        const newItems = [...newPoData.items];
-        const isNumber = field === 'quantity' || field === 'cost';
-        (newItems[index] as any)[field] = isNumber ? parseFloat(value) || 0 : value;
-
-        if (field === 'itemId') {
-            const selectedItem = inventory.find(i => i.id === value);
-            if (selectedItem) newItems[index].cost = selectedItem.unitCost;
+    const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setDragOver(true); };
+    const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setDragOver(false); };
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOver(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileChange(e.dataTransfer.files[0]);
         }
-
-        setNewPoData({ ...newPoData, items: newItems });
     };
 
-    const handleAddItem = () => {
-        const firstItem = inventory.length > 0 ? inventory[0] : null;
-        setNewPoData({
-            ...newPoData,
-            items: [...newPoData.items, { itemId: firstItem?.id || null, quantity: 1, cost: firstItem?.unitCost || 0 }]
-        });
-    };
-
-    const handleRemoveItem = (index: number) => {
-        setNewPoData({ ...newPoData, items: newPoData.items.filter((_, i) => i !== index) });
-    };
-
-    const handleSubmitNewPO = async () => {
-        if (!newPoData.supplierId || !newPoData.dueDate || newPoData.items.some(i => !i.itemId || i.quantity <= 0 || i.cost < 0)) {
-            addNotification('Please fill all fields correctly. Due date is required and item quantities must be positive.', 'error');
+    const handleImportClick = async () => {
+        if (!window.confirm(`This will replace your current price list of ${pricedItems.length} items with ${parsedData.length} new items. Are you sure you want to continue?`)) {
             return;
         }
-
-        const finalItems: PurchaseOrderItem[] = newPoData.items
-            .filter((item): item is NewPOItem & { itemId: string } => item.itemId !== null)
-            .map(item => ({
-                itemId: item.itemId,
-                quantity: item.quantity,
-                cost: item.cost,
-            }));
-        
-        await addPurchaseOrder({ supplierId: newPoData.supplierId, items: finalItems, dueDate: newPoData.dueDate });
-        addNotification('Purchase Order created successfully!', 'success');
-        handleCloseFormModal();
+        setStatus('importing');
+        const result = await uploadPriceList(parsedData);
+        addNotification(`${result.successCount} items have been imported successfully. Your price list is updated.`, 'success');
+        resetUploaderState();
     };
 
-    const newPoTotal = useMemo(() => {
-        return newPoData.items.reduce((sum, item) => sum + (item.quantity * item.cost), 0);
-    }, [newPoData.items]);
-    
-    const handleStatusChange = (id: string, status: PurchaseOrder['status']) => {
-        setConfirmationAction({ id, status });
-        setIsConfirmModalOpen(true);
-    };
-    
-    const confirmStatusChange = async () => {
-        if (confirmationAction) {
-            await updatePurchaseOrderStatus(confirmationAction.id, confirmationAction.status);
-            addNotification(`Order status updated to ${confirmationAction.status}.`, 'success');
+    const renderUploader = () => {
+        switch (status) {
+            case 'idle':
+                return (
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`mt-4 border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${dragOver ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]' : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/50'}`}
+                    >
+                      <input type="file" id="csv-upload" accept=".csv" className="hidden" onChange={(e) => handleFileChange(e.target.files ? e.target.files[0] : null)} />
+                      <label htmlFor="csv-upload" className="cursor-pointer w-full flex flex-col items-center">
+                        <Upload size={32} className="mx-auto text-[var(--color-text-muted)]" />
+                        <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                          <span className="font-semibold text-[var(--color-primary)]">Click to upload</span> or drag and drop
+                        </p>
+                        <p className="text-xs text-[var(--color-text-muted)]">CSV file with your price list</p>
+                      </label>
+                    </div>
+                );
+            case 'parsing':
+            case 'importing':
+                return <div className="text-center p-8"><p>Processing...</p></div>;
+            case 'preview':
+                 return (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center bg-[var(--color-input)] p-2 rounded-lg">
+                        <div className="flex items-center">
+                            <FileText size={18} className="mr-2 text-[var(--color-text-muted)]" />
+                            <p className="text-sm font-medium">{file?.name}</p>
+                        </div>
+                        <button onClick={resetUploaderState} className="text-sm font-semibold text-[var(--color-primary)] hover:underline">Choose another file</button>
+                        </div>
+                        {parseErrors.length > 0 && (
+                        <div className="bg-red-100 border border-red-200 p-3 rounded-lg">
+                            <h4 className="font-semibold text-[var(--color-danger)] flex items-center"><AlertTriangle size={16} className="mr-2" /> Found {parseErrors.length} potential issues:</h4>
+                            <ul className="list-disc list-inside text-sm text-red-800/90 mt-1 max-h-24 overflow-y-auto">
+                            {parseErrors.map((err, i) => <li key={i}>{err}</li>)}
+                            </ul>
+                        </div>
+                        )}
+                        <h4 className="font-semibold">{parsedData.length} records found.</h4>
+                        <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
+                        <button onClick={resetUploaderState} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
+                        <button onClick={handleImportClick} disabled={parsedData.length === 0} className={`ican-btn ican-btn-primary w-full md:w-auto ${parsedData.length === 0 ? 'ican-btn-disabled' : ''}`}>
+                            Upload and Replace
+                        </button>
+                        </div>
+                    </div>
+                 );
         }
-        setIsConfirmModalOpen(false);
-        setConfirmationAction(null);
     };
-
 
     return (
-        <>
+        <div className="space-y-6">
             <Card>
-                <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-4">
-                    <h2 className="text-xl font-bold">Purchase Orders</h2>
-                    <div className="flex items-center space-x-2">
-                         <button onClick={handleOpenFormModal} className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
-                            <PlusCircle size={20} className="md:mr-2" />
-                            <span className="hidden md:inline">Create PO</span>
-                        </button>
-                    </div>
-                </div>
-                <div className="flex flex-col md:flex-row gap-4 mb-4 p-4 bg-[var(--color-input)] rounded-lg">
-                    <div className="flex-1">
-                        <label htmlFor="statusFilter" className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">Status</label>
-                        <select id="statusFilter" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="ican-select">
-                            <option value="All">All Statuses</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                     <div className="flex-1">
-                        <label htmlFor="supplierFilter" className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">Supplier</label>
-                        <select id="supplierFilter" value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)} className="ican-select">
-                            <option value="All">All Suppliers</option>
-                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
-                    </div>
-                </div>
-                <div className="overflow-x-auto">
+                <h2 className="text-xl font-bold">Upload Price List</h2>
+                <p className="text-[var(--color-text-muted)] text-sm mt-1 mb-4">Upload a CSV file to set or replace your current price list. This list will be used for all recipe cost calculations.</p>
+                <a href="data:text/csv;charset=utf-8,name,category,unit,unitCost%0AExample%20Chicken,Meat,kg,18.50" download="price_list_template.csv" className="inline-flex items-center text-sm font-semibold text-[var(--color-primary)] hover:underline">
+                    <Download size={16} className="mr-2" />
+                    Download Template (name, category, unit, unitCost)
+                </a>
+                {renderUploader()}
+            </Card>
+            <Card>
+                 <h2 className="text-xl font-bold mb-4">Current Price List ({pricedItems.length} items)</h2>
+                 <div className="overflow-x-auto max-h-[50vh]">
                     <table className="w-full text-left responsive-table">
-                        <thead className="ican-table-header">
+                        <thead className="ican-table-header sticky top-0">
                             <tr>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">PO #</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Supplier</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Order Date</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Due Date</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Total</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Status</th>
-                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Name</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Category</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Unit</th>
+                                <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap text-right">Unit Cost</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {filteredOrders.length > 0 ? filteredOrders.map(order => {
-                                const today = new Date();
-                                today.setHours(0, 0, 0, 0);
-                                const isOverdue = order.status === 'Pending' && order.dueDate && new Date(order.dueDate) < today;
-
-                                return (
-                                <tr key={order.id} className={`border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input)] ${isOverdue ? 'bg-red-500/10' : ''}`}>
-                                    <td data-label="PO #" className="p-4 font-medium text-[var(--color-primary)] whitespace-nowrap">{order.poNumber}</td>
-                                    <td data-label="Supplier" className="p-4 text-[var(--color-text-primary)] whitespace-nowrap">{getSupplierById(order.supplierId)?.name || 'N/A'}</td>
-                                    <td data-label="Order Date" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
-                                    <td data-label="Due Date" className={`p-4 text-[var(--color-text-muted)] whitespace-nowrap ${isOverdue ? 'font-bold text-[var(--color-danger)]' : ''}`}>
-                                        {order.dueDate ? new Date(order.dueDate).toLocaleDateString() : 'N/A'}
-                                    </td>
-                                    <td data-label="Total" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(order.totalCost)}</td>
-                                    <td data-label="Status" className="p-4"><StatusBadge status={order.status} /></td>
-                                    <td data-label="Actions" className="p-4">
-                                        <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
-                                            <button onClick={() => handleViewDetails(order)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" title="View Details"><Eye size={20} /></button>
-                                            {order.status === 'Pending' && (
-                                                <>
-                                                    <button onClick={() => handleStatusChange(order.id, 'Completed')} className="text-green-500 hover:opacity-80" title="Mark as Completed"><CheckCircle size={20} /></button>
-                                                    <button onClick={() => handleStatusChange(order.id, 'Cancelled')} className="text-[var(--color-danger)] hover:opacity-80" title="Cancel Order"><XCircle size={20} /></button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </td>
+                         <tbody>
+                        {pricedItems.length > 0 ? pricedItems.map(item => {
+                            return (
+                                <tr key={item.id} className="border-b border-[var(--color-border)] last:border-b-0 transition-colors hover:bg-[var(--color-input)]">
+                                    <td data-label="Name" className="p-4 font-medium text-[var(--color-text-primary)] whitespace-nowrap">{item.name}</td>
+                                    <td data-label="Category" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.category}</td>
+                                    <td data-label="Unit" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.unit}</td>
+                                    <td data-label="Unit Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap text-right font-mono">{formatCurrency(item.unitCost)}</td>
                                 </tr>
-                            )}) : (
-                                <tr>
-                                    <td colSpan={7} className="text-center py-10">
-                                        <div className="flex flex-col items-center text-[var(--color-text-muted)]">
-                                            <Package size={40} className="mx-auto mb-2 text-[var(--color-border)]"/>
-                                            <p>No purchase orders found.</p>
-                                            <p className="text-sm">Create one or adjust your filters.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
+                            );
+                        }) : (
+                            <tr>
+                                <td colSpan={4} className="text-center py-10">
+                                     <div className="flex flex-col items-center text-[var(--color-text-muted)]">
+                                        <Tags size={40} className="mb-2 text-[var(--color-border)]"/>
+                                        <p className="font-semibold">Your price list is empty.</p>
+                                        <p className="text-sm">Upload a CSV file above to get started.</p>
+                                     </div>
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
                     </table>
-                </div>
+                 </div>
             </Card>
-
-            <Modal isOpen={isFormModalOpen} onClose={handleCloseFormModal} title="Create New Purchase Order">
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-[var(--color-text-muted)]">Supplier</label>
-                            <select
-                                value={newPoData.supplierId}
-                                onChange={(e) => setNewPoData({ ...newPoData, supplierId: e.target.value })}
-                                className="ican-select mt-1"
-                            >
-                                {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label htmlFor="dueDate" className="block text-sm font-medium text-[var(--color-text-muted)]">Due Date</label>
-                            <input
-                                type="date"
-                                id="dueDate"
-                                value={newPoData.dueDate}
-                                onChange={(e) => setNewPoData({ ...newPoData, dueDate: e.target.value })}
-                                className="ican-input mt-1"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 className="text-sm font-medium mb-2 text-[var(--color-text-muted)]">Items</h4>
-                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                            {newPoData.items.map((item, index) => (
-                                <div key={index} className="flex flex-col md:grid md:grid-cols-[1fr,80px,100px,auto] gap-2 items-center border border-[var(--color-border)] md:border-0 rounded-md p-2 md:p-0 bg-[var(--color-background)] md:bg-transparent">
-                                    <select
-                                        value={item.itemId || ''}
-                                        onChange={(e) => handleItemChange(index, 'itemId', e.target.value)}
-                                        className="ican-select"
-                                    >
-                                        <option value="" disabled>Select item</option>
-                                        {inventory.map(inv => <option key={inv.id} value={inv.id}>{inv.name}</option>)}
-                                    </select>
-                                    <input type="number" placeholder="Qty" value={item.quantity} min="1" onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="ican-input" />
-                                    <input type="number" placeholder="Cost" value={item.cost} min="0" step="0.01" onChange={(e) => handleItemChange(index, 'cost', e.target.value)} className="ican-input" />
-                                    <button onClick={() => handleRemoveItem(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)] md:justify-self-center"><Trash2 size={18} /></button>
-                                </div>
-                            ))}
-                        </div>
-                        <button onClick={handleAddItem} className="text-sm text-[var(--color-primary)] mt-2 flex items-center font-semibold"><Plus size={16} className="mr-1"/> Add Item</button>
-                    </div>
-                    <div className="text-right font-bold text-lg pt-4 border-t border-[var(--color-border)]">
-                        Total: {formatCurrency(newPoTotal)}
-                    </div>
-                    <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
-                        <button onClick={handleCloseFormModal} className="ican-btn ican-btn-secondary w-full md:w-auto">Cancel</button>
-                        <button onClick={handleSubmitNewPO} className="ican-btn ican-btn-primary w-full md:w-auto">Create Order</button>
-                    </div>
-                </div>
-            </Modal>
-
-            <Modal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} title={`Details for PO #${selectedOrder?.poNumber}`}>
-                {selectedOrder && (
-                    <div className="space-y-4">
-                        <p><strong>Supplier:</strong> {getSupplierById(selectedOrder.supplierId)?.name}</p>
-                        <p><strong>Order Date:</strong> {new Date(selectedOrder.orderDate).toLocaleDateString()}</p>
-                        {selectedOrder.dueDate && <p><strong>Due Date:</strong> {new Date(selectedOrder.dueDate).toLocaleDateString()}</p>}
-                        <p><strong>Status:</strong> <StatusBadge status={selectedOrder.status} /></p>
-                        {selectedOrder.completionDate && <p><strong>Completion Date:</strong> {new Date(selectedOrder.completionDate).toLocaleDateString()}</p>}
-                        <h4 className="font-semibold pt-2 border-t border-[var(--color-border)]">Items</h4>
-                        <ul className="list-disc list-inside space-y-1">
-                            {selectedOrder.items.map(item => {
-                                const invItem = inventory.find(i => i.id === item.itemId);
-                                return <li key={item.itemId}>{item.quantity} x {invItem?.name || 'N/A'} @ {formatCurrency(item.cost)} each</li>
-                            })}
-                        </ul>
-                         <div className="text-right font-bold text-lg pt-2 border-t border-[var(--color-border)]">
-                            Total: {formatCurrency(selectedOrder.totalCost)}
-                        </div>
-                         <div className="flex justify-end pt-4">
-                            <button onClick={() => setIsDetailsModalOpen(false)} className="ican-btn ican-btn-secondary">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </Modal>
-            
-            <ConfirmationModal
-                isOpen={isConfirmModalOpen}
-                onClose={() => setIsConfirmModalOpen(false)}
-                onConfirm={confirmStatusChange}
-                title="Confirm Action"
-                message={`Are you sure you want to mark this order as ${confirmationAction?.status}? ${confirmationAction?.status === 'Completed' ? 'This will update your inventory stock levels.' : ''}`}
-                confirmText="Yes, Confirm"
-                confirmButtonClass={confirmationAction?.status === 'Completed' ? 'ican-btn bg-[var(--color-success)] text-white hover:opacity-90' : confirmationAction?.status === 'Cancelled' ? 'ican-btn ican-btn-danger' : 'ican-btn ican-btn-primary' }
-            />
-        </>
+        </div>
     );
 };
 
-export default Purchasing;
+export default PriceList;

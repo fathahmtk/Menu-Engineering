@@ -5,7 +5,6 @@ import Sidebar from './components/Sidebar';
 import { DataProvider } from './hooks/useDataContext';
 import { CurrencyProvider } from './hooks/useCurrencyContext';
 import BusinessSelector from './components/BusinessSelector';
-import CurrencySelector from './components/CurrencySelector';
 import { Menu as MenuIcon, LoaderCircle } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
 import { AuthProvider, useAuth } from './hooks/useAuthContext';
@@ -18,38 +17,32 @@ import { AppSettingsProvider } from './hooks/useAppSettings';
 // Lazy-load page components for better performance
 const AuthPage = lazy(() => import('./components/AuthPage'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
-const Inventory = lazy(() => import('./components/Inventory'));
+const PriceList = lazy(() => import('./components/Purchasing')); // Re-purposed for Price List
 const Recipes = lazy(() => import('./components/Recipes'));
 const Menu = lazy(() => import('./components/Menu'));
 const Suppliers = lazy(() => import('./components/Suppliers'));
-const Purchasing = lazy(() => import('./components/Purchasing'));
-const Sales = lazy(() => import('./components/Sales'));
 const Reports = lazy(() => import('./components/Reports'));
 const Settings = lazy(() => import('./components/Settings'));
 
 
-type View = 'dashboard' | 'inventory' | 'recipes' | 'menu' | 'suppliers' | 'purchasing' | 'sales' | 'reports' | 'settings';
+type View = 'dashboard' | 'pricelist' | 'recipes' | 'menu' | 'suppliers' | 'reports' | 'settings';
 
 const viewComponents: Record<View, React.LazyExoticComponent<React.FC<{}>>> = {
     dashboard: Dashboard,
-    inventory: Inventory,
+    pricelist: PriceList,
     recipes: Recipes,
     menu: Menu,
     suppliers: Suppliers,
-    purchasing: Purchasing,
-    sales: Sales,
     reports: Reports,
     settings: Settings,
 };
 
 const viewTitles: Record<View, string> = {
     dashboard: 'Dashboard Overview',
-    inventory: 'Inventory Management',
+    pricelist: 'Price List Management',
     recipes: 'Recipe & Menu Costing',
     menu: 'Menu Engineering',
     suppliers: 'Supplier Directory',
-    purchasing: 'Purchase Orders',
-    sales: 'Sales Tracking',
     reports: 'Cost Analysis Reports',
     settings: 'Application Settings',
 };
@@ -152,11 +145,10 @@ const AppContent: React.FC = () => {
                             >
                                 <MenuIcon size={24} />
                             </button>
-                            <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)] truncate">{viewTitles[currentView]}</h2>
+                            <h2 className="text-xl font-bold text-[var(--color-text-primary)] truncate">{viewTitles[currentView]}</h2>
                         </div>
                         <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
                             <BusinessSelector />
-                            <CurrencySelector />
                         </div>
                     </header>
                     <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
