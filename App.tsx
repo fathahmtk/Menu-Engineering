@@ -1,7 +1,8 @@
 
 
 
-import React, { useState, lazy, Suspense } from 'react';
+
+import React, { useState, lazy, Suspense, useTransition } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import { DataProvider } from './hooks/useDataContext';
@@ -115,9 +116,16 @@ const OnboardingScreen: React.FC = () => {
 
 const AppContent: React.FC = () => {
     const { businesses, loading: dataLoading } = useData();
+    const [isPending, startTransition] = useTransition();
     const [currentView, setCurrentView] = useState<View>('dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const CurrentViewComponent = viewComponents[currentView];
+
+    const handleSetCurrentView = (view: View) => {
+        startTransition(() => {
+            setCurrentView(view);
+        });
+    };
 
     if (dataLoading) {
         return <GlobalLoading message="Loading your business data..." />;
@@ -132,7 +140,7 @@ const AppContent: React.FC = () => {
             <div className="flex min-h-screen text-[var(--color-text-primary)] bg-[var(--color-background)]">
                 <Sidebar 
                     currentView={currentView} 
-                    setCurrentView={setCurrentView}
+                    setCurrentView={handleSetCurrentView}
                     isOpen={isSidebarOpen}
                     setIsOpen={setIsSidebarOpen}
                 />
@@ -140,7 +148,7 @@ const AppContent: React.FC = () => {
                     <Header
                         viewTitle={viewTitles[currentView]}
                         setIsSidebarOpen={setIsSidebarOpen}
-                        setCurrentView={setCurrentView}
+                        setCurrentView={handleSetCurrentView}
                     />
                     <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
                         <Suspense fallback={<GlobalLoading message="Loading Content..." />}>
