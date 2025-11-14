@@ -4,7 +4,7 @@ import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download, Sparkles, Bot, Info, DollarSign } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download, Info, DollarSign } from 'lucide-react';
 import { Recipe, Ingredient, RecipeCategory, RecipeTemplate, IngredientType, InventoryItem } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import ActionsDropdown from './common/ActionsDropdown';
@@ -13,7 +13,6 @@ import { convertToCSV, downloadCSV } from '../utils/csvHelper';
 import { useNotification } from '../hooks/useNotificationContext';
 import { useUnsavedChanges } from '../hooks/useUnsavedChangesContext';
 import { generateCostingSheetSVG } from '../utils/costingSheetGenerator';
-import { generateRecipeSuggestions, AI_RecipeSuggestion } from '../services/geminiService';
 import { useAppSettings } from '../hooks/useAppSettings';
 
 const DEFAULT_UNITS: string[] = ['kg', 'g', 'L', 'ml', 'unit', 'dozen'];
@@ -289,13 +288,6 @@ const Recipes: React.FC = () => {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [isHistoryVisible, setIsHistoryVisible] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
-    const [initialRecipeData, setInitialRecipeData] = useState<Partial<Omit<Recipe, 'id' | 'businessId'>> | undefined>();
-
-    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-    const [aiSuggestions, setAiSuggestions] = useState<AI_RecipeSuggestion[]>([]);
-    const [aiCuisine, setAiCuisine] = useState('Any');
-    const [aiLoading, setAiLoading] = useState(false);
-    const [aiError, setAiError] = useState<string | null>(null);
     
     const [modalState, setModalState] = useState<{ type: null | 'delete' | 'duplicate' | 'saveTemplate' } >({ type: null });
     const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -690,40 +682,6 @@ const Recipes: React.FC = () => {
         addNotification('Costing sheet is ready to print/save as PDF!', 'success');
     };
 
-    const handleGenerateSuggestions = async () => {
-        setAiLoading(true);
-        setAiError(null);
-        setAiSuggestions([]);
-        try {
-            const availableIngredients = inventory.map(i => i.name);
-            if (availableIngredients.length === 0) {
-                setAiError("You need at least one inventory item to get suggestions.");
-                return;
-            }
-            const suggestions = await generateRecipeSuggestions(availableIngredients, aiCuisine);
-            setAiSuggestions(suggestions);
-        } catch (error) {
-            setAiError(error instanceof Error ? error.message : "An unknown error occurred.");
-        } finally {
-            setAiLoading(false);
-        }
-    };
-    
-    const handleUseSuggestion = (suggestion: AI_RecipeSuggestion) => {
-        setInitialRecipeData({
-            name: suggestion.recipeName,
-            instructions: [suggestion.description], // Use description as a starting instruction
-            ingredients: [], 
-        });
-        setIsAiModalOpen(false);
-        setIsNewRecipeModalOpen(true);
-    };
-
-    const handleCloseNewRecipeModal = () => {
-        setIsNewRecipeModalOpen(false);
-        setInitialRecipeData(undefined); // Reset on close
-    };
-
     const handleDetailChange = (field: keyof Recipe, value: string | number | boolean | undefined) => {
         if (!editedRecipe) return;
         setEditedRecipe({
@@ -740,11 +698,10 @@ const Recipes: React.FC = () => {
         <>
         <RecipeFormModal 
             isOpen={isNewRecipeModalOpen} 
-            onClose={handleCloseNewRecipeModal} 
+            onClose={() => setIsNewRecipeModalOpen(false)} 
             onSave={addRecipe} 
             categories={categories} 
             templates={recipeTemplates}
-            initialData={initialRecipeData}
         />
         <ImportModal
             isOpen={isImportModalOpen}
@@ -761,53 +718,6 @@ const Recipes: React.FC = () => {
                 </div>
             )}
         />
-        <Modal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} title="✨ AI Recipe Ideation">
-            <div className="space-y-4">
-                <p className="text-sm text-[var(--color-text-muted)]">Get recipe ideas based on your available inventory. Specify a cuisine or theme, or leave it as "Any" for broad suggestions.</p>
-                <div className="flex items-center space-x-2">
-                    <input
-                        type="text"
-                        value={aiCuisine}
-                        onChange={(e) => setAiCuisine(e.target.value)}
-                        placeholder="e.g., Italian, Quick Snacks"
-                        className="ican-input"
-                    />
-                    <button onClick={handleGenerateSuggestions} disabled={aiLoading} className={`ican-btn ican-btn-primary ${aiLoading ? 'ican-btn-disabled' : ''}`}>
-                        {aiLoading ? <Loader2 size={20} className="animate-spin" /> : 'Generate'}
-                    </button>
-                </div>
-
-                {aiError && <p className="text-[var(--color-danger)] text-sm">{aiError}</p>}
-
-                {aiSuggestions.length > 0 && (
-                    <div className="space-y-3 pt-4 max-h-80 overflow-y-auto pr-2">
-                        {aiSuggestions.map((suggestion, index) => (
-                            <div key={index} className="p-4 rounded-lg bg-[var(--color-input)] border border-[var(--color-border)]">
-                                <h4 className="font-bold text-md text-[var(--color-primary)]">{suggestion.recipeName}</h4>
-                                <p className="text-sm text-[var(--color-text-secondary)] mt-1">{suggestion.description}</p>
-                                <p className="text-xs text-[var(--color-text-muted)] mt-3 mb-1 font-semibold">Key Ingredients:</p>
-                                <ul className="list-disc list-inside text-sm text-[var(--color-text-muted)]">
-                                    {suggestion.ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
-                                </ul>
-                                <div className="flex justify-end mt-3">
-                                    <button onClick={() => handleUseSuggestion(suggestion)} className="ican-btn ican-btn-secondary py-1 px-3 text-sm">Use this Idea</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-                {aiLoading && (
-                    <div className="text-center py-8">
-                         <div className="flex flex-col items-center text-[var(--color-text-muted)]">
-                            <Bot size={40} className="mb-2 text-[var(--color-primary)]"/>
-                            <p className="font-semibold">Our AI Chef is thinking...</p>
-                            <p className="text-sm">This can take a few moments.</p>
-                         </div>
-                    </div>
-                )}
-            </div>
-        </Modal>
-
 
         {editedRecipe && <>
             <ConfirmationModal
@@ -854,9 +764,6 @@ const Recipes: React.FC = () => {
                         <h2 className="text-xl font-bold">Recipes</h2>
                         <div className="flex items-center space-x-1">
                             <ActionsDropdown onExport={handleExport} onImport={() => setIsImportModalOpen(true)} />
-                            <button onClick={() => setIsAiModalOpen(true)} className="flex items-center text-[var(--color-primary)] hover:opacity-80 p-2 rounded-lg" title="Get AI Recipe Ideas">
-                                <Sparkles size={22} />
-                            </button>
                             <button onClick={() => { setIsNewRecipeModalOpen(true); }} className="flex items-center text-[var(--color-primary)] hover:opacity-80 p-2 rounded-lg" title="New Recipe">
                                 <PlusCircle size={22} />
                             </button>
