@@ -99,7 +99,8 @@ export const mockCategories: RecipeCategory[] = [
 ];
 
 export const mockIngredientUnits: IngredientUnit[] = [
-    { id: 'u1', name: 'box', businessId: MOCK_BUSINESS_ID }
+    { id: 'u1', name: 'box', businessId: MOCK_BUSINESS_ID },
+    { id: 'u2', name: 'piece', businessId: MOCK_BUSINESS_ID },
 ];
 
 export const mockUnitConversions: UnitConversion[] = [
