@@ -1,10 +1,10 @@
 import React from 'react';
-import { LayoutDashboard, ShoppingCart, BookOpen, Truck, Utensils, BarChart2, X, ClipboardList, Receipt, LogOut, SlidersHorizontal } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, BookOpen, X, SlidersHorizontal, LogOut, BarChart3, Utensils, Truck, Users, DollarSign } from 'lucide-react';
 import { useAuth } from '../hooks/useAuthContext';
 import { useUnsavedChanges } from '../hooks/useUnsavedChangesContext';
 
 
-type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'sales' | 'reports' | 'settings';
+type View = 'dashboard' | 'inventory' | 'recipes' | 'menu' | 'suppliers' | 'purchasing' | 'sales' | 'reports' | 'settings';
 
 interface SidebarProps {
   currentView: View;
@@ -32,7 +32,7 @@ const NavItem: React.FC<{
     className={`flex items-center p-3 my-1 cursor-pointer rounded-lg transition-all duration-200 ${
       isActive
         ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-sm'
-        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)]'
+        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-input)] hover:text-[var(--color-text-primary)]'
     }`}
     onClick={onClick}
   >
@@ -45,15 +45,37 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
   const { signOut } = useAuth();
   const { promptNavigation } = useUnsavedChanges();
   
-  const navItems: { id: View; label: string; icon: React.ReactNode }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { id: 'inventory', label: 'Inventory', icon: <ShoppingCart size={20} /> },
-    { id: 'recipes', label: 'Recipes', icon: <BookOpen size={20} /> },
-    { id: 'suppliers', label: 'Suppliers', icon: <Truck size={20} /> },
-    { id: 'purchasing', label: 'Purchasing', icon: <ClipboardList size={20} /> },
-    { id: 'menu', label: 'Menu', icon: <Utensils size={20} /> },
-    { id: 'sales', label: 'Sales', icon: <Receipt size={20} /> },
-    { id: 'reports', label: 'Reports', icon: <BarChart2 size={20} /> },
+  const navSections: {
+    title: string;
+    items: {
+      id: View;
+      label: string;
+      icon: React.ReactNode;
+    }[];
+  }[] = [
+    {
+      title: 'Menu',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 'inventory', label: 'Inventory', icon: <ShoppingCart size={20} /> },
+        { id: 'recipes', label: 'Recipes', icon: <BookOpen size={20} /> },
+        { id: 'menu', label: 'Menu Items', icon: <Utensils size={20} /> },
+      ],
+    },
+    {
+      title: 'Operations',
+      items: [
+        { id: 'suppliers', label: 'Suppliers', icon: <Users size={20} /> },
+        { id: 'purchasing', label: 'Purchasing', icon: <Truck size={20} /> },
+        { id: 'sales', label: 'Sales', icon: <DollarSign size={20} /> },
+      ],
+    },
+    {
+      title: 'Analytics',
+      items: [
+        { id: 'reports', label: 'Reports', icon: <BarChart3 size={20} /> },
+      ],
+    }
   ];
   
   const bottomNavItems: { id: View; label: string; icon: React.ReactNode }[] = [
@@ -82,14 +104,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
         </div>
         <nav className="flex-1">
           <ul>
-            {navItems.map((item) => (
-              <NavItem
-                key={item.id}
-                icon={item.icon}
-                label={item.label}
-                isActive={currentView === item.id}
-                onClick={() => handleNavigation(item.id)}
-              />
+            {navSections.map((section, index) => (
+              <React.Fragment key={section.title}>
+                {index > 0 && <li className="px-3 pt-4 pb-2 text-xs font-semibold uppercase text-[var(--color-text-muted)] tracking-wider">{section.title}</li>}
+                {section.items.map((item) => (
+                  <NavItem
+                    key={item.id}
+                    icon={item.icon}
+                    label={item.label}
+                    isActive={currentView === item.id}
+                    onClick={() => handleNavigation(item.id)}
+                  />
+                ))}
+              </React.Fragment>
             ))}
           </ul>
         </nav>
@@ -108,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
              </div>
              <button
                 onClick={signOut}
-                className="w-full flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)]"
+                className="w-full flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors text-[var(--color-text-secondary)] hover:bg-[var(--color-input)] hover:text-[var(--color-text-primary)]"
               >
                 <LogOut size={20} />
                 <span className="ml-4 font-semibold">Logout</span>

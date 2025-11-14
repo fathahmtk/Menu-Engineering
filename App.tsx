@@ -1,8 +1,11 @@
+
+
 import React, { useState, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import { DataProvider } from './hooks/useDataContext';
 import { CurrencyProvider } from './hooks/useCurrencyContext';
 import BusinessSelector from './components/BusinessSelector';
+import CurrencySelector from './components/CurrencySelector';
 import { Menu as MenuIcon, LoaderCircle } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
 import { AuthProvider, useAuth } from './hooks/useAuthContext';
@@ -17,37 +20,37 @@ const AuthPage = lazy(() => import('./components/AuthPage'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const Inventory = lazy(() => import('./components/Inventory'));
 const Recipes = lazy(() => import('./components/Recipes'));
+const Menu = lazy(() => import('./components/Menu'));
 const Suppliers = lazy(() => import('./components/Suppliers'));
 const Purchasing = lazy(() => import('./components/Purchasing'));
-const Menu = lazy(() => import('./components/Menu'));
 const Sales = lazy(() => import('./components/Sales'));
 const Reports = lazy(() => import('./components/Reports'));
 const Settings = lazy(() => import('./components/Settings'));
 
 
-type View = 'dashboard' | 'inventory' | 'recipes' | 'suppliers' | 'purchasing' | 'menu' | 'sales' | 'reports' | 'settings';
+type View = 'dashboard' | 'inventory' | 'recipes' | 'menu' | 'suppliers' | 'purchasing' | 'sales' | 'reports' | 'settings';
 
 const viewComponents: Record<View, React.LazyExoticComponent<React.FC<{}>>> = {
     dashboard: Dashboard,
     inventory: Inventory,
     recipes: Recipes,
+    menu: Menu,
     suppliers: Suppliers,
     purchasing: Purchasing,
-    menu: Menu,
     sales: Sales,
     reports: Reports,
     settings: Settings,
 };
 
 const viewTitles: Record<View, string> = {
-    dashboard: 'Dashboard',
+    dashboard: 'Dashboard Overview',
     inventory: 'Inventory Management',
     recipes: 'Recipe & Menu Costing',
+    menu: 'Menu Engineering',
     suppliers: 'Supplier Directory',
     purchasing: 'Purchase Orders',
-    menu: 'Menu Engineering',
-    sales: 'Sales Analytics',
-    reports: 'Reports & Insights',
+    sales: 'Sales Tracking',
+    reports: 'Cost Analysis Reports',
     settings: 'Application Settings',
 };
 
@@ -84,9 +87,9 @@ const OnboardingScreen: React.FC = () => {
             <div className="text-center w-full max-w-md md:max-w-xl mx-auto z-10 p-8 md:p-12 rounded-2xl shadow-2xl border border-black/5 bg-[var(--color-card)]" style={{ animation: 'slideUp 0.5s ease-out' }}>
                 <ICanLogo />
                 <h1 className="text-3xl md:text-4xl font-bold mt-4 text-[var(--color-text-primary)]">Welcome to iCAN</h1>
-                <h2 className="text-xl font-medium text-[var(--color-primary)]">F&B Intelligence Platform</h2>
+                <h2 className="text-xl font-medium text-[var(--color-primary)]">F&B Costing Platform</h2>
                 <p className="text-[var(--color-text-secondary)] mt-4 mb-8 max-w-md mx-auto">
-                    Centralize your operations. Manage inventory, recipes, and sales for all your business divisions in one powerful platform.
+                    Centralize your operations. Manage inventory and recipes for all your business divisions in one powerful platform.
                 </p>
 
                 <p className="text-[var(--color-text-muted)] text-sm mt-2 mb-4">To get started, please create your first business division.</p>
@@ -153,9 +156,10 @@ const AppContent: React.FC = () => {
                         </div>
                         <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
                             <BusinessSelector />
+                            <CurrencySelector />
                         </div>
                     </header>
-                    <div className="flex-1 p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                    <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
                         <Suspense fallback={<GlobalLoading message="Loading Content..." />}>
                             <CurrentViewComponent />
                         </Suspense>
@@ -182,17 +186,17 @@ const AppContainer: React.FC = () => {
     }
 
     return (
-        <DataProvider>
-            <CurrencyProvider>
-                <NotificationProvider>
-                    <ThemeProvider>
-                        <AppSettingsProvider>
+        <AppSettingsProvider>
+            <DataProvider>
+                <CurrencyProvider>
+                    <NotificationProvider>
+                        <ThemeProvider>
                             <AppContent />
-                        </AppSettingsProvider>
-                    </ThemeProvider>
-                </NotificationProvider>
-            </CurrencyProvider>
-        </DataProvider>
+                        </ThemeProvider>
+                    </NotificationProvider>
+                </CurrencyProvider>
+            </DataProvider>
+        </AppSettingsProvider>
     );
 };
 

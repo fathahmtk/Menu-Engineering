@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { InventoryItem, Recipe, Supplier, MenuItem, Ingredient, Business, RecipeCategory, RecipeTemplate, PurchaseOrder, Sale, SaleItem, IngredientUnit, DataContextType, PurchaseOrderItem, UnitConversion } from '../types';
-import { mockBusinesses, mockSuppliers, mockInventory, mockRecipes, mockMenuItems, mockCategories, mockIngredientUnits, mockPurchaseOrders, mockSales, mockRecipeTemplates, mockUnitConversions } from './mockData';
-import { AlertTriangle } from 'lucide-react';
+import { InventoryItem, Recipe, Business, RecipeCategory, RecipeTemplate, IngredientUnit, DataContextType, UnitConversion, StaffMember, Overhead, RecipeCostBreakdown, Supplier, MenuItem, PurchaseOrder, Sale, SaleItem, PurchaseOrderItem } from '../types';
+import { mockBusinesses, mockInventory, mockRecipes, mockCategories, mockIngredientUnits, mockRecipeTemplates, mockUnitConversions, mockStaffMembers, mockOverheads, mockSuppliers, mockMenuItems, mockPurchaseOrders, mockSales } from './mockData';
+import { useAppSettings } from './useAppSettings';
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
@@ -14,18 +14,20 @@ export const useData = (): DataContextType => {
 };
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { settings } = useAppSettings();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
   const [businesses, setBusinesses] = useState<Business[]>(mockBusinesses);
-  const [suppliers, setSuppliers] = useState<Supplier[]>(mockSuppliers);
   const [inventory, setInventory] = useState<InventoryItem[]>(mockInventory);
   const [recipes, setRecipes] = useState<Recipe[]>(mockRecipes);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
   const [categories, setCategories] = useState<RecipeCategory[]>(mockCategories);
   const [ingredientUnits, setIngredientUnits] = useState<IngredientUnit[]>(mockIngredientUnits);
   const [unitConversions, setUnitConversions] = useState<UnitConversion[]>(mockUnitConversions);
   const [recipeTemplates, setRecipeTemplates] = useState<RecipeTemplate[]>(mockRecipeTemplates);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>(mockStaffMembers);
+  const [overheads, setOverheads] = useState<Overhead[]>(mockOverheads);
+  const [suppliers, setSuppliers] = useState<Supplier[]>(mockSuppliers);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(mockPurchaseOrders);
   const [sales, setSales] = useState<Sale[]>(mockSales);
   
@@ -70,14 +72,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const getInventoryItemById = useCallback((id: string) => inventory.find(item => item.id === id), [inventory]);
   const getRecipeById = useCallback((id: string) => recipes.find(r => r.id === id), [recipes]);
-  const getSupplierById = useCallback((id: string) => suppliers.find(s => s.id === id), [suppliers]);
   
   const getConversionFactor = useCallback((fromUnit: string, toUnit: string, itemId: string | null): number | null => {
       const from = fromUnit.toLowerCase();
       const to = toUnit.toLowerCase();
       if (from === to) return 1;
 
-      // 1. Check for item-specific conversions
       if(itemId) {
         const specificConversion = unitConversions.find(c => 
           c.itemId === itemId && 
@@ -89,7 +89,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
 
-      // 2. Check for generic conversions
       const genericConversion = unitConversions.find(c =>
         !c.itemId &&
          ((c.fromUnit.toLowerCase() === from && c.toUnit.toLowerCase() === to) || 
@@ -99,7 +98,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return genericConversion.fromUnit.toLowerCase() === from ? genericConversion.factor : 1 / genericConversion.factor;
        }
       
-      // 3. Fallback to hardcoded metric conversions
       const hardcodedConversions: { [key: string]: { [key: string]: number } } = {
           'kg': { 'g': 1000, 'lb': 2.20462, 'oz': 35.274 },
           'g': { 'kg': 0.001, 'oz': 0.035274 },
@@ -117,7 +115,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return null;
   }, [unitConversions]);
   
-  const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
+const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
     if (!recipe) return 0;
     
     const visitedRecipes = new Set<string>();
@@ -174,50 +172,68 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return calculateCostRecursive(recipe);
 }, [getInventoryItemById, getConversionFactor, recipes]);
 
+const calculateRecipeCostBreakdown = useCallback((recipe: Recipe | null): RecipeCostBreakdown => {
+    const emptyBreakdown: RecipeCostBreakdown = { rawMaterialCost: 0, adjustedRMC: 0, labourCost: 0, variableOverheadCost: 0, fixedOverheadCost: 0, packagingCost: 0, totalCost: 0, costPerServing: 0 };
+    if (!recipe) return emptyBreakdown;
 
-  const filteredSuppliers = useMemo(() => suppliers.filter(s => s.businessId === activeBusinessId), [suppliers, activeBusinessId]);
+    const rawMaterialCost = calculateRecipeCost(recipe);
+    const adjustedRMC = rawMaterialCost * (1 + (recipe.wastageFactor || 0) / 100);
+
+    // Labour Cost Calculation
+    let labourCost = 0;
+    if (recipe.useCustomLabourCost) {
+        const days = recipe.customWorkingDays || settings.workingDaysPerMonth;
+        const hours = recipe.customWorkingHours || settings.hoursPerDay;
+        const salary = recipe.customLabourSalary || 0;
+        const customMinutes = days * hours * 60;
+        const customCostPerMinute = customMinutes > 0 ? salary / customMinutes : 0;
+        labourCost = customCostPerMinute * (recipe.labourMinutes || 0) * recipe.servings;
+    } else {
+        const filteredStaff = staffMembers.filter(s => s.businessId === activeBusinessId);
+        const totalSalary = filteredStaff.reduce((sum, staff) => sum + staff.monthlySalary, 0);
+        const workingMinutes = settings.workingDaysPerMonth * settings.hoursPerDay * 60;
+        const costPerMinute = workingMinutes > 0 ? totalSalary / workingMinutes : 0;
+        labourCost = costPerMinute * (recipe.labourMinutes || 0) * recipe.servings;
+    }
+    
+    const filteredOverheads = overheads.filter(o => o.businessId === activeBusinessId);
+    const totalVOH = filteredOverheads.filter(o => o.type === 'Variable').reduce((sum, o) => sum + o.monthlyCost, 0);
+    const totalFOH = filteredOverheads.filter(o => o.type === 'Fixed').reduce((sum, o) => sum + o.monthlyCost, 0);
+    
+    const VOH_per_dish = (settings.totalDishesProduced || 1) > 0 ? totalVOH / settings.totalDishesProduced : 0;
+    const FOH_per_dish = (settings.totalDishesSold || 1) > 0 ? totalFOH / settings.totalDishesSold : 0;
+
+    const variableOverheadCost = VOH_per_dish * recipe.servings;
+    const fixedOverheadCost = FOH_per_dish * recipe.servings;
+    const packagingCost = (recipe.packagingCostPerServing || 0) * recipe.servings;
+    const totalCost = adjustedRMC + labourCost + variableOverheadCost + fixedOverheadCost + packagingCost;
+
+    return {
+        rawMaterialCost,
+        adjustedRMC,
+        labourCost,
+        variableOverheadCost,
+        fixedOverheadCost,
+        packagingCost,
+        totalCost,
+        costPerServing: totalCost / (recipe.servings || 1)
+    };
+}, [calculateRecipeCost, staffMembers, overheads, settings, activeBusinessId]);
+
+
   const filteredInventory = useMemo(() => inventory.filter(i => i.businessId === activeBusinessId), [inventory, activeBusinessId]);
   const filteredRecipes = useMemo(() => recipes.filter(r => r.businessId === activeBusinessId), [recipes, activeBusinessId]);
-  const filteredMenuItems = useMemo(() => menuItems.filter(m => m.businessId === activeBusinessId), [menuItems, activeBusinessId]);
   const filteredCategories = useMemo(() => categories.filter(c => c.businessId === activeBusinessId), [categories, activeBusinessId]);
   const filteredIngredientUnits = useMemo(() => ingredientUnits.filter(u => u.businessId === activeBusinessId), [ingredientUnits, activeBusinessId]);
   const filteredUnitConversions = useMemo(() => unitConversions.filter(uc => uc.businessId === activeBusinessId), [unitConversions, activeBusinessId]);
   const filteredRecipeTemplates = useMemo(() => recipeTemplates.filter(t => t.businessId === activeBusinessId), [recipeTemplates, activeBusinessId]);
-  const filteredPurchaseOrders = useMemo(() => purchaseOrders.filter(p => p.businessId === activeBusinessId).sort((a,b) => (b.poNumber || '').localeCompare(a.poNumber || '')), [purchaseOrders, activeBusinessId]);
+  const filteredStaffMembers = useMemo(() => staffMembers.filter(s => s.businessId === activeBusinessId), [staffMembers, activeBusinessId]);
+  const filteredOverheads = useMemo(() => overheads.filter(o => o.businessId === activeBusinessId), [overheads, activeBusinessId]);
+  const filteredSuppliers = useMemo(() => suppliers.filter(s => s.businessId === activeBusinessId), [suppliers, activeBusinessId]);
+  const filteredMenuItems = useMemo(() => menuItems.filter(m => m.businessId === activeBusinessId), [menuItems, activeBusinessId]);
+  const filteredPurchaseOrders = useMemo(() => purchaseOrders.filter(p => p.businessId === activeBusinessId), [purchaseOrders, activeBusinessId]);
   const filteredSales = useMemo(() => sales.filter(s => s.businessId === activeBusinessId), [sales, activeBusinessId]);
 
-  // CRUD functions
-  const addSupplier = async (supplier: Omit<Supplier, 'id' | 'businessId'>) => {
-    if (!activeBusinessId) return;
-    const newSupplier = { ...supplier, id: crypto.randomUUID(), businessId: activeBusinessId };
-    setSuppliers(prev => [...prev, newSupplier]);
-  };
-
-  const bulkAddSuppliers = async (newSuppliers: Omit<Supplier, 'id' | 'businessId'>[]) => {
-    if (!activeBusinessId) return { successCount: 0, duplicateCount: 0 };
-    const existingNames = new Set(suppliers.map(s => s.name.toLowerCase()));
-    const toAdd = newSuppliers.filter(s => !existingNames.has(s.name.toLowerCase()));
-    const duplicateCount = newSuppliers.length - toAdd.length;
-
-    if (toAdd.length === 0) return { successCount: 0, duplicateCount };
-    
-    const data = toAdd.map(s => ({ ...s, id: crypto.randomUUID(), businessId: activeBusinessId }));
-    setSuppliers(prev => [...prev, ...data]);
-    return { successCount: data.length, duplicateCount };
-  };
-
-  const updateSupplier = async (updatedSupplier: Supplier) => {
-    setSuppliers(prev => prev.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
-  };
-
-  const deleteSupplier = async (id: string) => {
-    const isUsed = inventory.some(item => item.supplierId === id);
-    if (isUsed) return { success: false, message: 'Cannot delete supplier. It is currently assigned to one or more inventory items.' };
-    
-    setSuppliers(prev => prev.filter(s => s.id !== id));
-    return { success: true };
-  };
-  
   const addInventoryItem = async (item: Omit<InventoryItem, 'id' | 'businessId'>) => {
       if (!activeBusinessId) return null;
       const newItem = { ...item, id: crypto.randomUUID(), businessId: activeBusinessId };
@@ -250,7 +266,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setInventory(prev => prev.filter(i => i.id !== id));
   };
     
-  const bulkUpdateInventoryItems = async (itemIds: string[], update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice' | 'supplierId'>>) => {
+  const bulkUpdateInventoryItems = async (itemIds: string[], update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice'>>) => {
     setInventory(prev => prev.map(item => itemIds.includes(item.id) ? { ...item, ...update } : item));
   };
 
@@ -281,7 +297,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addRecipe = async (recipe: Omit<Recipe, 'id' | 'businessId'>) => {
       if(!activeBusinessId) return;
-      await addCategory(recipe.category); // Ensure category exists
+      await addCategory(recipe.category);
       const newRecipe = { ...recipe, id: crypto.randomUUID(), businessId: activeBusinessId };
       setRecipes(prev => [...prev, newRecipe]);
   };
@@ -289,9 +305,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setRecipes(prev => prev.map(r => r.id === recipe.id ? recipe : r));
   };
   const deleteRecipe = async (id: string) => {
-      const isUsedOnMenu = menuItems.some(m => m.recipeId === id);
-      if (isUsedOnMenu) return { success: false, message: 'Cannot delete recipe. It is currently on a menu.' };
-
       const isUsedAsSubRecipe = recipes.some(r => r.ingredients.some(i => i.type === 'recipe' && i.itemId === id));
       if (isUsedAsSubRecipe) return { success: false, message: 'Cannot delete recipe. It is being used as a sub-recipe in another recipe.' };
 
@@ -303,11 +316,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const recipe = recipes.find(r => r.id === recipeId);
     if (!recipe) return;
     
-    const currentCost = calculateRecipeCost(recipe);
+    const { totalCost } = calculateRecipeCostBreakdown(recipe);
     const lastCostEntry = recipe.costHistory?.[recipe.costHistory.length - 1];
 
-    if (!lastCostEntry || Math.abs(lastCostEntry.cost - currentCost) > 0.01) { 
-        const newHistoryEntry = { date: new Date().toISOString(), cost: currentCost };
+    if (!lastCostEntry || Math.abs(lastCostEntry.cost - totalCost) > 0.01) { 
+        const newHistoryEntry = { date: new Date().toISOString(), cost: totalCost };
         const newHistory = [...(recipe.costHistory || []), newHistoryEntry];
         
         setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, costHistory: newHistory } : r));
@@ -317,12 +330,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const duplicateRecipe = async (id: string, includeHistory: boolean): Promise<Recipe | undefined> => {
     const recipeToDuplicate = recipes.find(r => r.id === id);
     if (!recipeToDuplicate) return undefined;
-
+    
+    const { totalCost } = calculateRecipeCostBreakdown(recipeToDuplicate);
     const newRecipe: Recipe = {
         ...recipeToDuplicate,
         id: crypto.randomUUID(),
         name: `${recipeToDuplicate.name} (Copy)`,
-        costHistory: includeHistory ? [...(recipeToDuplicate.costHistory || [])] : [{ date: new Date().toISOString(), cost: calculateRecipeCost(recipeToDuplicate) }],
+        costHistory: includeHistory ? [...(recipeToDuplicate.costHistory || [])] : [{ date: new Date().toISOString(), cost: totalCost }],
     };
 
     setRecipes(prev => [...prev, newRecipe]);
@@ -341,7 +355,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ...r,
       id: crypto.randomUUID(),
       businessId: activeBusinessId,
-      costHistory: [{ date: new Date().toISOString(), cost: calculateRecipeCost(r as Recipe) }]
+      costHistory: [{ date: new Date().toISOString(), cost: calculateRecipeCostBreakdown(r as Recipe).totalCost }]
     }));
 
     const newCategories = [...new Set(data.map(r => r.category))];
@@ -411,20 +425,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUnitConversions(prev => prev.filter(uc => uc.id !== id));
   };
 
-  const addMenuItem = async (item: Omit<MenuItem, 'id' | 'businessId'>) => {
-    if(!activeBusinessId) return;
-    const newMenuItem = { ...item, id: crypto.randomUUID(), businessId: activeBusinessId };
-    setMenuItems(prev => [...prev, newMenuItem]);
-  };
-  
-  const updateMenuItem = async (item: MenuItem) => {
-    setMenuItems(prev => prev.map(m => m.id === item.id ? item : m));
-  };
-  
-  const deleteMenuItem = async (id: string) => {
-    setMenuItems(prev => prev.filter(m => m.id !== id));
-  };
-
   const addRecipeTemplate = async (template: Omit<RecipeTemplate, 'id' | 'businessId'>) => {
     if(!activeBusinessId) return;
     const newTemplate = { ...template, id: crypto.randomUUID(), businessId: activeBusinessId };
@@ -447,115 +447,154 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, imageUrl: undefined } : r));
   };
   
-  const addPurchaseOrder = async (po: { supplierId: string; items: PurchaseOrderItem[]; dueDate?: string; }) => {
-    if (!activeBusinessId) return;
-
-    const totalCost = po.items.reduce((sum, item) => {
-        return sum + (item.quantity * item.cost);
-    }, 0);
-    
-    const businessPOs = purchaseOrders.filter(p => p.businessId === activeBusinessId);
-    const lastPoNumber = businessPOs.reduce((max, p) => {
-        const num = parseInt(p.poNumber.split('-')[1]);
-        return num > max ? num : max;
-    }, 0);
-    const newPoNumber = `PO-${String(lastPoNumber + 1).padStart(4, '0')}`;
-
-    const newPO: PurchaseOrder = {
-        ...po,
-        id: crypto.randomUUID(),
-        poNumber: newPoNumber,
-        businessId: activeBusinessId,
-        status: 'Pending',
-        orderDate: new Date().toISOString(),
-        totalCost,
-    };
-
-    setPurchaseOrders(prev => [...prev, newPO]);
+  const addStaffMember = async (staff: Omit<StaffMember, 'id' | 'businessId'>) => {
+    if(!activeBusinessId) return;
+    const newStaff = { ...staff, id: crypto.randomUUID(), businessId: activeBusinessId };
+    setStaffMembers(prev => [...prev, newStaff]);
+  };
+  const updateStaffMember = async (staff: StaffMember) => {
+    setStaffMembers(prev => prev.map(s => s.id === staff.id ? staff : s));
+  };
+  const deleteStaffMember = async (id: string) => {
+    setStaffMembers(prev => prev.filter(s => s.id !== id));
   };
 
-  const updatePurchaseOrderStatus = async (id: string, status: PurchaseOrder['status']) => {
-      const poToUpdate = purchaseOrders.find(po => po.id === id);
-      if (!poToUpdate || !activeBusinessId) return;
-      
-      const update: Partial<PurchaseOrder> = { status };
+  const addOverhead = async (overhead: Omit<Overhead, 'id' | 'businessId'>) => {
+    if(!activeBusinessId) return;
+    const newOverhead = { ...overhead, id: crypto.randomUUID(), businessId: activeBusinessId };
+    setOverheads(prev => [...prev, newOverhead]);
+  };
+  const updateOverhead = async (overhead: Overhead) => {
+    setOverheads(prev => prev.map(o => o.id === overhead.id ? overhead : o));
+  };
+  const deleteOverhead = async (id: string) => {
+    setOverheads(prev => prev.filter(o => o.id !== id));
+  };
 
-      if (status === 'Completed') {
-          update.completionDate = new Date().toISOString();
-          const newInventory = [...inventory];
-          for (const poItem of poToUpdate.items) {
-              const currentItemIndex = newInventory.findIndex(invItem => invItem.id === poItem.itemId);
-              if (currentItemIndex !== -1) {
-                  newInventory[currentItemIndex].quantity += poItem.quantity;
-              }
-          }
-          setInventory(newInventory);
-      }
-      
-      setPurchaseOrders(prev => prev.map(po => po.id === id ? { ...po, ...update } : po));
+  const getSupplierById = useCallback((id: string) => suppliers.find(s => s.id === id), [suppliers]);
+  
+  const addSupplier = async (supplier: Omit<Supplier, 'id' | 'businessId'>) => {
+    if(!activeBusinessId) return;
+    const newSupplier: Supplier = { ...supplier, id: crypto.randomUUID(), businessId: activeBusinessId };
+    setSuppliers(prev => [...prev, newSupplier]);
+  };
+
+  const updateSupplier = async (supplier: Supplier) => {
+    setSuppliers(prev => prev.map(s => s.id === supplier.id ? supplier : s));
+  };
+
+  const deleteSupplier = async (id: string) => {
+    if (purchaseOrders.some(po => po.supplierId === id)) {
+        return { success: false, message: 'Cannot delete supplier. They are associated with one or more purchase orders.'};
+    }
+    setSuppliers(prev => prev.filter(s => s.id !== id));
+    return { success: true };
+  };
+
+  const bulkAddSuppliers = async (newSuppliers: Omit<Supplier, 'id'|'businessId'>[]) => {
+    if (!activeBusinessId) return { successCount: 0, duplicateCount: 0 };
+    const existingNames = new Set(suppliers.map(s => s.name.toLowerCase()));
+    const toAdd = newSuppliers.filter(s => !existingNames.has(s.name.toLowerCase()));
+    const duplicateCount = newSuppliers.length - toAdd.length;
+
+    if (toAdd.length === 0) return { successCount: 0, duplicateCount };
+    
+    const data = toAdd.map(s => ({ ...s, id: crypto.randomUUID(), businessId: activeBusinessId }));
+    setSuppliers(prev => [...prev, ...data]);
+    return { successCount: data.length, duplicateCount };
+  };
+
+  const addMenuItem = async (item: Omit<MenuItem, 'id' | 'businessId'>) => {
+      if(!activeBusinessId) return;
+      const newItem = { ...item, id: crypto.randomUUID(), businessId: activeBusinessId };
+      setMenuItems(prev => [...prev, newItem]);
+  };
+  const updateMenuItem = async (item: MenuItem) => {
+      setMenuItems(prev => prev.map(m => m.id === item.id ? item : m));
+  };
+  const deleteMenuItem = async (id: string) => {
+      setMenuItems(prev => prev.filter(m => m.id !== id));
+  };
+
+  const addPurchaseOrder = async (order: Omit<PurchaseOrder, 'id' | 'businessId' | 'poNumber' | 'orderDate' | 'totalCost' | 'status'>) => {
+    if(!activeBusinessId) return;
+    const totalCost = order.items.reduce((sum, item) => sum + item.cost * item.quantity, 0);
+    const newOrder: PurchaseOrder = {
+        ...order,
+        id: crypto.randomUUID(),
+        businessId: activeBusinessId,
+        poNumber: `PO-${new Date().getFullYear()}-${String(purchaseOrders.length + 1).padStart(3, '0')}`,
+        orderDate: new Date().toISOString(),
+        totalCost,
+        status: 'Pending',
+    };
+    setPurchaseOrders(prev => [...prev, newOrder]);
+  };
+  const updatePurchaseOrderStatus = async (id: string, status: PurchaseOrder['status']) => {
+    setPurchaseOrders(prev => prev.map(order => {
+        if (order.id === id) {
+            const updatedOrder = { ...order, status, completionDate: status === 'Completed' ? new Date().toISOString() : undefined };
+            if (status === 'Completed') {
+                // Update inventory
+                setInventory(currentInventory => {
+                    const newInventory = [...currentInventory];
+                    updatedOrder.items.forEach(orderItem => {
+                        const invIndex = newInventory.findIndex(invItem => invItem.id === orderItem.itemId);
+                        if(invIndex > -1) {
+                            newInventory[invIndex].quantity += orderItem.quantity;
+                        }
+                    });
+                    return newInventory;
+                });
+            }
+            return updatedOrder;
+        }
+        return order;
+    }));
   };
 
   const addSale = async (items: { menuItemId: string; quantity: number }[]) => {
-    if (!activeBusinessId) return;
+      if(!activeBusinessId) return;
+      
+      const saleItems: SaleItem[] = [];
+      let totalRevenue = 0;
+      let totalProfit = 0;
 
-    const saleItems: SaleItem[] = [];
-    let totalRevenue = 0;
-    let totalCost = 0;
+      for (const item of items) {
+          const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
+          if (!menuItem) continue;
+          
+          const recipe = recipes.find(r => r.id === menuItem.recipeId);
+          const { costPerServing } = calculateRecipeCostBreakdown(recipe);
 
-    const inventoryMap = new Map<string, InventoryItem>(inventory.map(i => [i.id, {...i}]));
-    const menuItemsMap = new Map<string, MenuItem>(menuItems.map(m => [m.id, {...m}]));
+          const revenue = menuItem.salePrice * item.quantity;
+          const cost = costPerServing * item.quantity;
+          
+          totalRevenue += revenue;
+          totalProfit += (revenue - cost);
 
-    for (const item of items) {
-      const menuItem = menuItemsMap.get(item.menuItemId);
-      if (!menuItem) {
-        console.warn(`Menu item with id ${item.menuItemId} not found.`);
-        continue;
+          saleItems.push({
+              menuItemId: item.menuItemId,
+              quantity: item.quantity,
+              salePriceAtTime: menuItem.salePrice,
+              costAtTime: costPerServing
+          });
+
+          // Also update total sales count on menu item
+          setMenuItems(prev => prev.map(mi => mi.id === item.menuItemId ? { ...mi, salesCount: mi.salesCount + item.quantity } : mi));
       }
 
-      const recipe = recipes.find(r => r.id === menuItem.recipeId);
-      const costPerServing = recipe ? calculateRecipeCost(recipe) / (recipe.servings || 1) : 0;
-
-      saleItems.push({
-        menuItemId: item.menuItemId,
-        quantity: item.quantity,
-        salePrice: menuItem.salePrice,
-        cost: costPerServing,
-      });
-
-      totalRevenue += menuItem.salePrice * item.quantity;
-      totalCost += costPerServing * item.quantity;
-
-      if (recipe) {
-        for (const ingredient of recipe.ingredients) {
-            if (ingredient.type === 'item') {
-                const invItem = inventoryMap.get(ingredient.itemId);
-                if (invItem) {
-                    const conversionFactor = getConversionFactor(ingredient.unit, invItem.unit, invItem.id) || 1;
-                    const quantityToDecrement = (ingredient.quantity / (recipe.servings || 1)) * item.quantity * conversionFactor;
-                    invItem.quantity -= quantityToDecrement;
-                }
-            }
-        }
-      }
-
-      menuItem.salesCount += item.quantity;
-    }
-    
-    const totalProfit = totalRevenue - totalCost;
-    const newSale: Sale = {
-      id: crypto.randomUUID(),
-      items: saleItems,
-      saleDate: new Date().toISOString(),
-      totalRevenue,
-      totalCost,
-      totalProfit,
-      businessId: activeBusinessId,
-    };
-    
-    setSales(prev => [...prev, newSale]);
-    setInventory(Array.from(inventoryMap.values()));
-    setMenuItems(Array.from(menuItemsMap.values()));
+      const newSale: Sale = {
+          id: crypto.randomUUID(),
+          saleDate: new Date().toISOString(),
+          items: saleItems,
+          totalRevenue,
+          totalProfit,
+          businessId: activeBusinessId
+      };
+      setSales(prev => [...prev, newSale]);
   };
+
 
   const value: DataContextType = {
     loading,
@@ -565,21 +604,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addBusiness,
     updateBusiness,
     
-    suppliers: filteredSuppliers,
     inventory: filteredInventory,
     recipes: filteredRecipes,
-    menuItems: filteredMenuItems,
     categories: filteredCategories,
     ingredientUnits: filteredIngredientUnits,
     unitConversions: filteredUnitConversions,
     recipeTemplates: filteredRecipeTemplates,
+    staffMembers: filteredStaffMembers,
+    overheads: filteredOverheads,
+    suppliers: filteredSuppliers,
+    menuItems: filteredMenuItems,
     purchaseOrders: filteredPurchaseOrders,
     sales: filteredSales,
-    
-    addSupplier,
-    updateSupplier,
-    deleteSupplier,
-    bulkAddSuppliers,
     
     addInventoryItem,
     updateInventoryItem,
@@ -597,10 +633,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     removeRecipeImage,
     bulkAddRecipes,
 
-    addMenuItem,
-    updateMenuItem,
-    deleteMenuItem,
-
     addCategory,
     updateCategory,
     deleteCategory,
@@ -615,6 +647,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     addRecipeTemplate,
 
+    addStaffMember,
+    updateStaffMember,
+    deleteStaffMember,
+    addOverhead,
+    updateOverhead,
+    deleteOverhead,
+
+    addSupplier,
+    updateSupplier,
+    deleteSupplier,
+    bulkAddSuppliers,
+    addMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
     addPurchaseOrder,
     updatePurchaseOrderStatus,
     addSale,
@@ -623,6 +669,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     getRecipeById,
     getSupplierById,
     calculateRecipeCost,
+    calculateRecipeCostBreakdown,
     getConversionFactor,
   };
 

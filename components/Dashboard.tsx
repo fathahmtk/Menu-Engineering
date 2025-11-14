@@ -8,7 +8,7 @@ import { useAppSettings } from '../hooks/useAppSettings';
 
 
 const Dashboard: React.FC = () => {
-    const { inventory, menuItems, recipes, getRecipeById, calculateRecipeCost } = useData();
+    const { inventory, menuItems, recipes, getRecipeById, calculateRecipeCostBreakdown } = useData();
     const { formatCurrency } = useCurrency();
     const { settings } = useAppSettings();
 
@@ -17,22 +17,19 @@ const Dashboard: React.FC = () => {
 
     const menuProfitabilityData = menuItems.map(item => {
         const recipe = getRecipeById(item.recipeId);
-        if (!recipe) return { name: item.name, profit: 0, revenue: 0, cost: 0 };
-        const recipeCost = calculateRecipeCost(recipe);
-        const cost = recipe.servings > 0 ? recipeCost / recipe.servings : 0;
-        const profit = item.salePrice - cost;
+        const { costPerServing } = calculateRecipeCostBreakdown(recipe);
+        const profit = item.salePrice - costPerServing;
         return {
             name: item.name,
             profit,
             revenue: item.salePrice,
-            cost: cost
+            cost: costPerServing
         };
     }).sort((a,b) => b.profit - a.profit).slice(0, 5);
 
     const totalMenuProfitability = menuItems.reduce((acc, item) => {
         const recipe = getRecipeById(item.recipeId);
-        if (!recipe) return acc;
-        const costPerServing = recipe.servings > 0 ? calculateRecipeCost(recipe) / recipe.servings : 0;
+        const { costPerServing } = calculateRecipeCostBreakdown(recipe);
         return acc + (item.salePrice - costPerServing);
     }, 0);
 

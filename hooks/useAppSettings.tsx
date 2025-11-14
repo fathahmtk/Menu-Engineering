@@ -5,12 +5,16 @@ const AppSettingsContext = createContext<AppSettingsContextType | undefined>(und
 
 const defaultSettings: AppSettings = {
     foodCostTarget: 30,
+    workingDaysPerMonth: 28,
+    hoursPerDay: 10,
+    totalDishesProduced: 10000,
+    totalDishesSold: 8000,
     dashboard: {
         inventoryValue: true,
         lowStockItems: true,
         totalRecipes: true,
         avgMenuProfit: true,
-    }
+    },
 };
 
 export const AppSettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -19,8 +23,10 @@ export const AppSettingsProvider: React.FC<{ children: ReactNode }> = ({ childre
             const savedSettings = localStorage.getItem('appSettings');
             if (savedSettings) {
                 const parsed = JSON.parse(savedSettings);
-                // Merge with defaults to handle cases where new settings are added
-                return { ...defaultSettings, ...parsed, dashboard: {...defaultSettings.dashboard, ...parsed.dashboard} };
+                // Ensure dashboard settings are merged correctly
+                const mergedSettings = { ...defaultSettings, ...parsed };
+                mergedSettings.dashboard = { ...defaultSettings.dashboard, ...(parsed.dashboard || {}) };
+                return mergedSettings;
             }
         } catch (error) {
             console.error("Error parsing app settings from localStorage", error);
@@ -37,12 +43,16 @@ export const AppSettingsProvider: React.FC<{ children: ReactNode }> = ({ childre
     }, [settings]);
 
     const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
-        setSettings(prev => ({
-            ...prev,
-            ...newSettings,
-            dashboard: { ...prev.dashboard, ...newSettings.dashboard }
-        }));
+        setSettings(prev => {
+            const updated = { ...prev, ...newSettings };
+            // Deep merge dashboard settings if they are part of the update
+            if (newSettings.dashboard) {
+                updated.dashboard = { ...prev.dashboard, ...newSettings.dashboard };
+            }
+            return updated;
+        });
     }, []);
+
 
     return (
         <AppSettingsContext.Provider value={{ settings, updateSettings }}>

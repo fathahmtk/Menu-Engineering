@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -88,7 +86,7 @@ const Sales: React.FC = () => {
 
     const handleRecordSale = async () => {
         if (saleItems.some(item => !item.menuItemId || item.quantity <= 0)) {
-            alert('Please select a valid menu item and quantity for all entries.');
+            addNotification('Please select a valid menu item and quantity for all entries.', 'error');
             return;
         }
         
@@ -139,8 +137,8 @@ const Sales: React.FC = () => {
                 </Card>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <Card className="lg:col-span-3">
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+                <Card className="xl:col-span-3">
                     <h3 className="text-lg font-semibold mb-4">Sales Over Time</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={salesChartData}>
@@ -157,8 +155,8 @@ const Sales: React.FC = () => {
                         </LineChart>
                     </ResponsiveContainer>
                 </Card>
-                <Card className="lg:col-span-2">
-                    <div className="flex justify-between items-center mb-4">
+                <Card className="xl:col-span-2">
+                    <div className="flex flex-col md:flex-row gap-2 justify-between items-start md:items-center mb-4">
                         <h3 className="text-lg font-semibold">Recent Transactions</h3>
                          <button onClick={openModal} className="ican-btn ican-btn-primary p-2 md:py-1.5 md:px-3 text-sm">
                             <PlusCircle size={16} className="md:mr-2" />

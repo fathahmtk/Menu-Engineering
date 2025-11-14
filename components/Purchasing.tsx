@@ -101,7 +101,7 @@ const Purchasing: React.FC = () => {
 
     const handleSubmitNewPO = async () => {
         if (!newPoData.supplierId || !newPoData.dueDate || newPoData.items.some(i => !i.itemId || i.quantity <= 0 || i.cost < 0)) {
-            alert('Please fill all fields correctly. Due date is required and item quantities must be positive.');
+            addNotification('Please fill all fields correctly. Due date is required and item quantities must be positive.', 'error');
             return;
         }
 
@@ -167,7 +167,7 @@ const Purchasing: React.FC = () => {
                         </select>
                     </div>
                 </div>
-                <div className="overflow-x-auto md:overflow-visible">
+                <div className="overflow-x-auto">
                     <table className="w-full text-left responsive-table">
                         <thead className="ican-table-header">
                             <tr>
@@ -181,7 +181,7 @@ const Purchasing: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredOrders.map(order => {
+                            {filteredOrders.length > 0 ? filteredOrders.map(order => {
                                 const today = new Date();
                                 today.setHours(0, 0, 0, 0);
                                 const isOverdue = order.status === 'Pending' && order.dueDate && new Date(order.dueDate) < today;
@@ -208,15 +208,19 @@ const Purchasing: React.FC = () => {
                                         </div>
                                     </td>
                                 </tr>
-                            )})}
+                            )}) : (
+                                <tr>
+                                    <td colSpan={7} className="text-center py-10">
+                                        <div className="flex flex-col items-center text-[var(--color-text-muted)]">
+                                            <Package size={40} className="mx-auto mb-2 text-[var(--color-border)]"/>
+                                            <p>No purchase orders found.</p>
+                                            <p className="text-sm">Create one or adjust your filters.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
-                    {filteredOrders.length === 0 && (
-                        <div className="text-center py-10 text-[var(--color-text-muted)]">
-                            <Package size={40} className="mx-auto mb-2 text-[var(--color-border)]"/>
-                            <p>No purchase orders found. Create one or adjust your filters.</p>
-                        </div>
-                    )}
                 </div>
             </Card>
 
@@ -249,7 +253,7 @@ const Purchasing: React.FC = () => {
                         <h4 className="text-sm font-medium mb-2 text-[var(--color-text-muted)]">Items</h4>
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                             {newPoData.items.map((item, index) => (
-                                <div key={index} className="flex flex-col md:grid md:grid-cols-[1fr,80px,100px,auto] gap-2 md:items-center border border-transparent md:border-0 rounded-md p-2 md:p-0">
+                                <div key={index} className="flex flex-col md:grid md:grid-cols-[1fr,80px,100px,auto] gap-2 items-center border border-[var(--color-border)] md:border-0 rounded-md p-2 md:p-0 bg-[var(--color-background)] md:bg-transparent">
                                     <select
                                         value={item.itemId || ''}
                                         onChange={(e) => handleItemChange(index, 'itemId', e.target.value)}

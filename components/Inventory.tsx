@@ -41,7 +41,7 @@ const StockLevelIndicator: React.FC<{ item: InventoryItem }> = ({ item }) => {
 
 
 const Inventory: React.FC = () => {
-    const { inventory, getSupplierById, suppliers, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems, ingredientUnits, bulkAddInventoryItems } = useData();
+    const { inventory, addInventoryItem, updateInventoryItem, deleteInventoryItem, bulkUpdateInventoryItems, bulkDeleteInventoryItems, ingredientUnits, bulkAddInventoryItems } = useData();
     const { formatCurrency, currency } = useCurrency();
     const { addNotification } = useNotification();
 
@@ -53,7 +53,7 @@ const Inventory: React.FC = () => {
 
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-    const [bulkActionType, setBulkActionType] = useState<'cost' | 'price' | 'supplier' | null>(null);
+    const [bulkActionType, setBulkActionType] = useState<'cost' | 'price' | null>(null);
     const [bulkValue, setBulkValue] = useState<string | number>('');
     const [bulkError, setBulkError] = useState('');
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
@@ -116,9 +116,9 @@ const Inventory: React.FC = () => {
         setIsConfirmDeleteOpen(false);
     };
 
-    const openBulkModal = (action: 'cost' | 'price' | 'supplier') => {
+    const openBulkModal = (action: 'cost' | 'price') => {
         setBulkActionType(action);
-        setBulkValue(action === 'supplier' ? (suppliers[0]?.id || '') : 0);
+        setBulkValue(0);
         setBulkError('');
         setIsBulkModalOpen(true);
     };
@@ -131,7 +131,7 @@ const Inventory: React.FC = () => {
     };
 
     const handleBulkUpdate = async () => {
-        let update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice' | 'supplierId'>> = {};
+        let update: Partial<Pick<InventoryItem, 'unitCost' | 'unitPrice'>> = {};
         let isValid = true;
         setBulkError('');
 
@@ -142,13 +142,6 @@ const Inventory: React.FC = () => {
                 isValid = false;
             } else {
                 update = bulkActionType === 'cost' ? { unitCost: numericValue } : { unitPrice: numericValue };
-            }
-        } else if (bulkActionType === 'supplier') {
-            if (!bulkValue) {
-                setBulkError('Please select a supplier.');
-                isValid = false;
-            } else {
-                update = { supplierId: String(bulkValue) };
             }
         }
 
@@ -163,9 +156,8 @@ const Inventory: React.FC = () => {
     const isAllSelected = inventory.length > 0 && selectedItems.size === inventory.length;
 
     const handleExport = () => {
-        const headers = ['name', 'category', 'quantity', 'unit', 'unitCost', 'unitPrice', 'supplierName', 'lowStockThreshold', 'yieldPercentage'];
+        const headers = ['name', 'category', 'quantity', 'unit', 'unitCost', 'unitPrice', 'lowStockThreshold', 'yieldPercentage'];
         const dataToExport = inventory.map(item => {
-            const supplier = getSupplierById(item.supplierId);
             return {
                 name: item.name,
                 category: item.category,
@@ -173,7 +165,6 @@ const Inventory: React.FC = () => {
                 unit: item.unit,
                 unitCost: item.unitCost,
                 unitPrice: item.unitPrice,
-                supplierName: supplier ? supplier.name : 'N/A',
                 lowStockThreshold: item.lowStockThreshold,
                 yieldPercentage: item.yieldPercentage || 100
             };
@@ -185,23 +176,18 @@ const Inventory: React.FC = () => {
     const parseInventoryFile = async (fileContent: string): Promise<{ data: Omit<InventoryItem, 'id' | 'businessId'>[]; errors: string[] }> => {
         const lines = fileContent.trim().split('\n');
         const headers = lines[0].trim().split(',').map(h => h.replace(/"/g, '').trim());
-        const requiredHeaders = ['name', 'category', 'quantity', 'unit', 'unitCost', 'unitPrice', 'supplierName', 'lowStockThreshold'];
+        const requiredHeaders = ['name', 'category', 'quantity', 'unit', 'unitCost', 'unitPrice', 'lowStockThreshold'];
         const errors: string[] = [];
         
         requiredHeaders.forEach(h => {
             if (!headers.includes(h)) errors.push(`Missing required header: ${h}`);
         });
 
-        const supplierNameMap = new Map(suppliers.map(s => [s.name.toLowerCase(), s.id]));
-
         const data = lines.slice(1).map((line, index) => {
             const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
             const item: any = {};
             headers.forEach((header, i) => item[header] = values[i]);
             
-            const supplierId = supplierNameMap.get(String(item.supplierName || '').toLowerCase());
-            if (!supplierId) errors.push(`Row ${index + 2}: Supplier "${item.supplierName}" not found. Please add it first.`);
-
             const category = item.category as InventoryItem['category'];
             if (!ITEM_CATEGORIES.includes(category)) {
                 errors.push(`Row ${index + 2}: Invalid category "${item.category}".`);
@@ -214,11 +200,10 @@ const Inventory: React.FC = () => {
                 unit: item.unit,
                 unitCost: parseFloat(item.unitCost) || 0,
                 unitPrice: parseFloat(item.unitPrice) || 0,
-                supplierId: supplierId || '',
                 lowStockThreshold: parseFloat(item.lowStockThreshold) || 0,
                 yieldPercentage: parseFloat(item.yieldPercentage) || 100,
             };
-        }).filter(item => item.name && item.supplierId);
+        }).filter(item => item.name);
         
         if (data.length === 0 && errors.length > 0) return { data: [], errors };
         
@@ -251,7 +236,6 @@ const Inventory: React.FC = () => {
                         <div className="flex items-center space-x-2 flex-wrap gap-2">
                             <button onClick={() => openBulkModal('cost')} className="text-sm flex items-center bg-[var(--color-sidebar)] border border-[var(--color-border)] px-3 py-1.5 rounded-md hover:bg-[var(--color-border)] text-[var(--color-text-secondary)]"><DollarSign size={14} className="mr-1.5" /> Update Cost</button>
                             <button onClick={() => openBulkModal('price')} className="text-sm flex items-center bg-[var(--color-sidebar)] border border-[var(--color-border)] px-3 py-1.5 rounded-md hover:bg-[var(--color-border)] text-[var(--color-text-secondary)]"><DollarSign size={14} className="mr-1.5" /> Update Price</button>
-                            <button onClick={() => openBulkModal('supplier')} className="text-sm flex items-center bg-[var(--color-sidebar)] border border-[var(--color-border)] px-3 py-1.5 rounded-md hover:bg-[var(--color-border)] text-[var(--color-text-secondary)]"><Truck size={14} className="mr-1.5" /> Update Supplier</button>
                             <button onClick={() => setIsConfirmDeleteOpen(true)} className="text-sm flex items-center bg-[var(--color-danger)] text-white px-3 py-1.5 rounded-md hover:bg-opacity-80"><Trash2 size={14} className="mr-1.5" /> Delete</button>
                         </div>
                     </div>
@@ -269,14 +253,12 @@ const Inventory: React.FC = () => {
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Stock</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Yield</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Unit Cost</th>
-                            <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Supplier</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Status</th>
                             <th className="p-4 font-semibold text-sm text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {inventory.length > 0 ? inventory.map(item => {
-                            const supplier = getSupplierById(item.supplierId);
                             return (
                                 <tr key={item.id} className={`border-b border-[var(--color-border)] last:border-b-0 transition-colors hover:bg-[var(--color-input)] ${selectedItems.has(item.id) ? 'bg-[var(--color-primary-light)]' : ''}`}>
                                     <td className="p-4 checkbox-cell">
@@ -287,7 +269,6 @@ const Inventory: React.FC = () => {
                                     <td data-label="Stock" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.quantity} {item.unit}</td>
                                     <td data-label="Yield" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{item.yieldPercentage || 100}%</td>
                                     <td data-label="Unit Cost" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{formatCurrency(item.unitCost)}</td>
-                                    <td data-label="Supplier" className="p-4 text-[var(--color-text-muted)] whitespace-nowrap">{supplier?.name || 'N/A'}</td>
                                     <td data-label="Status" className="p-4">
                                         <StockLevelIndicator item={item} />
                                     </td>
@@ -301,7 +282,7 @@ const Inventory: React.FC = () => {
                             );
                         }) : (
                             <tr>
-                                <td colSpan={9} className="text-center py-10">
+                                <td colSpan={8} className="text-center py-10">
                                      <div className="flex flex-col items-center text-[var(--color-text-muted)]">
                                         <ShoppingCart size={40} className="mb-2 text-[var(--color-border)]"/>
                                         <p className="font-semibold">No inventory items yet</p>
@@ -319,7 +300,7 @@ const Inventory: React.FC = () => {
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
                 title="Import Inventory Items"
-                templateUrl="data:text/csv;charset=utf-8,name,category,quantity,unit,unitCost,unitPrice,supplierName,lowStockThreshold,yieldPercentage%0AExample%20Item,Produce,10,kg,5,8,Example%20Supplier,2,95"
+                templateUrl="data:text/csv;charset=utf-8,name,category,quantity,unit,unitCost,unitPrice,lowStockThreshold,yieldPercentage%0AExample%20Item,Produce,10,kg,5,8,2,95"
                 templateFilename="inventory_template.csv"
                 parseFile={parseInventoryFile}
                 onImport={handleImport}
@@ -327,7 +308,7 @@ const Inventory: React.FC = () => {
                     <div key={index} className="p-2 text-sm flex justify-between">
                         <div>
                             <p className="font-semibold text-[var(--color-text-primary)]">{item.name}</p>
-                            <p className="text-[var(--color-text-muted)]">{item.quantity} {item.unit} from {item.supplierName}</p>
+                            <p className="text-[var(--color-text-muted)]">{item.quantity} {item.unit}</p>
                         </div>
                         <div className="text-right">
                              <p className="font-medium">{formatCurrency(item.unitCost)}</p>
@@ -350,7 +331,6 @@ const Inventory: React.FC = () => {
                     }
                     handleCloseModal();
                 }}
-                suppliers={suppliers}
                 allUnits={allUnits}
              />
             <Modal isOpen={isBulkModalOpen} onClose={closeBulkModal} title={`Bulk Update ${selectedItems.size} Items`}>
@@ -365,14 +345,6 @@ const Inventory: React.FC = () => {
                         <div>
                             <label htmlFor="bulkPrice" className="block text-sm font-medium text-[var(--color-text-muted)]">New Unit Price ({currency})</label>
                             <input type="number" id="bulkPrice" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`ican-input mt-1 ${bulkError ? 'border-[var(--color-danger)]' : ''}`} min="0" step="0.01" autoFocus />
-                        </div>
-                    )}
-                    {bulkActionType === 'supplier' && (
-                         <div>
-                            <label htmlFor="bulkSupplier" className="block text-sm font-medium text-[var(--color-text-muted)]">New Supplier</label>
-                            <select id="bulkSupplier" value={bulkValue} onChange={e => setBulkValue(e.target.value)} className={`ican-select mt-1 ${bulkError ? 'border-[var(--color-danger)]' : ''}`}>
-                                {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
-                            </select>
                         </div>
                     )}
                     {bulkError && <p className="text-[var(--color-danger)] text-xs mt-1">{bulkError}</p>}
@@ -421,14 +393,13 @@ interface ItemFormModalProps {
     onClose: () => void;
     item: InventoryItem | null;
     onSave: (item: Omit<InventoryItem, 'id' | 'businessId'> | InventoryItem, isEditing: boolean) => void;
-    suppliers: { id: string, name: string }[];
     allUnits: string[];
 }
 
-const ItemFormModal: React.FC<ItemFormModalProps> = ({ isOpen, onClose, item, onSave, suppliers, allUnits }) => {
+const ItemFormModal: React.FC<ItemFormModalProps> = ({ isOpen, onClose, item, onSave, allUnits }) => {
     const { currency } = useCurrency();
     const [formData, setFormData] = useState<Omit<InventoryItem, 'id' | 'businessId'>>({
-        name: '', category: 'Produce', quantity: 0, unit: 'kg', unitCost: 0, unitPrice: 0, supplierId: '', lowStockThreshold: 0, yieldPercentage: 100
+        name: '', category: 'Produce', quantity: 0, unit: 'kg', unitCost: 0, unitPrice: 0, lowStockThreshold: 0, yieldPercentage: 100
     });
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const isEditing = !!item;
@@ -438,11 +409,11 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({ isOpen, onClose, item, on
             if (item) {
                 setFormData(item);
             } else {
-                setFormData({ name: '', category: 'Produce', quantity: 0, unit: 'kg', unitCost: 0, unitPrice: 0, supplierId: suppliers[0]?.id || '', lowStockThreshold: 0, yieldPercentage: 100 });
+                setFormData({ name: '', category: 'Produce', quantity: 0, unit: 'kg', unitCost: 0, unitPrice: 0, lowStockThreshold: 0, yieldPercentage: 100 });
             }
             setErrors({});
         }
-    }, [isOpen, item, suppliers]);
+    }, [isOpen, item]);
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -456,7 +427,6 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({ isOpen, onClose, item, on
         if (formData.unitCost <= 0) newErrors.unitCost = 'Unit cost must be a positive number.';
         if (formData.quantity < 0) newErrors.quantity = 'Quantity cannot be negative.';
         if (formData.lowStockThreshold < 0) newErrors.lowStockThreshold = 'Low stock threshold cannot be negative.';
-        if (!formData.supplierId) newErrors.supplierId = 'Please select a supplier.';
         if ((formData.yieldPercentage || 0) <= 0 || (formData.yieldPercentage || 0) > 100) newErrors.yieldPercentage = 'Yield must be between 1 and 100.';
 
         if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
@@ -473,21 +443,11 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({ isOpen, onClose, item, on
                         {errors.name && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.name}</p>}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <div>
-                            <label htmlFor="category" className="block text-sm font-medium text-[var(--color-text-muted)]">Category</label>
-                            <select name="category" id="category" value={formData.category} onChange={handleChange} className="ican-select mt-1">
-                                {ITEM_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
-                        </div>
-                         <div>
-                            <label htmlFor="supplierId" className="block text-sm font-medium text-[var(--color-text-muted)]">Supplier</label>
-                            <select name="supplierId" id="supplierId" value={formData.supplierId} onChange={handleChange} className={`ican-select mt-1 ${errors.supplierId ? 'border-[var(--color-danger)]' : ''}`}>
-                                <option value="" disabled>Select a supplier</option>
-                                {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
-                            </select>
-                            {errors.supplierId && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.supplierId}</p>}
-                        </div>
+                    <div>
+                        <label htmlFor="category" className="block text-sm font-medium text-[var(--color-text-muted)]">Category</label>
+                        <select name="category" id="category" value={formData.category} onChange={handleChange} className="ican-select mt-1">
+                            {ITEM_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

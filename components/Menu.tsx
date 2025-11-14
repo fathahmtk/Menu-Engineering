@@ -36,7 +36,7 @@ const ClassificationBadge: React.FC<{ classification: Classification }> = ({ cla
 
 
 const Menu: React.FC = () => {
-    const { menuItems, recipes, addMenuItem, updateMenuItem, deleteMenuItem, calculateRecipeCost } = useData();
+    const { menuItems, recipes, addMenuItem, updateMenuItem, deleteMenuItem, calculateRecipeCostBreakdown } = useData();
     const { formatCurrency } = useCurrency();
     const { addNotification } = useNotification();
 
@@ -64,15 +64,12 @@ const Menu: React.FC = () => {
     const menuPerformance = useMemo(() => {
         return menuItems.map(item => {
             const recipe = recipes.find(r => r.id === item.recipeId);
-            if (!recipe) return { ...item, costPerServing: 0, profit: 0, foodCostPercentage: 0 };
-
-            const totalCost = calculateRecipeCost(recipe);
-            const costPerServing = recipe.servings > 0 ? totalCost / recipe.servings : 0;
+            const { costPerServing } = calculateRecipeCostBreakdown(recipe);
             const profit = item.salePrice - costPerServing;
             const foodCostPercentage = item.salePrice > 0 ? (costPerServing / item.salePrice) * 100 : 0;
             return { ...item, costPerServing, profit, foodCostPercentage };
         });
-    }, [menuItems, recipes, calculateRecipeCost]);
+    }, [menuItems, recipes, calculateRecipeCostBreakdown]);
 
     const { averageProfit, averageSales } = useMemo(() => {
         if (menuPerformance.length === 0) return { averageProfit: 0, averageSales: 0 };
@@ -166,9 +163,9 @@ const Menu: React.FC = () => {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-4 xl:col-span-3">
                 <Card>
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex flex-col md:flex-row gap-2 justify-between items-start md:items-center mb-4">
                         <h2 className="text-xl font-bold">Menu Engineering</h2>
                         <button onClick={() => handleOpenModal()} className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
                             <PlusCircle size={20} className="md:mr-2" />
@@ -253,7 +250,7 @@ const Menu: React.FC = () => {
                     </div>
                 </Card>
             </div>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-4 xl:col-span-1">
                 <Card>
                     <h3 className="text-lg font-semibold mb-3 flex items-center">
                         <Info size={16} className="mr-2 text-[var(--color-primary)]"/>

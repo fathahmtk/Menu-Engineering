@@ -1,29 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'%3E%3C/path%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'%3E%3C/path%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>iCAN | F&B Intelligence Platform</title>
+    <title>iCAN | F&B Costing Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       :root {
-        --font-sans: 'Poppins', sans-serif;
+        font-family: 'Poppins', sans-serif;
         --radius: 0.75rem;
         --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
       }
 
       [data-theme='dark'] {
         --color-background: #0f172a; /* slate-900 */
         --color-sidebar: #1e293b;    /* slate-800 */
         --color-card: #1e293b;       /* slate-800 */
-        --color-primary: #06b6d4;    /* cyan-500 */
-        --color-primary-hover: #0891b2; /* cyan-600 */
-        --color-primary-light: rgba(6, 182, 212, 0.1);
+        --color-primary: #3b82f6;    /* blue-500 */
+        --color-primary-hover: #2563eb; /* blue-600 */
+        --color-primary-light: rgba(59, 130, 246, 0.1);
         --color-primary-foreground: #FFFFFF;
         
         --color-text-primary: #e2e8f0;   /* slate-200 */
@@ -32,33 +32,33 @@
         
         --color-border: #334155;     /* slate-700 */
         --color-input: #0f172a;       /* slate-900 */
-        --color-ring: rgba(6, 182, 212, 0.5);
+        --color-ring: rgba(59, 130, 246, 0.5);
         
         --color-success: #22C55E;
         --color-warning: #F59E0B;
-        --color-danger: #dc2626; /* red-600 */
+        --color-danger: #ef4444; /* red-500 */
       }
 
       [data-theme='light'] {
-        --color-background: #f1f5f9; /* slate-100 */
+        --color-background: #f8fafc; /* slate-50 */
         --color-sidebar: #ffffff;
         --color-card: #ffffff;
-        --color-primary: #06b6d4;
-        --color-primary-hover: #0891b2;
-        --color-primary-light: rgba(6, 182, 212, 0.1);
-        --color-primary-foreground: #FFFFFF;
+        --color-primary: #2563eb; /* blue-600 */
+        --color-primary-hover: #1d4ed8; /* blue-700 */
+        --color-primary-light: #eff6ff; /* blue-50 */
+        --color-primary-foreground: #ffffff;
         
-        --color-text-primary: #0f172a;   /* slate-900 */
+        --color-text-primary: #020617;   /* slate-950 */
         --color-text-secondary: #475569; /* slate-600 */
-        --color-text-muted: #94a3b8;     /* slate-400 */
+        --color-text-muted: #64748b;     /* slate-500 */
         
         --color-border: #e2e8f0;     /* slate-200 */
         --color-input: #f8fafc;       /* slate-50 */
-        --color-ring: rgba(6, 182, 212, 0.5);
+        --color-ring: rgba(37, 99, 235, 0.4);
         
         --color-success: #16a34a; /* green-600 */
-        --color-warning: #f59e0b;
-        --color-danger: #dc2626;
+        --color-warning: #f59e0b; /* amber-500 */
+        --color-danger: #dc2626;  /* red-600 */
       }
 
 
@@ -74,6 +74,7 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         transition: background-color 0.3s, color 0.3s;
+        font-size: 15px;
       }
       
       /* Custom Scrollbar */
@@ -91,11 +92,8 @@
         background-color: var(--color-card);
         border: 1px solid var(--color-border);
         border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        transition: box-shadow 0.3s, background-color 0.3s, border-color 0.3s;
-      }
-      .ican-card:hover {
         box-shadow: var(--shadow-md);
+        transition: box-shadow 0.3s, background-color 0.3s, border-color 0.3s;
       }
 
       .ican-btn {
@@ -121,12 +119,12 @@
         background-color: var(--color-primary-hover);
       }
       .ican-btn-secondary {
-        background-color: transparent;
+        background-color: var(--color-card);
         color: var(--color-text-secondary);
         border-color: var(--color-border);
       }
       .ican-btn-secondary:hover {
-        background-color: var(--color-border);
+        background-color: var(--color-input);
         color: var(--color-text-primary);
       }
       .ican-btn-danger {
@@ -141,8 +139,6 @@
         cursor: not-allowed;
         transform: none !important;
         box-shadow: none !important;
-        background-color: var(--color-border) !important;
-        color: var(--color-text-muted) !important;
       }
 
       .ican-input, .ican-select {

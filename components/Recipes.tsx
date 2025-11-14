@@ -44,11 +44,10 @@ const RecipeFormModal: React.FC<{
         return [...new Set([...DEFAULT_UNITS, ...ingredientUnits.map(u => u.name)])]
     }, [ingredientUnits]);
 
-    // Fix: initialData is for a new recipe and has no 'id'. There is no need to filter sub-recipes when creating a new recipe.
     const subRecipes = useMemo(() => recipes, [recipes]);
 
     const recipeCost = useMemo(() => {
-        const tempRecipe: Recipe = { id: '', name, category, servings, ingredients, instructions: [], businessId: '' };
+        const tempRecipe: Recipe = { id: '', name, category, servings, ingredients, instructions: [], businessId: '', labourMinutes: 0, packagingCostPerServing: 0, wastageFactor: 0 };
         return calculateRecipeCost(tempRecipe);
     }, [ingredients, name, category, servings, calculateRecipeCost]);
 
@@ -144,7 +143,7 @@ const RecipeFormModal: React.FC<{
 
         const instructionSteps = instructions.split('\n').filter(line => line.trim() !== '');
         
-        onSave({ name, category, servings, targetSalePricePerServing, productionYield, productionUnit, ingredients, instructions: instructionSteps });
+        onSave({ name, category, servings, targetSalePricePerServing, productionYield, productionUnit, ingredients, instructions: instructionSteps, labourMinutes: 0, packagingCostPerServing: 0, wastageFactor: 0 });
         handleClose();
     };
 
@@ -273,8 +272,7 @@ const RecipeFormModal: React.FC<{
 };
 
 const Recipes: React.FC = () => {
-    // Fix: Added getRecipeById to destructuring
-    const { recipes, getInventoryItemById, getRecipeById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCost, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes, businesses } = useData();
+    const { recipes, getInventoryItemById, getRecipeById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCostBreakdown, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, inventory, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes, businesses } = useData();
     const { formatCurrency } = useCurrency();
     const { addNotification } = useNotification();
     const { setIsDirty, promptNavigation } = useUnsavedChanges();
@@ -626,6 +624,9 @@ const Recipes: React.FC = () => {
             instructions: r.instructions,
             targetSalePricePerServing: r.targetSalePricePerServing,
             ingredients: r.ingredients,
+            labourMinutes: 0,
+            packagingCostPerServing: 0,
+            wastageFactor: 0,
         }));
         
         return { data, errors };
@@ -639,7 +640,7 @@ const Recipes: React.FC = () => {
         if (!editedRecipe) return;
 
         const business = businesses.find(b => b.id === activeBusinessId);
-        const totalCost = calculateRecipeCost(editedRecipe);
+        const { rawMaterialCost } = calculateRecipeCostBreakdown(editedRecipe);
         
         const ingredientsWithDetails = editedRecipe.ingredients.map(ing => {
             let item, name, trimYield = 100;
@@ -651,15 +652,18 @@ const Recipes: React.FC = () => {
                 item = getRecipeById(ing.itemId);
                 name = item?.name ? `(Sub-Recipe) ${item.name}` : 'Unknown Sub-Recipe';
             }
-
-            if (!item) return { name: 'Unknown', quantity: ing.quantity, unit: ing.unit, cost: 0, percentage: 0, trimYield: 100, prepYield: 100, type: ing.type };
-            const cost = calculateRecipeCost({ ...editedRecipe, ingredients: [ing] });
-            const percentage = totalCost > 0 ? (cost / totalCost) * 100 : 0;
+            
+            // Create a temporary recipe with just this one ingredient to calculate its specific cost
+            const tempRecipe: Recipe = { ...editedRecipe, ingredients: [ing] };
+            const { rawMaterialCost: ingredientRMC } = calculateRecipeCostBreakdown(tempRecipe);
+            
+            const percentage = rawMaterialCost > 0 ? (ingredientRMC / rawMaterialCost) * 100 : 0;
+            
             return {
                 name,
                 quantity: ing.quantity,
                 unit: ing.unit,
-                cost,
+                cost: ingredientRMC,
                 percentage,
                 trimYield,
                 prepYield: ing.yieldPercentage || 100,
@@ -672,7 +676,7 @@ const Recipes: React.FC = () => {
             ingredientsWithDetails,
             business,
             formatCurrency,
-            calculateRecipeCost,
+            calculateRecipeCost: (r) => calculateRecipeCostBreakdown(r).rawMaterialCost,
         });
         
         const printWindow = window.open('', '_blank');
@@ -721,7 +725,7 @@ const Recipes: React.FC = () => {
         setInitialRecipeData(undefined); // Reset on close
     };
 
-    const handleDetailChange = (field: keyof Recipe, value: string | number | undefined) => {
+    const handleDetailChange = (field: keyof Recipe, value: string | number | boolean | undefined) => {
         if (!editedRecipe) return;
         setEditedRecipe({
             ...editedRecipe,
@@ -729,10 +733,9 @@ const Recipes: React.FC = () => {
         });
     };
 
-    const editedRecipeCost = editedRecipe ? calculateRecipeCost(editedRecipe) : 0;
-    const editedCostPerServing = (editedRecipe && editedRecipe.servings > 0) ? editedRecipeCost / editedRecipe.servings : 0;
-    const foodCostPercentage = (editedRecipe?.targetSalePricePerServing && editedRecipe.targetSalePricePerServing > 0) ? (editedCostPerServing / editedRecipe.targetSalePricePerServing) * 100 : 0;
-    const potentialProfit = (editedRecipe?.targetSalePricePerServing || 0) - editedCostPerServing;
+    const costBreakdown = useMemo(() => editedRecipe ? calculateRecipeCostBreakdown(editedRecipe) : null, [editedRecipe, calculateRecipeCostBreakdown]);
+    const foodCostPercentage = (costBreakdown && editedRecipe?.targetSalePricePerServing && editedRecipe.targetSalePricePerServing > 0) ? (costBreakdown.costPerServing / editedRecipe.targetSalePricePerServing) * 100 : 0;
+    const potentialProfit = (editedRecipe?.targetSalePricePerServing || 0) - (costBreakdown?.costPerServing || 0);
     
     return (
         <>
@@ -862,286 +865,355 @@ const Recipes: React.FC = () => {
                     </div>
                      <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="relative w-full md:max-w-xs">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={18} />
                             <input
                                 type="text"
                                 placeholder="Search recipes..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="ican-input pl-10"
-                                aria-label="Search recipes by name"
                             />
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={20} />
                         </div>
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                             <select
-                                id="category-filter"
-                                value={filterCategory}
-                                onChange={e => setFilterCategory(e.target.value)}
-                                className="ican-select flex-grow"
-                                aria-label="Filter by category"
-                            >
-                                <option value="all">All Categories</option>
-                                {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
-                            </select>
-                        </div>
+                         <select
+                            value={filterCategory}
+                            onChange={(e) => setFilterCategory(e.target.value)}
+                            className="ican-select w-full md:w-48"
+                        >
+                            <option value="all">All Categories</option>
+                            {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+                        </select>
                     </div>
-                    <ul className="space-y-2 max-h-[calc(65vh-120px)] overflow-y-auto">
-                        {filteredRecipes.length > 0 ? filteredRecipes.map(recipe => (
-                            <li
+
+                    <div className="space-y-2 max-h-[calc(100vh-220px)] overflow-y-auto pr-2">
+                         {filteredRecipes.length > 0 ? filteredRecipes.map(recipe => (
+                            <div
                                 key={recipe.id}
-                                className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedRecipe?.id === recipe.id ? 'bg-[var(--color-primary-light)]' : 'hover:bg-[var(--color-input)]'}`}
                                 onClick={() => handleSelectRecipe(recipe)}
+                                className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
+                                    selectedRecipe?.id === recipe.id
+                                        ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)] shadow-sm'
+                                        : 'bg-[var(--color-input)] border-[var(--color-border)] hover:border-[var(--color-primary)]/50'
+                                }`}
                             >
-                                <div className="font-semibold">{recipe.name}</div>
-                                <div className="text-xs text-[var(--color-text-muted)] mt-1">Cost/Serving: {formatCurrency(calculateRecipeCost(recipe) / (recipe.servings || 1))}</div>
-                            </li>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className={`font-semibold ${selectedRecipe?.id === recipe.id ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-primary)]'}`}>{recipe.name}</h3>
+                                        <p className="text-xs text-[var(--color-text-muted)]">{recipe.category}</p>
+                                    </div>
+                                    <div className="text-right flex-shrink-0 ml-2">
+                                        <p className="font-bold text-sm">{formatCurrency(calculateRecipeCostBreakdown(recipe).costPerServing)}</p>
+                                        <p className="text-xs text-[var(--color-text-muted)]">/ serving</p>
+                                    </div>
+                                </div>
+                            </div>
                         )) : (
-                           <div className="text-center py-10 text-[var(--color-text-muted)]">
-                                <p>No recipes match your search.</p>
-                           </div>
+                            <div className="text-center py-10 text-[var(--color-text-muted)]">
+                                <p>No recipes found.</p>
+                            </div>
                         )}
-                    </ul>
+                    </div>
                 </Card>
             </div>
-            
-            <div className={`${!editedRecipe ? 'hidden lg:block' : 'block'} lg:col-span-2`}>
-                 <Card noPadding className="flex flex-col max-h-[calc(100vh-8rem)]">
-                    {editedRecipe ? (
-                        <>
-                        <div className="flex-1 overflow-y-auto p-4 md:p-6">
-                            <button 
-                                onClick={() => {
-                                    promptNavigation(() => {
-                                        setEditedRecipe(null);
-                                        setSelectedRecipe(null);
-                                    });
-                                }}
-                                className="lg:hidden flex items-center text-sm text-[var(--color-primary)] hover:opacity-80 font-semibold mb-3 -ml-1"
-                            >
-                                <ChevronLeft size={20} />
-                                Back to list
-                            </button>
-                            <div className="flex justify-between items-start mb-4">
-                                 <h2 className="text-2xl font-bold">{editedRecipe.name}</h2>
-                                 <div className="flex items-center space-x-2">
-                                     <button onClick={handleDownloadCostingSheet} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Download Costing Sheet as PDF">
-                                        <Download size={20} className="text-[var(--color-text-muted)]" />
-                                    </button>
-                                    <button onClick={() => setModalState({ type: 'saveTemplate'})} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Save as Template">
-                                        <FileText size={20} className="text-[var(--color-text-muted)]" />
-                                    </button>
-                                    <button onClick={() => setModalState({ type: 'duplicate'})} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Duplicate Recipe">
-                                        <Copy size={20} className="text-[var(--color-text-muted)]" />
-                                    </button>
-                                    <button onClick={() => setModalState({ type: 'delete'})} className="p-2 rounded-full hover:bg-[var(--color-input)]" title="Delete Recipe">
-                                        <Trash2 size={20} className="text-[var(--color-text-muted)]" />
-                                    </button>
-                                 </div>
-                            </div>
 
-                             <div className="relative group w-full h-48 bg-[var(--color-input)] rounded-lg mb-6 flex items-center justify-center overflow-hidden border border-dashed border-[var(--color-border)]">
+            <div className={`lg:col-span-2 ${!editedRecipe ? 'hidden lg:block' : 'block'}`}>
+            {editedRecipe && costBreakdown ? (
+            <div className="space-y-6">
+                 {/* Header */}
+                 <Card noPadding>
+                    <div className="flex flex-col md:flex-row justify-between md:items-center p-4">
+                        <div className="flex items-center mb-4 md:mb-0">
+                             <button className="lg:hidden mr-4 text-[var(--color-text-muted)]" onClick={() => setEditedRecipe(null)} aria-label="Back to list">
+                                <ChevronLeft size={24} />
+                             </button>
+                             <div className="relative group w-16 h-16 mr-4 flex-shrink-0">
                                 {isUploading ? (
-                                    <div className="flex flex-col items-center text-[var(--color-primary)]">
-                                        <Loader2 size={32} className="animate-spin"/>
-                                        <p className="mt-2 text-sm">Processing...</p>
-                                    </div>
+                                    <div className="w-full h-full bg-[var(--color-input)] rounded-lg flex items-center justify-center"><Loader2 size={24} className="animate-spin text-[var(--color-primary)]"/></div>
                                 ) : editedRecipe.imageUrl ? (
                                     <>
-                                        <img src={editedRecipe.imageUrl} alt={editedRecipe.name} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-4">
-                                            <label htmlFor="image-upload" className="cursor-pointer text-white bg-black/30 p-3 rounded-full hover:bg-black/50" title="Change image">
-                                                <Edit size={20} />
-                                                <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                                            </label>
-                                            <button onClick={handleImageRemove} className="text-white bg-black/30 p-3 rounded-full hover:bg-black/50" title="Remove image">
-                                                <Trash2 size={20} />
-                                            </button>
+                                        <img src={editedRecipe.imageUrl} alt={editedRecipe.name} className="w-16 h-16 object-cover rounded-lg" />
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+                                             <button onClick={handleImageRemove} className="text-white hover:text-[var(--color-danger)] p-1 rounded-full bg-black/30"><Trash2 size={18} /></button>
                                         </div>
                                     </>
                                 ) : (
-                                    <label htmlFor="image-upload" className="cursor-pointer text-center text-[var(--color-text-muted)] p-4 rounded-lg hover:bg-[var(--color-border)] transition-colors w-full h-full flex flex-col justify-center items-center">
-                                        <UploadCloud size={32} className="mx-auto" />
-                                        <span className="mt-2 block text-sm font-semibold text-[var(--color-primary)]">Upload an image</span>
-                                        <p className="text-xs">PNG, JPG up to 5MB</p>
-                                        <input id="image-upload" type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleImageUpload} />
+                                    <label htmlFor="image-upload" className="w-16 h-16 bg-[var(--color-input)] border-2 border-dashed border-[var(--color-border)] rounded-lg flex items-center justify-center cursor-pointer hover:border-[var(--color-primary)]">
+                                        <UploadCloud size={24} className="text-[var(--color-text-muted)]"/>
                                     </label>
                                 )}
+                                <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                             </div>
-                            
-                            <div className="bg-[var(--color-input)] p-4 rounded-lg border border-[var(--color-border)] mb-6">
-                                <h3 className="text-lg font-semibold mb-4 text-[var(--color-text-primary)]">Costing Details</h3>
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                                    <div className="bg-[var(--color-background)] p-3 rounded-md">
-                                        <label className="text-xs text-[var(--color-text-muted)]">Total Recipe Cost</label>
-                                        <p className="text-lg font-bold text-[var(--color-primary)]">{formatCurrency(editedRecipeCost)}</p>
-                                    </div>
-                                     <div className="bg-[var(--color-background)] p-3 rounded-md">
-                                        <label className="text-xs text-[var(--color-text-muted)]">Cost / Serving</label>
-                                        <p className="text-lg font-bold">{formatCurrency(editedCostPerServing)}</p>
-                                    </div>
-                                    <div className="bg-[var(--color-background)] p-3 rounded-md">
-                                        <label className="text-xs text-[var(--color-text-muted)] flex items-center">
-                                            Food Cost %
-                                            <span className="group relative ml-1.5">
-                                                <Info size={12} />
-                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 text-xs text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                                    (Cost per Serving / Target Price) * 100
-                                                </span>
-                                            </span>
-                                        </label>
-                                        <p className={`text-lg font-bold ${foodCostPercentage > settings.foodCostTarget ? 'text-[var(--color-danger)]' : 'text-[var(--color-success)]'}`}>{foodCostPercentage.toFixed(1)}%</p>
-                                    </div>
-                                    <div className="bg-[var(--color-background)] p-3 rounded-md">
-                                        <label className="text-xs text-[var(--color-text-muted)]">Potential Profit</label>
-                                        <p className={`text-lg font-bold ${potentialProfit > 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{formatCurrency(potentialProfit)}</p>
+                            <div>
+                                <input 
+                                    type="text"
+                                    value={editedRecipe.name}
+                                    onChange={(e) => handleDetailChange('name', e.target.value)}
+                                    className="text-2xl font-bold bg-transparent border-none p-0 focus:ring-0 w-full text-[var(--color-text-primary)]"
+                                />
+                                <input 
+                                    type="text"
+                                    value={editedRecipe.category}
+                                    onChange={(e) => handleDetailChange('category', e.target.value)}
+                                    className="text-sm bg-transparent border-none p-0 focus:ring-0 w-full text-[var(--color-text-muted)]"
+                                    list="recipe-categories-edit"
+                                />
+                                <datalist id="recipe-categories-edit">
+                                    {categories.map((cat) => <option key={cat.id} value={cat.name} />)}
+                                </datalist>
+                            </div>
+                        </div>
+                        <div className="flex items-center space-x-1 flex-shrink-0 self-end md:self-center">
+                           {isDirty && (
+                           <>
+                                <button onClick={handleCancelChanges} title="Cancel changes" className="ican-btn ican-btn-secondary p-2"><XCircle size={20} /></button>
+                                <button onClick={handleSaveChanges} title="Save changes" className="ican-btn ican-btn-primary p-2"><Save size={20} /></button>
+                           </>
+                           )}
+                           <div className="border-l border-[var(--color-border)] h-8 mx-2"></div>
+                           <button onClick={() => setModalState({ type: 'duplicate' })} title="Duplicate" className="ican-btn ican-btn-secondary p-2"><Copy size={18} /></button>
+                           <button onClick={() => setModalState({ type: 'saveTemplate' })} title="Save as Template" className="ican-btn ican-btn-secondary p-2"><FileText size={18} /></button>
+                           <button onClick={() => setModalState({ type: 'delete' })} title="Delete" className="ican-btn ican-btn-danger p-2"><Trash2 size={18} /></button>
+                        </div>
+                    </div>
+                 </Card>
+
+                 {/* Cost Breakdown */}
+                 <Card>
+                    <h3 className="text-lg font-bold mb-4">Total True Cost Breakdown</h3>
+                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 text-center">
+                        <div className="bg-[var(--color-input)] p-3 rounded-lg">
+                            <p className="text-xs text-[var(--color-text-muted)]">Adjusted Materials</p>
+                            <p className="font-bold text-lg">{formatCurrency(costBreakdown.adjustedRMC)}</p>
+                        </div>
+                        <div className="bg-[var(--color-input)] p-3 rounded-lg">
+                            <p className="text-xs text-[var(--color-text-muted)]">Direct Labour</p>
+                            <p className="font-bold text-lg">{formatCurrency(costBreakdown.labourCost)}</p>
+                        </div>
+                        <div className="bg-[var(--color-input)] p-3 rounded-lg">
+                            <p className="text-xs text-[var(--color-text-muted)]">Overheads (V+F)</p>
+                            <p className="font-bold text-lg">{formatCurrency(costBreakdown.variableOverheadCost + costBreakdown.fixedOverheadCost)}</p>
+                        </div>
+                        <div className="bg-[var(--color-input)] p-3 rounded-lg">
+                            <p className="text-xs text-[var(--color-text-muted)]">Packaging</p>
+                            <p className="font-bold text-lg">{formatCurrency(costBreakdown.packagingCost)}</p>
+                        </div>
+                        <div className="bg-[var(--color-primary-light)] p-3 rounded-lg col-span-2">
+                            <p className="text-xs text-[var(--color-primary)]/80">Total Cost / Serving</p>
+                            <p className="font-bold text-2xl text-[var(--color-primary)]">{formatCurrency(costBreakdown.costPerServing)}</p>
+                        </div>
+                    </div>
+                 </Card>
+
+                 {/* Details & Profitability */}
+                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <Card>
+                        <h3 className="text-lg font-bold mb-4">Recipe Details</h3>
+                        <div className="space-y-4 text-sm">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-[var(--color-text-muted)]">Servings</label>
+                                    <input type="number" min="1" value={editedRecipe.servings} onChange={(e) => handleDetailChange('servings', Number(e.target.value))} className="ican-input mt-1 p-2 h-auto" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-[var(--color-text-muted)]">Wastage Factor</label>
+                                    <div className="relative">
+                                      <input type="number" min="0" value={editedRecipe.wastageFactor} onChange={(e) => handleDetailChange('wastageFactor', Number(e.target.value))} className="ican-input mt-1 p-2 h-auto pr-6" />
+                                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">%</span>
                                     </div>
                                 </div>
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                     <div>
-                                        <label htmlFor="servings" className="block text-sm font-medium text-[var(--color-text-muted)]">Servings</label>
-                                        <input type="number" id="servings" value={editedRecipe.servings} onChange={(e) => handleDetailChange('servings', parseInt(e.target.value) || 0)} min="1" className="ican-input mt-1" />
-                                     </div>
-                                      <div>
-                                        <label htmlFor="targetPrice" className="block text-sm font-medium text-[var(--color-text-muted)]">Target Sale Price</label>
-                                        <div className="relative">
-                                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] text-sm">{useCurrency().currency}</span>
-                                           <input type="number" id="targetPrice" value={editedRecipe.targetSalePricePerServing || ''} onChange={(e) => handleDetailChange('targetSalePricePerServing', parseFloat(e.target.value) || 0)} min="0" step="0.01" className="ican-input mt-1 pl-10" />
-                                        </div>
-                                     </div>
-                                 </div>
-                                 <div className="mt-4">
-                                     <h4 className="text-sm font-medium text-[var(--color-text-muted)]">Production Details (for Sub-Recipes)</h4>
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
-                                        <div>
-                                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Production Yield</label>
-                                            <input type="number" min="0" value={editedRecipe.productionYield || ''} onChange={(e) => handleDetailChange('productionYield', parseFloat(e.target.value) || undefined)} className="ican-input mt-1" placeholder="e.g. 5" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Production Unit</label>
-                                            <input type="text" value={editedRecipe.productionUnit || ''} onChange={(e) => handleDetailChange('productionUnit', e.target.value)} className="ican-input mt-1" placeholder="e.g. kg, L" />
-                                        </div>
-                                    </div>
-                                 </div>
-                            </div>
-                            
-                            <div className="flex justify-between items-center mt-6 mb-2">
-                                 <h3 className="text-lg font-semibold">Ingredients ({editedRecipe.ingredients.length})</h3>
-                                 <button
-                                    onClick={handleAddIngredientToRecipe}
-                                    disabled={inventory.length === 0}
-                                    className={`ican-btn ican-btn-secondary py-1.5 px-3 text-sm ${inventory.length === 0 ? 'ican-btn-disabled' : ''}`}
-                                    title={inventory.length === 0 ? "Add items to your inventory first" : ""}
-                                >
-                                    <Plus size={16} className="mr-1.5" /> Add Ingredient
-                                </button>
-                            </div>
-                            <div className="border border-[var(--color-border)] rounded-lg">
-                                <div className="hidden md:grid md:grid-cols-[1fr,80px,80px,80px,80px,40px] gap-x-2 px-3 py-2 text-sm bg-[var(--color-input)] text-[var(--color-text-muted)] font-semibold">
-                                    <span>Ingredient</span>
-                                    <span>Quantity</span>
-                                    <span>Unit</span>
-                                    <span>Yield %</span>
-                                    <span className="text-right">Cost</span>
-                                    <span></span>
+                                <div>
+                                    <label className="block text-xs font-medium text-[var(--color-text-muted)]">Labour (mins/serving)</label>
+                                    <input type="number" min="0" step="0.5" value={editedRecipe.labourMinutes} onChange={(e) => handleDetailChange('labourMinutes', Number(e.target.value))} className="ican-input mt-1 p-2 h-auto" />
                                 </div>
-                                <div className="divide-y md:divide-y-0 divide-[var(--color-border)]">
-                                    {editedRecipe.ingredients.map((ing, index) => {
-                                        const item = ing.type === 'item' ? getInventoryItemById(ing.itemId) : getRecipeById(ing.itemId);
-                                        const ingredientCost = item ? calculateRecipeCost({ ...editedRecipe, ingredients: [ing] }) : 0;
-                                        return (
-                                            <div key={ing.id} className={`p-3 md:p-2 md:grid md:grid-cols-[1fr,80px,80px,80px,80px,40px] md:gap-x-2 md:items-center hover:bg-[var(--color-input)] space-y-2 md:space-y-0 transition-colors`}>
-                                                <div>
-                                                    <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Ingredient</label>
-                                                    <select value={`${ing.type}::${ing.itemId}`} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select text-sm">
-                                                       <optgroup label="Inventory Items">
-                                                        {inventory.map(invItem => <option key={invItem.id} value={`item::${invItem.id}`}>{invItem.name}</option>)}
-                                                       </optgroup>
-                                                       <optgroup label="Sub-Recipes">
-                                                         {subRecipes.map(rec => <option key={rec.id} value={`recipe::${rec.id}`}>{rec.name}</option>)}
-                                                       </optgroup>
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Quantity</label>
-                                                    <input type="number" value={ing.quantity} min="0" onChange={e => handleIngredientChange(index, 'quantity', parseFloat(e.target.value) || 0)} className="ican-input text-sm" />
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Unit</label>
-                                                    <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="ican-select text-sm">
-                                                        {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
-                                                    </select>
-                                                </div>
-                                                 <div>
-                                                    <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Prep Yield %</label>
-                                                    <input type="number" value={ing.yieldPercentage || 100} min="0" max="100" onChange={e => handleIngredientChange(index, 'yieldPercentage', parseFloat(e.target.value) || 0)} className="ican-input text-sm" title="Preparation Yield: usable portion after cooking, chopping, etc."/>
-                                                </div>
-                                                <div className="flex justify-between items-center md:block md:text-right">
-                                                    <label className="text-xs font-medium text-[var(--color-text-muted)] md:hidden">Cost</label>
-                                                    {item ? <span className="font-medium text-sm">{formatCurrency(ingredientCost)}</span> : <span className="text-[var(--color-danger)] text-xs">Item not found</span>}
-                                                </div>
-                                                <div className="flex justify-end md:justify-center">
-                                                    <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-[var(--color-text-muted)]/70 hover:text-[var(--color-danger)]"><XCircle size={18} /></button>
-                                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-[var(--color-text-muted)]">Packaging (/serving)</label>
+                                    <input type="number" min="0" step="0.01" value={editedRecipe.packagingCostPerServing} onChange={(e) => handleDetailChange('packagingCostPerServing', Number(e.target.value))} className="ican-input mt-1 p-2 h-auto" />
+                                </div>
+                            </div>
+                             <div className="pt-4 border-t border-[var(--color-border)]">
+                                <h5 className="font-medium text-[var(--color-text-secondary)] mb-2 flex items-center">
+                                    Sub-Recipe Production
+                                    <span className="group relative ml-1.5">
+                                        <Info size={14} className="cursor-help text-[var(--color-text-muted)]" />
+                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 text-xs text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                            If you plan to use this recipe as an ingredient in other recipes, define its output here. E.g., a batch of sauce might yield 5 Liters.
+                                        </span>
+                                    </span>
+                                </h5>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-[var(--color-text-muted)]">Production Yield</label>
+                                        <input type="number" min="0" value={editedRecipe.productionYield || ''} onChange={(e) => handleDetailChange('productionYield', Number(e.target.value) || undefined)} className="ican-input mt-1 p-2 h-auto" placeholder="e.g., 5" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-[var(--color-text-muted)]">Production Unit</label>
+                                        <input type="text" value={editedRecipe.productionUnit || ''} onChange={(e) => handleDetailChange('productionUnit', e.target.value)} className="ican-input mt-1 p-2 h-auto" placeholder="e.g., kg, L" />
+                                    </div>
+                                </div>
+                            </div>
+                             <div className="pt-4 border-t border-[var(--color-border)]">
+                                <div className="flex items-center justify-between">
+                                    <label htmlFor="useCustomLabourCost" className="font-medium text-[var(--color-text-secondary)] cursor-pointer">
+                                        Use Custom Labour Cost
+                                    </label>
+                                    <input
+                                        type="checkbox"
+                                        id="useCustomLabourCost"
+                                        checked={!!editedRecipe.useCustomLabourCost}
+                                        onChange={(e) => handleDetailChange('useCustomLabourCost', e.target.checked)}
+                                        className="h-4 w-4 rounded border-gray-400 text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                                    />
+                                </div>
+                                {editedRecipe.useCustomLabourCost && (
+                                    <div className="mt-4 space-y-3 bg-[var(--color-input)] p-3 rounded-lg" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+                                        <p className="text-xs text-[var(--color-text-muted)]">Override global financial settings for this recipe's labour calculation.</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-[var(--color-text-muted)]">Monthly Salary</label>
+                                                <input
+                                                    type="number"
+                                                    value={editedRecipe.customLabourSalary || ''}
+                                                    onChange={(e) => handleDetailChange('customLabourSalary', Number(e.target.value))}
+                                                    className="ican-input mt-1 p-2 h-auto"
+                                                />
                                             </div>
-                                        );
-                                    })}
+                                            <div>
+                                                <label className="block text-xs font-medium text-[var(--color-text-muted)]">Working Days</label>
+                                                <input
+                                                    type="number"
+                                                    value={editedRecipe.customWorkingDays || ''}
+                                                    onChange={(e) => handleDetailChange('customWorkingDays', Number(e.target.value))}
+                                                    className="ican-input mt-1 p-2 h-auto"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-[var(--color-text-muted)]">Hours / Day</label>
+                                                <input
+                                                    type="number"
+                                                    value={editedRecipe.customWorkingHours || ''}
+                                                    onChange={(e) => handleDetailChange('customWorkingHours', Number(e.target.value))}
+                                                    className="ican-input mt-1 p-2 h-auto"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
+                    <Card>
+                         <h3 className="text-lg font-bold mb-4">Profitability Analysis</h3>
+                         <div className="space-y-4 text-sm">
+                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-[var(--color-text-muted)]">Target Sale Price</label>
+                                    <input type="number" min="0" step="0.01" value={editedRecipe.targetSalePricePerServing} onChange={(e) => handleDetailChange('targetSalePricePerServing', Number(e.target.value))} className="ican-input mt-1 p-2 h-auto" />
+                                </div>
+                                 <div className="text-center bg-[var(--color-input)] p-2 rounded-lg">
+                                    <p className="text-xs text-[var(--color-text-muted)]">Food Cost %</p>
+                                    <p className="font-bold text-lg">{foodCostPercentage.toFixed(1)}%</p>
                                 </div>
                             </div>
-                            
-                            <div className="flex justify-between items-center mt-6 mb-2">
-                                 <h3 className="text-lg font-semibold">Instructions</h3>
-                                 <button onClick={handleAddInstruction} className="flex items-center text-sm text-[var(--color-primary)] hover:opacity-80 font-semibold">
-                                    <Plus size={16} className="mr-1" /> Add Step
-                                </button>
+                            <div className="bg-[var(--color-input)] p-3 rounded-lg text-center">
+                                <p className="text-xs text-[var(--color-text-muted)]">Potential Profit / Serving</p>
+                                <p className={`font-bold text-xl ${potentialProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{formatCurrency(potentialProfit)}</p>
                             </div>
-                            <ol className="list-decimal list-inside space-y-2">
-                               {editedRecipe.instructions.map((instruction, index) => (
-                                   <li 
-                                       key={index} 
-                                       className={`flex items-start group p-2 rounded-md transition-shadow ${draggedIndex === index ? 'shadow-lg bg-[var(--color-primary-light)]' : ''}`}
-                                       draggable
-                                       onDragStart={() => { dragItem.current = index; setDraggedIndex(index); }}
-                                       onDragEnter={() => dragOverItem.current = index}
-                                       onDragEnd={handleDragSort}
-                                       onDragOver={(e) => e.preventDefault()}
-                                    >
-                                       <GripVertical className="mr-2 text-[var(--color-text-muted)] cursor-grab flex-shrink-0 mt-1" size={18} />
-                                       <span className="mr-2 text-[var(--color-text-muted)] font-semibold mt-1">{index + 1}.</span>
-                                       <textarea 
-                                            value={instruction}
-                                            onChange={(e) => handleInstructionChange(index, e.target.value)}
-                                            rows={Math.max(1, Math.ceil(instruction.length / 50))}
-                                            className="flex-grow p-1 border border-transparent hover:border-[var(--color-border)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] rounded-md transition-colors w-full text-[var(--color-text-secondary)] bg-transparent resize-none"
-                                       />
-                                       <button onClick={() => handleRemoveInstruction(index)} className="ml-2 text-[var(--color-text-muted)]/60 hover:text-[var(--color-danger)] opacity-0 group-hover:opacity-100 transition-opacity mt-1">
-                                           <XCircle size={18} />
-                                       </button>
-                                   </li>
-                               ))}
-                            </ol>
-                        </div>
-                        {isDirty && (
-                            <div className="mt-auto p-4 md:p-6 border-t border-[var(--color-border)] bg-[var(--color-card)] flex justify-between items-center">
-                                <span className="text-sm font-semibold text-[var(--color-primary)]">You have unsaved changes.</span>
-                                <div className="flex space-x-2">
-                                <button onClick={handleCancelChanges} className="ican-btn ican-btn-secondary">Discard</button>
-                                <button onClick={handleSaveChanges} className="ican-btn ican-btn-primary">Save Changes</button>
-                                </div>
-                            </div>
-                        )}
-                        </>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-[var(--color-text-muted)] p-8 text-center">
-                            <FileText size={48} className="mb-4 text-[var(--color-border)]" />
-                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">No Recipe Selected</h3>
-                            <p className="max-w-xs mt-1">Select a recipe from the list to view its details, or create a new one to get started.</p>
-                             <button onClick={() => { setIsNewRecipeModalOpen(true); }} className="mt-4 ican-btn ican-btn-primary">
-                                <PlusCircle size={20} className="mr-2" />
-                                Create Recipe
-                            </button>
-                        </div>
-                    )}
+                         </div>
+                    </Card>
+                 </div>
+
+                 {/* Ingredients */}
+                 <Card>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold">Ingredients</h3>
+                        <button onClick={handleAddIngredientToRecipe} className="ican-btn ican-btn-secondary py-1 px-3 text-sm" disabled={inventory.length === 0}><PlusCircle size={16} className="mr-1.5"/>Add Ingredient</button>
+                    </div>
+                     <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                       {editedRecipe.ingredients.map((ing, index) => (
+                           <div key={ing.id} className="grid grid-cols-[1fr,80px,80px,80px,auto] gap-2 items-center">
+                               <select value={`${ing.type}::${ing.itemId}`} onChange={e => handleIngredientChange(index, 'itemId', e.target.value)} className="ican-select">
+                                   <optgroup label="Inventory Items">
+                                    {inventory.map(item => <option key={item.id} value={`item::${item.id}`}>{item.name}</option>)}
+                                   </optgroup>
+                                   <optgroup label="Sub-Recipes">
+                                     {subRecipes.map(item => <option key={item.id} value={`recipe::${item.id}`}>{item.name}</option>)}
+                                   </optgroup>
+                               </select>
+                               <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', parseFloat(e.target.value) || 0)} className="ican-input" placeholder="Qty"/>
+                               <select value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="ican-select">
+                                   {allUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                               </select>
+                               <input type="number" value={ing.yieldPercentage || 100} onChange={e => handleIngredientChange(index, 'yieldPercentage', parseFloat(e.target.value) || 0)} className="ican-input" placeholder="Yield %" title="Preparation Yield %"/>
+                               <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)]"><X size={18} /></button>
+                           </div>
+                       ))}
+                    </div>
+                 </Card>
+                 
+                 {/* Instructions */}
+                 <Card>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold">Instructions</h3>
+                        <button onClick={handleAddInstruction} className="ican-btn ican-btn-secondary py-1 px-3 text-sm"><PlusCircle size={16} className="mr-1.5"/>Add Step</button>
+                    </div>
+                     <ol className="space-y-3">
+                        {editedRecipe.instructions.map((inst, index) => (
+                          <li key={index}
+                              draggable
+                              onDragStart={() => dragItem.current = index}
+                              onDragEnter={(e) => { e.preventDefault(); dragOverItem.current = index; setDraggedIndex(index); }}
+                              onDragEnd={handleDragSort}
+                              onDragOver={e => e.preventDefault()}
+                              className={`flex items-start group transition-all p-2 rounded-lg ${draggedIndex === index ? 'bg-[var(--color-input)]' : ''}`}>
+                             <span className="text-sm font-semibold text-[var(--color-text-muted)] mr-3 pt-1">{index + 1}.</span>
+                             <textarea 
+                                value={inst} 
+                                onChange={(e) => handleInstructionChange(index, e.target.value)}
+                                rows={Math.max(1, Math.ceil(inst.length / 50))} // Auto-resize
+                                className="w-full text-sm bg-transparent focus:outline-none focus:ring-0 resize-none leading-relaxed p-1 rounded-md focus:bg-[var(--color-input)]"/>
+                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                                <button onClick={() => handleRemoveInstruction(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)] p-1"><Trash2 size={16}/></button>
+                                <GripVertical size={16} className="cursor-grab text-[var(--color-text-muted)]"/>
+                             </div>
+                          </li>
+                        ))}
+                     </ol>
+                 </Card>
+
+                 {/* Cost History */}
+                <Card>
+                    <div className="flex justify-between items-center mb-4">
+                         <h3 className="text-lg font-bold flex items-center"><TrendingUp size={20} className="mr-2 text-[var(--color-primary)]"/> Cost History</h3>
+                         <div className="flex items-center space-x-2">
+                           <button onClick={handleDownloadCostingSheet} className="ican-btn ican-btn-secondary text-sm p-2"><Download size={16} /></button>
+                           <button onClick={() => setIsHistoryVisible(!isHistoryVisible)} className="ican-btn ican-btn-secondary p-2">{isHistoryVisible ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}</button>
+                         </div>
+                    </div>
+                     {isHistoryVisible && (
+                        <ResponsiveContainer width="100%" height={200}>
+                            <LineChart data={editedRecipe.costHistory}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                                <XAxis dataKey="date" tickFormatter={(d) => new Date(d).toLocaleDateString()} tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}/>
+                                <YAxis tickFormatter={(v) => formatCurrency(v)} tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} />
+                                <Tooltip
+                                  formatter={(value: number) => formatCurrency(value)}
+                                  contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', color: 'var(--color-text-primary)', boxShadow: 'var(--shadow-md)' }}
+                                />
+                                <Line type="monotone" dataKey="cost" stroke="var(--color-primary)" strokeWidth={2} name="Total Cost" />
+                            </LineChart>
+                        </ResponsiveContainer>
+                     )}
                 </Card>
+            </div>
+            ) : (
+                <Card className="flex flex-col items-center justify-center text-center h-[calc(100vh-120px)]">
+                     <ListChecks size={64} className="text-[var(--color-border)] mb-4"/>
+                     <h2 className="text-xl font-bold">Select a Recipe</h2>
+                     <p className="text-[var(--color-text-muted)] mt-2 max-w-xs">Choose a recipe from the list to view its details, manage ingredients, and analyze costs.</p>
+                     <button onClick={() => setIsNewRecipeModalOpen(true)} className="mt-6 ican-btn ican-btn-primary">
+                        Create Your First Recipe
+                    </button>
+                </Card>
+            )}
             </div>
         </div>
         </>

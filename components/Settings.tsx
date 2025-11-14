@@ -6,13 +6,14 @@ import { useTheme } from '../hooks/useTheme';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useCurrency } from '../hooks/useCurrencyContext';
 import { useNotification } from '../hooks/useNotificationContext';
-import { Business, RecipeCategory, IngredientUnit, UnitConversion } from '../types';
+import { Business, RecipeCategory, IngredientUnit, UnitConversion, StaffMember, Overhead, AppSettings } from '../types';
 import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
-import { Edit3, Trash2, Sun, Moon, AlertTriangle, Building, Settings as SettingsIcon, Database, List } from 'lucide-react';
+import { Edit3, Trash2, Sun, Moon, AlertTriangle, Building, Settings as SettingsIcon, Database, List, DollarSign, PlusCircle, BarChart3 } from 'lucide-react';
 
 const TABS = [
   { id: 'business', label: 'Business Details', icon: <Building size={18} /> },
+  { id: 'financials', label: 'Financials', icon: <DollarSign size={18} /> },
   { id: 'preferences', label: 'Preferences', icon: <SettingsIcon size={18} /> },
   { id: 'data', label: 'Data Management', icon: <Database size={18} /> },
   { id: 'lists', label: 'Manage Lists', icon: <List size={18} /> },
@@ -21,24 +22,19 @@ const TABS = [
 const Settings: React.FC = () => {
     const [activeTab, setActiveTab] = useState('business');
     const { businesses, activeBusinessId, updateBusiness } = useData();
-    const { user } = useAuth();
     const { addNotification } = useNotification();
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
     const activeBusiness = businesses.find(b => b.id === activeBusinessId);
 
     const handleResetData = () => {
-        // In a real app, this would be a destructive backend operation.
-        // For this mock app, we'll clear localStorage and reload.
         localStorage.clear();
         window.location.reload();
     };
     
     const handleExportData = () => {
-        // This is a simplified export. In a real app, you'd gather all data from context.
         const dataToExport = {
             businesses,
-            // ... include other data like inventory, recipes etc.
         };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
         const downloadAnchorNode = document.createElement('a');
@@ -76,6 +72,7 @@ const Settings: React.FC = () => {
             <div className="lg:col-span-3">
                 <Card>
                     {activeTab === 'business' && <BusinessDetailsTab business={activeBusiness} updateBusiness={updateBusiness} addNotification={addNotification} />}
+                    {activeTab === 'financials' && <FinancialsTab />}
                     {activeTab === 'preferences' && <PreferencesTab />}
                     {activeTab === 'data' && <DataManagementTab onExport={handleExportData} onReset={() => setIsResetConfirmOpen(true)} />}
                     {activeTab === 'lists' && <ManageListsTab />}
@@ -145,20 +142,272 @@ const BusinessDetailsTab: React.FC<{ business?: Business, updateBusiness: (b: Bu
     );
 };
 
+const FinancialsTab: React.FC = () => {
+    const { settings, updateSettings } = useAppSettings();
+    const { staffMembers, addStaffMember, updateStaffMember, deleteStaffMember, overheads, addOverhead, updateOverhead, deleteOverhead } = useData();
+    const { formatCurrency } = useCurrency();
+    const { addNotification } = useNotification();
+    
+    const [isStaffModalOpen, setStaffModalOpen] = useState(false);
+    const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+
+    const [isOverheadModalOpen, setOverheadModalOpen] = useState(false);
+    const [editingOverhead, setEditingOverhead] = useState<Overhead | null>(null);
+
+    const handleMetricChange = (field: keyof AppSettings, value: string) => {
+        updateSettings({ [field]: Number(value) || 0 });
+    };
+
+    // Labour Cost calculations
+    const totalMonthlySalary = useMemo(() => staffMembers.reduce((sum, s) => sum + s.monthlySalary, 0), [staffMembers]);
+    const totalMonthlyHours = settings.workingDaysPerMonth * settings.hoursPerDay;
+    const blendedRatePerHour = totalMonthlyHours > 0 ? totalMonthlySalary / totalMonthlyHours : 0;
+
+    // Overhead Cost calculations
+    const totalVOH = useMemo(() => overheads.filter(o => o.type === 'Variable').reduce((sum, o) => sum + o.monthlyCost, 0), [overheads]);
+    const totalFOH = useMemo(() => overheads.filter(o => o.type === 'Fixed').reduce((sum, o) => sum + o.monthlyCost, 0), [overheads]);
+    const vohPerDish = settings.totalDishesProduced > 0 ? totalVOH / settings.totalDishesProduced : 0;
+    const fohPerDish = settings.totalDishesSold > 0 ? totalFOH / settings.totalDishesSold : 0;
+
+    return (
+        <div className="space-y-8">
+            <h3 className="text-xl font-bold">Financials & Costing Parameters</h3>
+            
+            {/* Labour Section */}
+            <div className="p-4 border border-[var(--color-border)] rounded-lg space-y-6">
+                <h4 className="text-lg font-semibold">Labour Configuration</h4>
+                
+                <div>
+                    <h5 className="font-semibold text-[var(--color-text-secondary)]">Working Schedule</h5>
+                    <p className="text-sm text-[var(--color-text-muted)] mb-4">Set the standard monthly working schedule for your business. This is used to calculate the blended labour rate.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Working Days / Month</label>
+                            <input type="number" value={settings.workingDaysPerMonth} onChange={e => handleMetricChange('workingDaysPerMonth', e.target.value)} className="ican-input mt-1"/>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Hours / Day</label>
+                            <input type="number" value={settings.hoursPerDay} onChange={e => handleMetricChange('hoursPerDay', e.target.value)} className="ican-input mt-1"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div className="flex justify-between items-center mb-2">
+                        <h5 className="font-semibold text-[var(--color-text-secondary)]">Staff Members</h5>
+                        <button onClick={() => { setEditingStaff(null); setStaffModalOpen(true); }} className="ican-btn ican-btn-secondary py-1 px-2 text-sm"><PlusCircle size={16}/></button>
+                    </div>
+                    <div className="bg-[var(--color-input)] rounded-lg p-2 max-h-48 overflow-y-auto">
+                        {staffMembers.map(staff => (
+                            <div key={staff.id} className="flex justify-between items-center p-2 hover:bg-[var(--color-border)] rounded-md">
+                                <div>
+                                    <p className="font-medium">{staff.name}</p>
+                                    <p className="text-xs text-[var(--color-text-muted)]">{formatCurrency(staff.monthlySalary)}/month</p>
+                                </div>
+                                <div className="space-x-1">
+                                    <button onClick={() => { setEditingStaff(staff); setStaffModalOpen(true);}} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit3 size={16} /></button>
+                                    <button onClick={() => deleteStaffMember(staff.id)} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={16} /></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-[var(--color-input)] p-4 rounded-lg space-y-3">
+                    <h5 className="font-semibold text-[var(--color-text-secondary)] mb-2">Labour Cost Analysis</h5>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div className="text-[var(--color-text-muted)]">Total Monthly Labour Cost:</div>
+                        <div className="font-semibold text-right">{formatCurrency(totalMonthlySalary)}</div>
+                        <div className="text-[var(--color-text-muted)]">Total Monthly Hours:</div>
+                        <div className="font-semibold text-right">{totalMonthlyHours.toLocaleString()} hrs</div>
+                        <div className="text-[var(--color-text-muted)] font-bold text-[var(--color-text-primary)] border-t border-[var(--color-border)] pt-2 mt-1 col-span-2 flex justify-between items-center">
+                            <span>Blended Labour Rate / Hour:</span>
+                            <span className="font-bold text-base text-[var(--color-primary)]">{formatCurrency(blendedRatePerHour)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Overhead Section */}
+            <div className="p-4 border border-[var(--color-border)] rounded-lg space-y-6">
+                <h4 className="text-lg font-semibold">Overhead Configuration</h4>
+                
+                <div>
+                    <h5 className="font-semibold text-[var(--color-text-secondary)]">Production & Sales Volume</h5>
+                    <p className="text-sm text-[var(--color-text-muted)] mb-4">These volumes are used to allocate overhead costs to each dish.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Total Dishes Produced / Month</label>
+                            <input type="number" value={settings.totalDishesProduced} onChange={e => handleMetricChange('totalDishesProduced', e.target.value)} className="ican-input mt-1"/>
+                        </div>
+                         <div>
+                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Total Dishes Sold / Month</label>
+                            <input type="number" value={settings.totalDishesSold} onChange={e => handleMetricChange('totalDishesSold', e.target.value)} className="ican-input mt-1"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div className="flex justify-between items-center mb-2">
+                        <h5 className="font-semibold text-[var(--color-text-secondary)]">Overhead Items</h5>
+                        <button onClick={() => { setEditingOverhead(null); setOverheadModalOpen(true); }} className="ican-btn ican-btn-secondary py-1 px-2 text-sm"><PlusCircle size={16}/></button>
+                    </div>
+                     <div className="bg-[var(--color-input)] rounded-lg p-2 max-h-48 overflow-y-auto">
+                        {overheads.map(o => (
+                            <div key={o.id} className="flex justify-between items-center p-2 hover:bg-[var(--color-border)] rounded-md">
+                                <div>
+                                    <p className="font-medium">{o.name} <span className="text-xs text-[var(--color-text-muted)]">({o.type})</span></p>
+                                    <p className="text-xs text-[var(--color-text-muted)]">{formatCurrency(o.monthlyCost)}/month</p>
+                                </div>
+                                <div className="space-x-1">
+                                    <button onClick={() => { setEditingOverhead(o); setOverheadModalOpen(true);}} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"><Edit3 size={16} /></button>
+                                    <button onClick={() => deleteOverhead(o.id)} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"><Trash2 size={16} /></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-[var(--color-input)] p-4 rounded-lg space-y-3">
+                    <h5 className="font-semibold text-[var(--color-text-secondary)] mb-2">Overhead Cost Analysis</h5>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div className="text-[var(--color-text-muted)]">Total Variable Overheads:</div>
+                        <div className="font-semibold text-right">{formatCurrency(totalVOH)}</div>
+                        <div className="text-[var(--color-text-muted)]">VOH Cost per Produced Dish:</div>
+                        <div className="font-semibold text-right">{formatCurrency(vohPerDish)}</div>
+                        
+                        <div className="text-[var(--color-text-muted)] pt-2 mt-1 border-t border-[var(--color-border)]">Total Fixed Overheads:</div>
+                        <div className="font-semibold text-right pt-2 mt-1 border-t border-[var(--color-border)]">{formatCurrency(totalFOH)}</div>
+                        <div className="text-[var(--color-text-muted)]">FOH Cost per Sold Dish:</div>
+                        <div className="font-semibold text-right">{formatCurrency(fohPerDish)}</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Modals */}
+            <StaffFormModal 
+                isOpen={isStaffModalOpen} 
+                onClose={() => setStaffModalOpen(false)}
+                onSave={async (data) => {
+                    if(editingStaff) {
+                        await updateStaffMember({ ...editingStaff, ...data });
+                        addNotification("Staff member updated.", "success");
+                    } else {
+                        await addStaffMember(data);
+                        addNotification("Staff member added.", "success");
+                    }
+                    setStaffModalOpen(false);
+                }}
+                staffMember={editingStaff}
+            />
+            <OverheadFormModal
+                isOpen={isOverheadModalOpen}
+                onClose={() => setOverheadModalOpen(false)}
+                onSave={async (data) => {
+                     if(editingOverhead) {
+                        await updateOverhead({ ...editingOverhead, ...data });
+                        addNotification("Overhead updated.", "success");
+                    } else {
+                        await addOverhead(data);
+                        addNotification("Overhead added.", "success");
+                    }
+                    setOverheadModalOpen(false);
+                }}
+                overhead={editingOverhead}
+            />
+        </div>
+    );
+};
+
+const StaffFormModal: React.FC<{isOpen: boolean, onClose: ()=>void, onSave: (data:Omit<StaffMember, 'id'|'businessId'>)=>void, staffMember: StaffMember|null}> = ({isOpen, onClose, onSave, staffMember}) => {
+    const [name, setName] = useState('');
+    const [monthlySalary, setMonthlySalary] = useState(0);
+
+    useEffect(() => {
+        if(isOpen) {
+            setName(staffMember?.name || '');
+            setMonthlySalary(staffMember?.monthlySalary || 0);
+        }
+    }, [isOpen, staffMember]);
+    
+    const handleSubmit = () => {
+        if(name.trim() && monthlySalary > 0) {
+            onSave({name, monthlySalary});
+        }
+    }
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title={staffMember ? "Edit Staff Member" : "Add Staff Member"}>
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-[var(--color-text-muted)]">Staff Name</label>
+                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="ican-input mt-1"/>
+                </div>
+                 <div>
+                    <label className="block text-sm font-medium text-[var(--color-text-muted)]">Monthly Salary</label>
+                    <input type="number" value={monthlySalary} onChange={e => setMonthlySalary(Number(e.target.value))} className="ican-input mt-1"/>
+                </div>
+                <div className="flex justify-end space-x-2 pt-2">
+                    <button onClick={onClose} className="ican-btn ican-btn-secondary">Cancel</button>
+                    <button onClick={handleSubmit} className="ican-btn ican-btn-primary">Save</button>
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
+const OverheadFormModal: React.FC<{isOpen: boolean, onClose: ()=>void, onSave: (data:Omit<Overhead, 'id'|'businessId'>)=>void, overhead: Overhead|null}> = ({isOpen, onClose, onSave, overhead}) => {
+    const [name, setName] = useState('');
+    const [type, setType] = useState<'Fixed'|'Variable'>('Fixed');
+    const [monthlyCost, setMonthlyCost] = useState(0);
+
+    useEffect(() => {
+        if(isOpen) {
+            setName(overhead?.name || '');
+            setType(overhead?.type || 'Fixed');
+            setMonthlyCost(overhead?.monthlyCost || 0);
+        }
+    }, [isOpen, overhead]);
+    
+    const handleSubmit = () => {
+        if(name.trim() && monthlyCost > 0) {
+            onSave({name, type, monthlyCost});
+        }
+    }
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title={overhead ? "Edit Overhead" : "Add Overhead"}>
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-[var(--color-text-muted)]">Overhead Name</label>
+                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="ican-input mt-1"/>
+                </div>
+                 <div>
+                    <label className="block text-sm font-medium text-[var(--color-text-muted)]">Type</label>
+                    <select value={type} onChange={e => setType(e.target.value as 'Fixed'|'Variable')} className="ican-select mt-1">
+                        <option value="Fixed">Fixed</option>
+                        <option value="Variable">Variable</option>
+                    </select>
+                </div>
+                 <div>
+                    <label className="block text-sm font-medium text-[var(--color-text-muted)]">Monthly Cost</label>
+                    <input type="number" value={monthlyCost} onChange={e => setMonthlyCost(Number(e.target.value))} className="ican-input mt-1"/>
+                </div>
+                <div className="flex justify-end space-x-2 pt-2">
+                    <button onClick={onClose} className="ican-btn ican-btn-secondary">Cancel</button>
+                    <button onClick={handleSubmit} className="ican-btn ican-btn-primary">Save</button>
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
+
 const PreferencesTab: React.FC = () => {
     const { theme, setTheme } = useTheme();
     const { settings, updateSettings } = useAppSettings();
     const { currency, setCurrency, supportedCurrencies, isLoading } = useCurrency();
     
-    const handleDashboardToggle = (key: string) => {
-        updateSettings({
-            dashboard: {
-                ...settings.dashboard,
-                [key]: !settings.dashboard[key]
-            }
-        });
-    };
-
     return (
         <div className="space-y-8">
             <h3 className="text-xl font-bold">Preferences</h3>
@@ -196,21 +445,6 @@ const PreferencesTab: React.FC = () => {
                  <div className="relative">
                     <input type="number" value={settings.foodCostTarget} onChange={(e) => updateSettings({ foodCostTarget: parseInt(e.target.value) || 0 })} className="ican-input pr-8" min="1" max="100"/>
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">%</span>
-                </div>
-            </div>
-
-            <div>
-                <h4 className="font-semibold">Dashboard Cards</h4>
-                <p className="text-sm text-[var(--color-text-muted)] mb-4">Choose which metric cards to display on the dashboard.</p>
-                <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(settings.dashboard).map(([key, value]) => (
-                        <label key={key} className="flex items-center space-x-3 cursor-pointer">
-                           <input type="checkbox" checked={value} onChange={() => handleDashboardToggle(key)} className="h-4 w-4 rounded border-gray-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]"/>
-                           <span className="text-sm font-medium text-[var(--color-text-primary)] capitalize">
-                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                           </span>
-                        </label>
-                    ))}
                 </div>
             </div>
         </div>
