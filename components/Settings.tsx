@@ -35,6 +35,7 @@ const Settings: React.FC = () => {
     const handleExportData = () => {
         const dataToExport = {
             businesses,
+            // In a real app, you would export all other relevant data from useData here
         };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
         const downloadAnchorNode = document.createElement('a');
@@ -50,9 +51,9 @@ const Settings: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-1">
                 <Card noPadding>
-                    <div className="p-4 border-b border-[var(--color-border)]">
+                    <div className="p-4">
                         <h2 className="text-xl font-bold">Settings</h2>
-                        <p className="text-sm text-[var(--color-text-muted)]">Manage your application and business settings.</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">Manage your application.</p>
                     </div>
                     <nav className="p-2">
                         {TABS.map(tab => (

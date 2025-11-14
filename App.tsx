@@ -1,10 +1,11 @@
 
 
+
 import React, { useState, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 import { DataProvider } from './hooks/useDataContext';
 import { CurrencyProvider } from './hooks/useCurrencyContext';
-import BusinessSelector from './components/BusinessSelector';
 import { Menu as MenuIcon, LoaderCircle } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
 import { AuthProvider, useAuth } from './hooks/useAuthContext';
@@ -25,7 +26,7 @@ const Reports = lazy(() => import('./components/Reports'));
 const Settings = lazy(() => import('./components/Settings'));
 
 
-type View = 'dashboard' | 'pricelist' | 'recipes' | 'menu' | 'suppliers' | 'reports' | 'settings';
+export type View = 'dashboard' | 'pricelist' | 'recipes' | 'menu' | 'suppliers' | 'reports' | 'settings';
 
 const viewComponents: Record<View, React.LazyExoticComponent<React.FC<{}>>> = {
     dashboard: Dashboard,
@@ -37,8 +38,8 @@ const viewComponents: Record<View, React.LazyExoticComponent<React.FC<{}>>> = {
     settings: Settings,
 };
 
-const viewTitles: Record<View, string> = {
-    dashboard: 'Dashboard Overview',
+export const viewTitles: Record<View, string> = {
+    dashboard: 'Dashboard',
     pricelist: 'Price List Management',
     recipes: 'Recipe & Menu Costing',
     menu: 'Menu Engineering',
@@ -77,7 +78,7 @@ const OnboardingScreen: React.FC = () => {
         <div 
             className="flex items-center justify-center min-h-screen bg-cover bg-center p-4 bg-[var(--color-background)]"
         >
-            <div className="text-center w-full max-w-md md:max-w-xl mx-auto z-10 p-8 md:p-12 rounded-2xl shadow-2xl border border-black/5 bg-[var(--color-card)]" style={{ animation: 'slideUp 0.5s ease-out' }}>
+            <div className="text-center w-full max-w-md md:max-w-xl mx-auto z-10 p-8 md:p-12 ican-card" style={{ animation: 'slideUp 0.5s ease-out' }}>
                 <ICanLogo />
                 <h1 className="text-3xl md:text-4xl font-bold mt-4 text-[var(--color-text-primary)]">Welcome to iCAN</h1>
                 <h2 className="text-xl font-medium text-[var(--color-primary)]">F&B Costing Platform</h2>
@@ -135,28 +136,18 @@ const AppContent: React.FC = () => {
                     isOpen={isSidebarOpen}
                     setIsOpen={setIsSidebarOpen}
                 />
-                <main className="flex-1 flex flex-col h-screen">
-                    <header className="bg-[var(--color-card)]/80 border-b border-[var(--color-border)] p-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
-                        <div className="flex items-center min-w-0">
-                            <button 
-                                className="lg:hidden mr-2 md:mr-4 text-[var(--color-text-muted)]"
-                                onClick={() => setIsSidebarOpen(true)}
-                                aria-label="Open sidebar"
-                            >
-                                <MenuIcon size={24} />
-                            </button>
-                            <h2 className="text-xl font-bold text-[var(--color-text-primary)] truncate">{viewTitles[currentView]}</h2>
-                        </div>
-                        <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
-                            <BusinessSelector />
-                        </div>
-                    </header>
-                    <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                <div className="flex-1 flex flex-col h-screen">
+                    <Header
+                        viewTitle={viewTitles[currentView]}
+                        setIsSidebarOpen={setIsSidebarOpen}
+                        setCurrentView={setCurrentView}
+                    />
+                    <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
                         <Suspense fallback={<GlobalLoading message="Loading Content..." />}>
                             <CurrentViewComponent />
                         </Suspense>
-                    </div>
-                </main>
+                    </main>
+                </div>
             </div>
         </UnsavedChangesProvider>
     );

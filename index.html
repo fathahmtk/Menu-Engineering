@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'%3E%3C/path%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 20a2 2 0 1 0-4 0V4a2 2 0 1 0 4 0v16z'/%3E%3Cpath d='M12 4H8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4Z'/%3E%3Cpath d='M12 4h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-4Z'/%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>iCAN | F&B Costing Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,63 +11,61 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       :root {
-        font-family: 'Poppins', sans-serif;
-        --radius: 0.5rem;
-        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
-        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
-      }
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        --radius: 0.75rem;
+        --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
-      [data-theme='dark'] {
-        --color-background: #020617; /* slate-950 */
-        --color-sidebar: #0f172a;    /* slate-900 */
-        --color-card: #0f172a;       /* slate-900 */
-        --color-primary: #60a5fa;    /* blue-400 */
-        --color-primary-hover: #3b82f6; /* blue-500 */
-        --color-primary-light: rgba(59, 130, 246, 0.1);
-        --color-primary-foreground: #020617;
+        --color-background: hsl(210, 40%, 98%);
+        --color-sidebar: hsl(0, 0%, 100%);
+        --color-card: hsl(0, 0%, 100%);
+        --color-primary: hsl(220, 90%, 55%);
+        --color-primary-hover: hsl(220, 90%, 60%);
+        --color-primary-light: hsl(220, 90%, 95%);
+        --color-primary-foreground: hsl(0, 0%, 100%);
         
-        --color-text-primary: #f1f5f9;   /* slate-100 */
-        --color-text-secondary: #94a3b8; /* slate-400 */
-        --color-text-muted: #64748b;     /* slate-500 */
+        --color-text-primary: hsl(222, 47%, 11%);
+        --color-text-secondary: hsl(215, 20%, 45%);
+        --color-text-muted: hsl(215, 20%, 65%);
         
-        --color-border: #1e293b;     /* slate-800 */
-        --color-input: #1e293b;       /* slate-800 */
-        --color-ring: rgba(96, 165, 250, 0.5);
-        
-        --color-success: #22c55e;
-        --color-warning: #f59e0b;
-        --color-danger: #f87171; /* red-400 */
-      }
-
-      [data-theme='light'] {
-        --color-background: #f1f5f9; /* slate-100 */
-        --color-sidebar: #ffffff;
-        --color-card: #ffffff;
-        --color-primary: #3b82f6; /* blue-500 */
-        --color-primary-hover: #2563eb; /* blue-600 */
-        --color-primary-light: #eff6ff; /* blue-50 */
-        --color-primary-foreground: #ffffff;
-        
-        --color-text-primary: #0f172a;   /* slate-900 */
-        --color-text-secondary: #475569; /* slate-600 */
-        --color-text-muted: #64748b;     /* slate-500 */
-        
-        --color-border: #e2e8f0;     /* slate-200 */
-        --color-input: #f8fafc;       /* slate-50 */
-        --color-ring: rgba(59, 130, 246, 0.4);
+        --color-border: hsl(214, 32%, 91%);
+        --color-input: hsl(210, 40%, 96%);
+        --color-ring: hsla(220, 90%, 55%, 0.3);
         
         --color-success: #16a34a;
         --color-warning: #f59e0b;
         --color-danger: #dc2626;
       }
 
+      [data-theme='dark'] {
+        --color-background: hsl(222, 47%, 11%);
+        --color-sidebar: hsl(222, 47%, 13%);
+        --color-card: hsl(222, 47%, 15%);
+        --color-primary: hsl(210, 100%, 65%);
+        --color-primary-hover: hsl(210, 100%, 75%);
+        --color-primary-light: hsla(210, 100%, 65%, 0.1);
+        --color-primary-foreground: hsl(222, 47%, 11%);
+        
+        --color-text-primary: hsl(210, 40%, 98%);
+        --color-text-secondary: hsl(215, 20%, 65%);
+        --color-text-muted: hsl(215, 28%, 45%);
+        
+        --color-border: hsl(215, 28%, 19%);
+        --color-input: hsl(215, 28%, 17%);
+        --color-ring: hsla(210, 100%, 65%, 0.3);
+        
+        --color-success: #22c55e;
+        --color-warning: #f59e0b;
+        --color-danger: #f87171;
+      }
 
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      @keyframes button-press { from { transform: scale(1); } to { transform: scale(0.98); } }
 
       /* Base Styles */
       body {
-        font-family: var(--font-sans);
         background-color: var(--color-background);
         color: var(--color-text-primary);
         overflow: hidden;
@@ -78,15 +76,15 @@
       }
       
       /* Typography Scale */
-      h1, .h1 { font-size: 2.25rem; font-weight: 700; line-height: 2.5rem; letter-spacing: -0.025em; }
-      h2, .h2 { font-size: 1.875rem; font-weight: 700; line-height: 2.25rem; letter-spacing: -0.025em; }
-      h3, .h3 { font-size: 1.5rem; font-weight: 600; line-height: 2rem; }
-      h4, .h4 { font-size: 1.25rem; font-weight: 600; line-height: 1.75rem; }
+      h1, .h1 { font-size: 2rem; font-weight: 700; line-height: 2.25rem; letter-spacing: -0.02em; }
+      h2, .h2 { font-size: 1.5rem; font-weight: 600; line-height: 2rem; }
+      h3, .h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.75rem; }
+      h4, .h4 { font-size: 1.125rem; font-weight: 600; line-height: 1.5rem; }
 
       /* Custom Scrollbar */
-      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar { width: 8px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+      ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; border: 2px solid var(--color-background); }
       ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
 
       /* Cursor */
@@ -103,9 +101,9 @@
       }
 
       .ican-btn {
-        padding: 0.5rem 1rem;
+        padding: 0.6rem 1.25rem;
         border-radius: var(--radius);
-        font-weight: 500;
+        font-weight: 600;
         transition: all 0.2s ease;
         display: inline-flex;
         align-items: center;
@@ -113,18 +111,24 @@
         border: 1px solid transparent;
         user-select: none;
         font-size: 14px;
+        line-height: 1;
       }
       .ican-btn:focus-visible {
         outline: 2px solid var(--color-primary);
         outline-offset: 2px;
       }
+      .ican-btn:active {
+        animation: button-press 0.1s ease-out;
+      }
       .ican-btn-primary {
         background-color: var(--color-primary);
         color: var(--color-primary-foreground);
-        box-shadow: var(--shadow);
+        box-shadow: var(--shadow-md);
       }
       .ican-btn-primary:hover {
         background-color: var(--color-primary-hover);
+        box-shadow: 0 0 20px hsla(220, 90%, 60%, 0.3);
+        transform: translateY(-2px);
       }
       .ican-btn-secondary {
         background-color: var(--color-card);
@@ -153,8 +157,8 @@
       .ican-input, .ican-select {
         background-color: var(--color-input);
         border: 1px solid var(--color-border);
-        border-radius: var(--radius);
-        padding: 0.5rem 0.75rem;
+        border-radius: calc(var(--radius) - 2px);
+        padding: 0.6rem 0.8rem;
         color: var(--color-text-primary);
         transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.3s;
         width: 100%;
@@ -168,8 +172,9 @@
       
       .ican-table-header {
          background-color: var(--color-input);
-         border-bottom: 2px solid var(--color-border);
          font-size: 12px;
+         font-weight: 600;
+         color: var(--color-text-muted);
          text-transform: uppercase;
          letter-spacing: 0.05em;
       }

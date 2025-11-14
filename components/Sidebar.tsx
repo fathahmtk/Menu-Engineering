@@ -2,9 +2,8 @@ import React from 'react';
 import { LayoutDashboard, BookOpen, X, SlidersHorizontal, LogOut, BarChart3, Utensils, Users, Tags } from 'lucide-react';
 import { useAuth } from '../hooks/useAuthContext';
 import { useUnsavedChanges } from '../hooks/useUnsavedChangesContext';
+import { View } from '../App';
 
-
-type View = 'dashboard' | 'pricelist' | 'recipes' | 'menu' | 'suppliers' | 'reports' | 'settings';
 
 interface SidebarProps {
   currentView: View;
@@ -29,15 +28,16 @@ const NavItem: React.FC<{
   onClick: () => void;
 }> = ({ icon, label, isActive, onClick }) => (
   <li
-    className={`flex items-center p-3 my-1 cursor-pointer rounded-lg transition-all duration-200 ${
+    className={`relative flex items-center p-3 my-1 cursor-pointer rounded-lg transition-all duration-200 ${
       isActive
-        ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-sm'
+        ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold'
         : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-input)] hover:text-[var(--color-text-primary)]'
     }`}
     onClick={onClick}
   >
+    {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[var(--color-primary)] rounded-r-full" />}
     {icon}
-    <span className="ml-4 font-medium">{label}</span>
+    <span className="ml-4">{label}</span>
   </li>
 );
 
@@ -45,41 +45,18 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
   const { signOut } = useAuth();
   const { promptNavigation } = useUnsavedChanges();
   
-  const navSections: {
-    title: string;
-    items: {
+  const navItems: {
       id: View;
       label: string;
       icon: React.ReactNode;
-    }[];
-  }[] = [
-    {
-      title: 'Menu',
-      items: [
+    }[] = [
         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 'pricelist', label: 'Price List', icon: <Tags size={20} /> },
         { id: 'recipes', label: 'Recipes', icon: <BookOpen size={20} /> },
         { id: 'menu', label: 'Menu Items', icon: <Utensils size={20} /> },
-      ],
-    },
-    {
-      title: 'Operations',
-      items: [
         { id: 'suppliers', label: 'Suppliers', icon: <Users size={20} /> },
-      ],
-    },
-    {
-      title: 'Analytics',
-      items: [
         { id: 'reports', label: 'Reports', icon: <BarChart3 size={20} /> },
-      ],
-    }
   ];
-  
-  const bottomNavItems: { id: View; label: string; icon: React.ReactNode }[] = [
-      { id: 'settings', label: 'Settings', icon: <SlidersHorizontal size={20} /> },
-  ];
-
 
   const handleNavigation = (view: View) => {
     promptNavigation(() => {
@@ -102,44 +79,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, 
         </div>
         <nav className="flex-1">
           <ul>
-            {navSections.map((section, index) => (
-              <React.Fragment key={section.title}>
-                {index > 0 && <li className="px-3 pt-4 pb-2 text-xs font-semibold uppercase text-[var(--color-text-muted)] tracking-wider">{section.title}</li>}
-                {section.items.map((item) => (
-                  <NavItem
-                    key={item.id}
-                    icon={item.icon}
-                    label={item.label}
-                    isActive={currentView === item.id}
-                    onClick={() => handleNavigation(item.id)}
-                  />
-                ))}
-              </React.Fragment>
+            {navItems.map((item) => (
+              <NavItem
+                key={item.id}
+                icon={item.icon}
+                label={item.label}
+                isActive={currentView === item.id}
+                onClick={() => handleNavigation(item.id)}
+              />
             ))}
           </ul>
         </nav>
-        
-        <div className="mt-auto">
-             <div className="border-t border-[var(--color-border)] pt-2">
-                {bottomNavItems.map((item) => (
-                    <NavItem
-                        key={item.id}
-                        icon={item.icon}
-                        label={item.label}
-                        isActive={currentView === item.id}
-                        onClick={() => handleNavigation(item.id)}
-                    />
-                ))}
-             </div>
-             <button
-                onClick={signOut}
-                className="w-full flex items-center p-3 my-1 cursor-pointer rounded-lg transition-colors text-[var(--color-text-secondary)] hover:bg-[var(--color-input)] hover:text-[var(--color-text-primary)]"
-              >
-                <LogOut size={20} />
-                <span className="ml-4 font-medium">Logout</span>
-              </button>
-        </div>
-
       </aside>
     </>
   );
