@@ -157,6 +157,7 @@ export interface RecipeCostBreakdown {
     packagingCost: number;
     totalCost: number;
     costPerServing: number;
+    warnings: string[];
 }
 
 

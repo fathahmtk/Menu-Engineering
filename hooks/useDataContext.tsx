@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PricedItem, Recipe, Business, RecipeCategory, RecipeTemplate, IngredientUnit, DataContextType, UnitConversion, StaffMember, Overhead, RecipeCostBreakdown, Supplier, MenuItem, Ingredient } from '../types';
 import { mockBusinesses, mockPricedItems, mockRecipes, mockCategories, mockIngredientUnits, mockRecipeTemplates, mockUnitConversions, mockStaffMembers, mockOverheads, mockSuppliers, mockMenuItems } from './mockData';
 import { useAppSettings } from './useAppSettings';
@@ -114,34 +114,35 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return null;
   }, [unitConversions]);
   
-const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
+  const costMemoRef = useRef(new Map<string, number>());
+
+  // Effect to clear the memoization cache when data that affects costs changes.
+  useEffect(() => {
+    costMemoRef.current.clear();
+  }, [pricedItems, recipes, unitConversions]);
+
+const calculateRecipeCost = useCallback((recipe: Recipe | null, warnings?: string[]): number => {
     if (!recipe) return 0;
 
-    // Memoization cache to optimize performance for complex recipes with repeated sub-recipes.
-    const costMemo = new Map<string, number>();
-    // Tracks visited recipes in the current calculation path to gracefully handle circular dependencies.
-    const visitedRecipes = new Set<string>();
+    const costMemo = costMemoRef.current; // Use the shared cache
+    const visitedRecipes = new Set<string>(); // Keep visited check local to each run
 
-    /**
-     * Calculates the cost of a single priced item ingredient, handling unit conversions and yield.
-     * @returns The calculated cost, or 0 if an error occurs (e.g., missing data).
-     */
     const getCostForPricedItem = (ingredient: Ingredient, currentRecipeName: string): number => {
         const item = getPricedItemById(ingredient.itemId);
         if (!item) {
-            console.warn(`Priced item not found (ID: ${ingredient.itemId}) for recipe "${currentRecipeName}". This ingredient's cost will be ignored.`);
+            if(warnings) warnings.push(`Priced item not found (ID: ${ingredient.itemId}) for recipe "${currentRecipeName}".`);
             return 0;
         }
         
         const conversionFactor = getConversionFactor(ingredient.unit, item.unit, item.id);
         if (conversionFactor === null) {
-            console.warn(`Unit conversion not found from "${ingredient.unit}" to "${item.unit}" for item "${item.name}" in recipe "${currentRecipeName}". This ingredient's cost will be ignored.`);
+            if(warnings) warnings.push(`Unit conversion not found from "${ingredient.unit}" to "${item.unit}" for item "${item.name}" in recipe "${currentRecipeName}".`);
             return 0;
         }
 
         const yieldFactor = (ingredient.yieldPercentage ?? 100) / 100;
         if (yieldFactor <= 0) {
-             console.warn(`Invalid yield percentage (${ingredient.yieldPercentage}%) for item "${item.name}" in recipe "${currentRecipeName}". This ingredient's cost will be ignored.`);
+             if(warnings) warnings.push(`Invalid yield percentage (${ingredient.yieldPercentage}%) for item "${item.name}" in recipe "${currentRecipeName}".`);
              return 0;
         }
         
@@ -150,28 +151,24 @@ const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
         return isNaN(cost) ? 0 : cost;
     };
 
-    /**
-     * Recursively calculates the cost of a sub-recipe ingredient, handling production yield and unit conversions.
-     * @returns The calculated cost, or 0 if an error occurs.
-     */
     const getCostForSubRecipe = (ingredient: Ingredient, currentRecipeName: string): number => {
         const subRecipe = getRecipeById(ingredient.itemId);
         if (!subRecipe) {
-             console.warn(`Sub-recipe not found (ID: ${ingredient.itemId}) for recipe "${currentRecipeName}". This ingredient's cost will be ignored.`);
+             if(warnings) warnings.push(`Sub-recipe not found (ID: ${ingredient.itemId}) for recipe "${currentRecipeName}".`);
              return 0;
         }
         
         if (!subRecipe.productionYield || !subRecipe.productionUnit || subRecipe.productionYield <= 0) {
-            console.warn(`Sub-recipe "${subRecipe.name}" in recipe "${currentRecipeName}" lacks valid production details (yield/unit) and cannot be costed. It will be ignored.`);
+            if(warnings) warnings.push(`Sub-recipe "${subRecipe.name}" in recipe "${currentRecipeName}" lacks valid production details (yield/unit).`);
             return 0;
         }
 
-        const subRecipeTotalCost = calculateCostRecursive(subRecipe); // Recursive call
+        const subRecipeTotalCost = calculateCostRecursive(subRecipe);
         const costPerProductionUnit = subRecipeTotalCost / subRecipe.productionYield;
         
         const conversionFactor = getConversionFactor(ingredient.unit, subRecipe.productionUnit, null);
         if (conversionFactor === null) {
-             console.warn(`Unit conversion not found from "${ingredient.unit}" to "${subRecipe.productionUnit}" for sub-recipe "${subRecipe.name}" in recipe "${currentRecipeName}". It will be ignored.`);
+             if(warnings) warnings.push(`Unit conversion not found from "${ingredient.unit}" to "${subRecipe.productionUnit}" for sub-recipe "${subRecipe.name}" in recipe "${currentRecipeName}".`);
              return 0;
         }
         
@@ -179,7 +176,7 @@ const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
         const yieldFactor = (ingredient.yieldPercentage ?? 100) / 100;
         
         if (yieldFactor <= 0) {
-            console.warn(`Invalid yield percentage (${ingredient.yieldPercentage}%) for sub-recipe "${subRecipe.name}" in recipe "${currentRecipeName}". It will be ignored.`);
+            if(warnings) warnings.push(`Invalid yield percentage (${ingredient.yieldPercentage}%) for sub-recipe "${subRecipe.name}" in recipe "${currentRecipeName}".`);
             return 0;
         }
         
@@ -187,18 +184,13 @@ const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
         return isNaN(cost) ? 0 : cost;
     };
 
-    /**
-     * The core recursive function that calculates the total raw material cost for a given recipe.
-     */
     const calculateCostRecursive = (currentRecipe: Recipe): number => {
-        // Return cached cost if already calculated for this recipe.
         if (costMemo.has(currentRecipe.id)) {
             return costMemo.get(currentRecipe.id)!;
         }
 
-        // Handle circular dependencies to prevent infinite loops.
         if (visitedRecipes.has(currentRecipe.id)) {
-            console.warn(`Circular dependency detected involving recipe: "${currentRecipe.name}". Its cost is ignored in this path to prevent an infinite loop.`);
+            if(warnings) warnings.push(`Circular dependency detected involving recipe: "${currentRecipe.name}".`);
             return 0;
         }
         visitedRecipes.add(currentRecipe.id);
@@ -210,20 +202,20 @@ const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
             return total + ingredientCost;
         }, 0);
 
-        // Clean up visited path and cache the result before returning.
         visitedRecipes.delete(currentRecipe.id);
         costMemo.set(currentRecipe.id, totalIngredientCost);
         return totalIngredientCost;
     };
     
     return calculateCostRecursive(recipe);
-}, [getPricedItemById, getRecipeById, getConversionFactor, recipes]);
+}, [getPricedItemById, getRecipeById, getConversionFactor]);
 
 const calculateRecipeCostBreakdown = useCallback((recipe: Recipe | null): RecipeCostBreakdown => {
-    const emptyBreakdown: RecipeCostBreakdown = { rawMaterialCost: 0, labourCost: 0, variableOverheadCost: 0, fixedOverheadCost: 0, packagingCost: 0, totalCost: 0, costPerServing: 0 };
+    const warnings: string[] = [];
+    const emptyBreakdown: RecipeCostBreakdown = { rawMaterialCost: 0, labourCost: 0, variableOverheadCost: 0, fixedOverheadCost: 0, packagingCost: 0, totalCost: 0, costPerServing: 0, warnings };
     if (!recipe) return emptyBreakdown;
 
-    const rawMaterialCost = calculateRecipeCost(recipe);
+    const rawMaterialCost = calculateRecipeCost(recipe, warnings);
 
     // Labour Cost Calculation
     let labourCost = 0;
@@ -277,7 +269,8 @@ const calculateRecipeCostBreakdown = useCallback((recipe: Recipe | null): Recipe
         fixedOverheadCost,
         packagingCost,
         totalCost,
-        costPerServing: totalCost / (recipe.servings || 1)
+        costPerServing: totalCost / (recipe.servings || 1),
+        warnings
     };
 }, [calculateRecipeCost, staffMembers, overheads, settings, activeBusinessId]);
 

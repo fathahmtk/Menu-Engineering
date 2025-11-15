@@ -5,7 +5,7 @@ import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
-import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download, Info, DollarSign, PieChart, ClipboardList, Settings, SlidersHorizontal } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Plus, X, XCircle, Search, GripVertical, CheckCircle, TrendingUp, ChevronDown, ChevronUp, Copy, FileText, Save, ListChecks, Edit3, UploadCloud, Loader2, Weight, ChevronLeft, Download, Info, DollarSign, PieChart, ClipboardList, Settings, SlidersHorizontal, AlertTriangle } from 'lucide-react';
 import { Recipe, Ingredient, RecipeCategory, RecipeTemplate, IngredientType, PricedItem } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import ActionsDropdown from './common/ActionsDropdown';
@@ -1040,6 +1040,26 @@ const Recipes: React.FC = () => {
                                       </div>
                                     </div>
                                 </div>
+                                {costBreakdown.warnings.length > 0 && (
+                                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                        <div className="flex items-start">
+                                            <div className="flex-shrink-0">
+                                                <AlertTriangle className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+                                            </div>
+                                            <div className="ml-3">
+                                                <h3 className="text-sm font-semibold text-yellow-800">Calculation Warnings</h3>
+                                                <div className="mt-2 text-xs text-yellow-700">
+                                                    <p>The total cost may be inaccurate due to the following issues:</p>
+                                                    <ul className="list-disc space-y-1 pl-5 mt-1">
+                                                        {costBreakdown.warnings.map((warning, index) => (
+                                                            <li key={index}>{warning}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </Card>
                              <Card>
                                  <h3 className="text-lg font-bold mb-4">Profitability Analysis</h3>

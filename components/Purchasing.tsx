@@ -21,36 +21,61 @@ const PricedItemFormModal: React.FC<{
     onSave: (item: Omit<PricedItem, 'id' | 'businessId'> | PricedItem) => void;
     item: Omit<PricedItem, 'id' | 'businessId'> | PricedItem | null;
 }> = ({ isOpen, onClose, onSave, item }) => {
-    const [formData, setFormData] = useState<Omit<PricedItem, 'id' | 'businessId'>>({ name: '', category: 'Pantry', unit: '', unitCost: 0 });
-    const [errors, setErrors] = useState<{ [key:string]: string }>({});
+    const [formState, setFormState] = useState({ name: '', category: 'Pantry' as PricedItem['category'], unit: '', unitCost: '' });
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
     useEffect(() => {
-        if (item) {
-            setFormData(item);
-        } else {
-            setFormData({ name: '', category: 'Pantry', unit: '', unitCost: 0 });
+        if (isOpen) { // Reset form every time modal is opened
+            if (item) {
+                setFormState({
+                    name: item.name,
+                    category: item.category,
+                    unit: item.unit,
+                    unitCost: String(item.unitCost), // Convert number to string for input
+                });
+            } else {
+                // For new items, start with empty fields
+                setFormState({ name: '', category: 'Pantry', unit: '', unitCost: '' });
+            }
+            setErrors({}); // Clear previous errors
         }
-    }, [item]);
+    }, [item, isOpen]); // Depend on isOpen to reset
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: name === 'unitCost' ? parseFloat(value) : value }));
+        setFormState(prev => ({ ...prev, [name]: value }));
     };
 
     const validate = () => {
-        const newErrors: {[key:string]: string} = {};
-        if (!formData.name.trim()) newErrors.name = 'Item name is required.';
-        if (!formData.unit.trim()) newErrors.unit = 'Unit is required.';
-        if (isNaN(formData.unitCost) || formData.unitCost < 0) {
-            newErrors.unitCost = 'Unit cost must be a valid non-negative number.';
+        const newErrors: { [key: string]: string } = {};
+        if (!formState.name.trim()) newErrors.name = 'Item name is required.';
+        if (!formState.unit.trim()) newErrors.unit = 'Unit is required.';
+
+        const costValue = parseFloat(formState.unitCost);
+
+        if (formState.unitCost.trim() === '' || isNaN(costValue)) {
+            newErrors.unitCost = 'Unit cost is required and must be a number.';
+        } else if (costValue < 0) {
+            newErrors.unitCost = 'Unit cost cannot be negative.';
         }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = () => {
         if (validate()) {
-            onSave(formData);
+            const finalData = {
+                ...formState,
+                unitCost: parseFloat(formState.unitCost), // Convert back to number on save
+            };
+            if (item && 'id' in item) {
+                // It's an existing item, so merge to keep id and businessId
+                onSave({ ...item, ...finalData });
+            } else {
+                // It's a new item
+                onSave(finalData);
+            }
             onClose();
         }
     };
@@ -60,25 +85,25 @@ const PricedItemFormModal: React.FC<{
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-[var(--color-text-muted)]">Item Name</label>
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} className={`ican-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
+                    <input type="text" name="name" value={formState.name} onChange={handleChange} className={`ican-input mt-1 ${errors.name ? 'border-[var(--color-danger)]' : ''}`} />
                      {errors.name && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.name}</p>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Category</label>
-                        <select name="category" value={formData.category} onChange={handleChange} className="ican-select mt-1">
+                        <select name="category" value={formState.category} onChange={handleChange} className="ican-select mt-1">
                             {ITEM_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                     </div>
                      <div>
                         <label className="block text-sm font-medium text-[var(--color-text-muted)]">Unit</label>
-                        <input type="text" name="unit" value={formData.unit} onChange={handleChange} placeholder="e.g., kg, L, unit" className={`ican-input mt-1 ${errors.unit ? 'border-[var(--color-danger)]' : ''}`} />
+                        <input type="text" name="unit" value={formState.unit} onChange={handleChange} placeholder="e.g., kg, L, unit" className={`ican-input mt-1 ${errors.unit ? 'border-[var(--color-danger)]' : ''}`} />
                         {errors.unit && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.unit}</p>}
                     </div>
                 </div>
                  <div>
                     <label className="block text-sm font-medium text-[var(--color-text-muted)]">Unit Cost</label>
-                    <input type="number" name="unitCost" value={formData.unitCost} onChange={handleChange} min="0" step="0.01" className={`ican-input mt-1 ${errors.unitCost ? 'border-[var(--color-danger)]' : ''}`} />
+                    <input type="number" name="unitCost" value={formState.unitCost} onChange={handleChange} step="0.01" className={`ican-input mt-1 ${errors.unitCost ? 'border-[var(--color-danger)]' : ''}`} />
                     {errors.unitCost && <p className="text-[var(--color-danger)] text-xs mt-1">{errors.unitCost}</p>}
                 </div>
                 <div className="flex flex-col-reverse md:flex-row md:justify-end md:space-x-2 pt-4 gap-2">
