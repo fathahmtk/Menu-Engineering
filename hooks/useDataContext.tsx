@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { PricedItem, Recipe, Business, RecipeCategory, RecipeTemplate, IngredientUnit, DataContextType, UnitConversion, StaffMember, Overhead, RecipeCostBreakdown, Supplier, MenuItem } from '../types';
+import { PricedItem, Recipe, Business, RecipeCategory, RecipeTemplate, IngredientUnit, DataContextType, UnitConversion, StaffMember, Overhead, RecipeCostBreakdown, Supplier, MenuItem, Ingredient } from '../types';
 import { mockBusinesses, mockPricedItems, mockRecipes, mockCategories, mockIngredientUnits, mockRecipeTemplates, mockUnitConversions, mockStaffMembers, mockOverheads, mockSuppliers, mockMenuItems } from './mockData';
 import { useAppSettings } from './useAppSettings';
 
@@ -116,86 +116,104 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
 const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
     if (!recipe) return 0;
-    
-    // Memoization cache for sub-recipe costs to optimize performance for complex recipes.
+
+    // Memoization cache to optimize performance for complex recipes with repeated sub-recipes.
     const costMemo = new Map<string, number>();
     // Tracks visited recipes in the current calculation path to gracefully handle circular dependencies.
     const visitedRecipes = new Set<string>();
 
-    const calculateCostRecursive = (currentRecipe: Recipe): number => {
-      if (costMemo.has(currentRecipe.id)) {
-          return costMemo.get(currentRecipe.id)!;
-      }
-
-      if (visitedRecipes.has(currentRecipe.id)) {
-        console.warn(`Circular dependency detected involving recipe: "${currentRecipe.name}". Its cost will be ignored in this path to prevent an infinite loop.`);
-        return 0;
-      }
-      visitedRecipes.add(currentRecipe.id);
-
-      const totalIngredientCost = currentRecipe.ingredients.reduce((total, ingredient) => {
-        let ingredientCost = 0;
+    /**
+     * Calculates the cost of a single priced item ingredient, handling unit conversions and yield.
+     * @returns The calculated cost, or 0 if an error occurs (e.g., missing data).
+     */
+    const getCostForPricedItem = (ingredient: Ingredient, currentRecipeName: string): number => {
+        const item = getPricedItemById(ingredient.itemId);
+        if (!item) {
+            console.warn(`Priced item not found (ID: ${ingredient.itemId}) for recipe "${currentRecipeName}". This ingredient's cost will be ignored.`);
+            return 0;
+        }
         
-        if (ingredient.type === 'item') {
-            const item = getPricedItemById(ingredient.itemId);
-            if (!item) {
-                console.warn(`Priced item not found (ID: ${ingredient.itemId}) for recipe "${currentRecipe.name}". This ingredient will be skipped.`);
-                return total;
-            }
-            
-            const conversionFactor = getConversionFactor(ingredient.unit, item.unit, item.id);
-            if (conversionFactor === null) {
-                console.warn(`Unit conversion not found from "${ingredient.unit}" to "${item.unit}" for item "${item.name}" in recipe "${currentRecipe.name}". This ingredient will be skipped.`);
-                return total;
-            }
-
-            const yieldFactor = (ingredient.yieldPercentage ?? 100) / 100;
-            if (yieldFactor <= 0) {
-                 console.warn(`Invalid yield percentage (${ingredient.yieldPercentage}%) for item "${item.name}" in recipe "${currentRecipe.name}". This ingredient will be skipped.`);
-                 return total;
-            }
-            
-            const asPurchasedQuantity = ingredient.quantity / yieldFactor;
-            ingredientCost = item.unitCost * asPurchasedQuantity * conversionFactor;
-
-        } else { // type === 'recipe'
-            const subRecipe = getRecipeById(ingredient.itemId);
-            if (!subRecipe) {
-                 console.warn(`Sub-recipe not found (ID: ${ingredient.itemId}) for recipe "${currentRecipe.name}". This ingredient will be skipped.`);
-                 return total;
-            }
-            
-            if (!subRecipe.productionYield || !subRecipe.productionUnit || subRecipe.productionYield <= 0) {
-                console.warn(`Sub-recipe "${subRecipe.name}" in recipe "${currentRecipe.name}" is missing valid production details (yield/unit) and cannot be costed. This ingredient will be skipped.`);
-                return total;
-            }
-
-            const subRecipeTotalCost = calculateCostRecursive(subRecipe);
-            const costPerProductionUnit = subRecipeTotalCost / subRecipe.productionYield;
-            
-            const conversionFactor = getConversionFactor(ingredient.unit, subRecipe.productionUnit, null);
-            if (conversionFactor === null) {
-                 console.warn(`Unit conversion not found from "${ingredient.unit}" to "${subRecipe.productionUnit}" for sub-recipe "${subRecipe.name}" in recipe "${currentRecipe.name}". This ingredient will be skipped.`);
-                 return total;
-            }
-            
-            const subRecipeCostInRecipe = costPerProductionUnit * ingredient.quantity * conversionFactor;
-            const yieldFactor = (ingredient.yieldPercentage ?? 100) / 100;
-            
-            if (yieldFactor <= 0) {
-                console.warn(`Invalid yield percentage (${ingredient.yieldPercentage}%) for sub-recipe "${subRecipe.name}" in recipe "${currentRecipe.name}". This ingredient will be skipped.`);
-                return total;
-            }
-            
-            ingredientCost = subRecipeCostInRecipe / yieldFactor;
+        const conversionFactor = getConversionFactor(ingredient.unit, item.unit, item.id);
+        if (conversionFactor === null) {
+            console.warn(`Unit conversion not found from "${ingredient.unit}" to "${item.unit}" for item "${item.name}" in recipe "${currentRecipeName}". This ingredient's cost will be ignored.`);
+            return 0;
         }
 
-        return total + (isNaN(ingredientCost) ? 0 : ingredientCost);
-      }, 0);
+        const yieldFactor = (ingredient.yieldPercentage ?? 100) / 100;
+        if (yieldFactor <= 0) {
+             console.warn(`Invalid yield percentage (${ingredient.yieldPercentage}%) for item "${item.name}" in recipe "${currentRecipeName}". This ingredient's cost will be ignored.`);
+             return 0;
+        }
+        
+        const asPurchasedQuantity = ingredient.quantity / yieldFactor;
+        const cost = item.unitCost * asPurchasedQuantity * conversionFactor;
+        return isNaN(cost) ? 0 : cost;
+    };
 
-      visitedRecipes.delete(currentRecipe.id);
-      costMemo.set(currentRecipe.id, totalIngredientCost);
-      return totalIngredientCost;
+    /**
+     * Recursively calculates the cost of a sub-recipe ingredient, handling production yield and unit conversions.
+     * @returns The calculated cost, or 0 if an error occurs.
+     */
+    const getCostForSubRecipe = (ingredient: Ingredient, currentRecipeName: string): number => {
+        const subRecipe = getRecipeById(ingredient.itemId);
+        if (!subRecipe) {
+             console.warn(`Sub-recipe not found (ID: ${ingredient.itemId}) for recipe "${currentRecipeName}". This ingredient's cost will be ignored.`);
+             return 0;
+        }
+        
+        if (!subRecipe.productionYield || !subRecipe.productionUnit || subRecipe.productionYield <= 0) {
+            console.warn(`Sub-recipe "${subRecipe.name}" in recipe "${currentRecipeName}" lacks valid production details (yield/unit) and cannot be costed. It will be ignored.`);
+            return 0;
+        }
+
+        const subRecipeTotalCost = calculateCostRecursive(subRecipe); // Recursive call
+        const costPerProductionUnit = subRecipeTotalCost / subRecipe.productionYield;
+        
+        const conversionFactor = getConversionFactor(ingredient.unit, subRecipe.productionUnit, null);
+        if (conversionFactor === null) {
+             console.warn(`Unit conversion not found from "${ingredient.unit}" to "${subRecipe.productionUnit}" for sub-recipe "${subRecipe.name}" in recipe "${currentRecipeName}". It will be ignored.`);
+             return 0;
+        }
+        
+        const subRecipeCostInRecipe = costPerProductionUnit * ingredient.quantity * conversionFactor;
+        const yieldFactor = (ingredient.yieldPercentage ?? 100) / 100;
+        
+        if (yieldFactor <= 0) {
+            console.warn(`Invalid yield percentage (${ingredient.yieldPercentage}%) for sub-recipe "${subRecipe.name}" in recipe "${currentRecipeName}". It will be ignored.`);
+            return 0;
+        }
+        
+        const cost = subRecipeCostInRecipe / yieldFactor;
+        return isNaN(cost) ? 0 : cost;
+    };
+
+    /**
+     * The core recursive function that calculates the total raw material cost for a given recipe.
+     */
+    const calculateCostRecursive = (currentRecipe: Recipe): number => {
+        // Return cached cost if already calculated for this recipe.
+        if (costMemo.has(currentRecipe.id)) {
+            return costMemo.get(currentRecipe.id)!;
+        }
+
+        // Handle circular dependencies to prevent infinite loops.
+        if (visitedRecipes.has(currentRecipe.id)) {
+            console.warn(`Circular dependency detected involving recipe: "${currentRecipe.name}". Its cost is ignored in this path to prevent an infinite loop.`);
+            return 0;
+        }
+        visitedRecipes.add(currentRecipe.id);
+
+        const totalIngredientCost = currentRecipe.ingredients.reduce((total, ingredient) => {
+            const ingredientCost = ingredient.type === 'item'
+                ? getCostForPricedItem(ingredient, currentRecipe.name)
+                : getCostForSubRecipe(ingredient, currentRecipe.name);
+            return total + ingredientCost;
+        }, 0);
+
+        // Clean up visited path and cache the result before returning.
+        visitedRecipes.delete(currentRecipe.id);
+        costMemo.set(currentRecipe.id, totalIngredientCost);
+        return totalIngredientCost;
     };
     
     return calculateCostRecursive(recipe);
