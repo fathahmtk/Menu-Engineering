@@ -117,21 +117,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
     if (!recipe) return 0;
     
-    // Memoization cache for recipe costs to optimize performance
+    // Memoization cache for sub-recipe costs to optimize performance for complex recipes.
     const costMemo = new Map<string, number>();
-    // Set to track visited recipes for circular dependency detection within a single calculation path
+    // Tracks visited recipes in the current calculation path to gracefully handle circular dependencies.
     const visitedRecipes = new Set<string>();
 
     const calculateCostRecursive = (currentRecipe: Recipe): number => {
-      // Check cache first for performance
       if (costMemo.has(currentRecipe.id)) {
           return costMemo.get(currentRecipe.id)!;
       }
 
-      // Circular dependency check
       if (visitedRecipes.has(currentRecipe.id)) {
-        console.warn(`Circular dependency detected involving recipe: "${currentRecipe.name}". This ingredient's cost will be ignored.`);
-        return 0; // Prevent infinite loop
+        console.warn(`Circular dependency detected involving recipe: "${currentRecipe.name}". Its cost will be ignored in this path to prevent an infinite loop.`);
+        return 0;
       }
       visitedRecipes.add(currentRecipe.id);
 
@@ -141,34 +139,34 @@ const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
         if (ingredient.type === 'item') {
             const item = getPricedItemById(ingredient.itemId);
             if (!item) {
-                console.warn(`Priced item with ID ${ingredient.itemId} not found for recipe "${currentRecipe.name}".`);
+                console.warn(`Priced item not found (ID: ${ingredient.itemId}) for recipe "${currentRecipe.name}". This ingredient will be skipped.`);
                 return total;
             }
             
-            const costConversionFactor = getConversionFactor(ingredient.unit, item.unit, item.id);
-            if (costConversionFactor === null) {
-                console.warn(`No conversion found from "${ingredient.unit}" to "${item.unit}" for item "${item.name}" in recipe "${currentRecipe.name}".`);
+            const conversionFactor = getConversionFactor(ingredient.unit, item.unit, item.id);
+            if (conversionFactor === null) {
+                console.warn(`Unit conversion not found from "${ingredient.unit}" to "${item.unit}" for item "${item.name}" in recipe "${currentRecipe.name}". This ingredient will be skipped.`);
                 return total;
             }
 
-            const prepYieldFactor = (ingredient.yieldPercentage ?? 100) / 100;
-            if (prepYieldFactor <= 0) {
-                 console.warn(`Invalid yield percentage (0% or less) for ingredient "${item.name}" in recipe "${currentRecipe.name}". Cost will be ignored.`);
+            const yieldFactor = (ingredient.yieldPercentage ?? 100) / 100;
+            if (yieldFactor <= 0) {
+                 console.warn(`Invalid yield percentage (${ingredient.yieldPercentage}%) for item "${item.name}" in recipe "${currentRecipe.name}". This ingredient will be skipped.`);
                  return total;
             }
             
-            const requiredQuantity = ingredient.quantity / prepYieldFactor;
-            ingredientCost = item.unitCost * requiredQuantity * costConversionFactor;
+            const asPurchasedQuantity = ingredient.quantity / yieldFactor;
+            ingredientCost = item.unitCost * asPurchasedQuantity * conversionFactor;
 
         } else { // type === 'recipe'
-            const subRecipe = recipes.find(r => r.id === ingredient.itemId);
+            const subRecipe = getRecipeById(ingredient.itemId);
             if (!subRecipe) {
-                 console.warn(`Sub-recipe with ID ${ingredient.itemId} not found for recipe "${currentRecipe.name}".`);
+                 console.warn(`Sub-recipe not found (ID: ${ingredient.itemId}) for recipe "${currentRecipe.name}". This ingredient will be skipped.`);
                  return total;
             }
             
             if (!subRecipe.productionYield || !subRecipe.productionUnit || subRecipe.productionYield <= 0) {
-                console.warn(`Sub-recipe "${subRecipe.name}" is missing production details (yield/unit) or has an invalid yield, cannot be costed.`);
+                console.warn(`Sub-recipe "${subRecipe.name}" in recipe "${currentRecipe.name}" is missing valid production details (yield/unit) and cannot be costed. This ingredient will be skipped.`);
                 return total;
             }
 
@@ -177,19 +175,19 @@ const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
             
             const conversionFactor = getConversionFactor(ingredient.unit, subRecipe.productionUnit, null);
             if (conversionFactor === null) {
-                 console.warn(`No conversion found from "${ingredient.unit}" to "${subRecipe.productionUnit}" for sub-recipe "${subRecipe.name}" in recipe "${currentRecipe.name}".`);
+                 console.warn(`Unit conversion not found from "${ingredient.unit}" to "${subRecipe.productionUnit}" for sub-recipe "${subRecipe.name}" in recipe "${currentRecipe.name}". This ingredient will be skipped.`);
                  return total;
             }
             
             const subRecipeCostInRecipe = costPerProductionUnit * ingredient.quantity * conversionFactor;
-            const prepYieldFactor = (ingredient.yieldPercentage ?? 100) / 100;
+            const yieldFactor = (ingredient.yieldPercentage ?? 100) / 100;
             
-            if (prepYieldFactor <= 0) {
-                console.warn(`Invalid yield percentage (0% or less) for sub-recipe "${subRecipe.name}" in recipe "${currentRecipe.name}". Cost will be ignored.`);
-                ingredientCost = subRecipeCostInRecipe;
-            } else {
-                ingredientCost = subRecipeCostInRecipe / prepYieldFactor;
+            if (yieldFactor <= 0) {
+                console.warn(`Invalid yield percentage (${ingredient.yieldPercentage}%) for sub-recipe "${subRecipe.name}" in recipe "${currentRecipe.name}". This ingredient will be skipped.`);
+                return total;
             }
+            
+            ingredientCost = subRecipeCostInRecipe / yieldFactor;
         }
 
         return total + (isNaN(ingredientCost) ? 0 : ingredientCost);
@@ -201,7 +199,7 @@ const calculateRecipeCost = useCallback((recipe: Recipe | null): number => {
     };
     
     return calculateCostRecursive(recipe);
-}, [getPricedItemById, getConversionFactor, recipes]);
+}, [getPricedItemById, getRecipeById, getConversionFactor, recipes]);
 
 const calculateRecipeCostBreakdown = useCallback((recipe: Recipe | null): RecipeCostBreakdown => {
     const emptyBreakdown: RecipeCostBreakdown = { rawMaterialCost: 0, labourCost: 0, variableOverheadCost: 0, fixedOverheadCost: 0, packagingCost: 0, totalCost: 0, costPerServing: 0 };
