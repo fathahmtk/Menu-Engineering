@@ -20,7 +20,9 @@ async function getAiClient() {
     try {
         // Dynamically import the library. This is the key change to prevent module load errors.
         const { GoogleGenAI } = await import('@google/genai');
-        const apiKey = process.env.API_KEY;
+        
+        // Safely access process.env.API_KEY to prevent ReferenceError in environments where 'process' is not defined.
+        const apiKey = typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined;
 
         if (apiKey) {
             ai = new GoogleGenAI({ apiKey });

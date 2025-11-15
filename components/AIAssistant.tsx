@@ -89,6 +89,33 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
         setInput(prompt);
     };
 
+    const renderMarkdown = (text: string) => {
+        // A simple markdown-to-HTML converter.
+        // Handles **bold**, - lists, and newlines for improved readability.
+        let html = text
+            // 1. Escape HTML to prevent XSS.
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+        // 2. Bold text: **text**
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        // 3. Unordered lists: - item
+        // Note: This is a simplified implementation. It wraps list items in <ul>.
+        html = html.replace(/^\s*[-*]\s+(.*)$/gm, '<li>$1</li>');
+        html = html.replace(/^(<li>.*<\/li>)$/gms, '<ul>$1</ul>');
+        html = html.replace(/<\/ul>\s?<ul>/g, ''); // Merge consecutive lists
+
+        // 4. Convert newlines to <br>, but clean up extras around lists.
+        html = html.replace(/\n/g, '<br />');
+        html = html.replace(/<\/li><br \/>/g, '</li>');
+        html = html.replace(/<br \/><ul>/g, '<ul>');
+        html = html.replace(/<\/ul><br \/>/g, '</ul>');
+        
+        return html;
+    };
+
     const examplePrompts = [
         "What's my most profitable menu item?",
         "Which recipes use 'Chicken Breast (Halal)'?",
@@ -122,7 +149,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
                             <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                                 {msg.role === 'model' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center"><Bot size={18} className="text-[var(--color-primary)]"/></div>}
                                 <div className={`max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-input)]'}`}>
-                                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br />') }} />
+                                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} />
                                 </div>
                                 {msg.role === 'user' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--color-input)] flex items-center justify-center"><User size={18} className="text-[var(--color-text-secondary)]"/></div>}
                             </div>

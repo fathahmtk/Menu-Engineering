@@ -95,6 +95,7 @@ const Dashboard: React.FC<{setCurrentView?: (view: View) => void}> = ({ setCurre
                             <p className="text-2xl font-bold text-[var(--color-text-primary)]">{formatCurrency(totalMenuProfitability / menuItems.length || 0)}</p>
                         </div>
                     </div>
+                </Card>
             }
              <Card className="col-span-1">
                 <div className="flex items-center">
