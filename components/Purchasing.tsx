@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -6,9 +7,11 @@ import ConfirmationModal from './common/ConfirmationModal';
 import { useData } from '../hooks/useDataContext';
 import { useCurrency } from '../hooks/useCurrencyContext';
 import { PricedItem } from '../types';
-import { Upload, Download, Tags, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { Tags, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useNotification } from '../hooks/useNotificationContext';
 import ImportModal from './common/ImportModal';
+import ActionsDropdown from './common/ActionsDropdown';
+import { convertToCSV, downloadCSV } from '../utils/csvHelper';
 
 const ITEM_CATEGORIES: PricedItem['category'][] = ['Produce', 'Meat', 'Dairy', 'Pantry', 'Bakery', 'Beverages', 'Seafood'];
 
@@ -38,7 +41,9 @@ const PricedItemFormModal: React.FC<{
         const newErrors: {[key:string]: string} = {};
         if (!formData.name.trim()) newErrors.name = 'Item name is required.';
         if (!formData.unit.trim()) newErrors.unit = 'Unit is required.';
-        if (formData.unitCost < 0) newErrors.unitCost = 'Unit cost cannot be negative.';
+        if (isNaN(formData.unitCost) || formData.unitCost < 0) {
+            newErrors.unitCost = 'Unit cost must be a valid non-negative number.';
+        }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -143,6 +148,19 @@ const PriceList: React.FC = () => {
         });
     };
 
+    const handleExport = () => {
+        const headers = ['name', 'category', 'unit', 'unitCost'];
+        const dataToExport = pricedItems.map(item => ({
+            name: item.name,
+            category: item.category,
+            unit: item.unit,
+            unitCost: item.unitCost
+        }));
+        const csvString = convertToCSV(dataToExport, headers);
+        downloadCSV(csvString, 'price_list.csv');
+        addNotification('Price list exported successfully!', 'success');
+    };
+
     const handleSaveItem = (itemData: Omit<PricedItem, 'id' | 'businessId'> | PricedItem) => {
         if ('id' in itemData) {
             updatePricedItem(itemData);
@@ -180,10 +198,7 @@ const PriceList: React.FC = () => {
                 <div className="flex flex-col md:flex-row gap-4 md:gap-2 justify-between items-start md:items-center mb-6">
                     <h2 className="text-xl font-bold">Price List Management</h2>
                     <div className="flex items-center space-x-2">
-                        <button onClick={() => setImportModalOpen(true)} className="ican-btn ican-btn-secondary p-2 md:px-4 md:py-2">
-                            <Upload size={20} className="md:mr-2" />
-                            <span className="hidden md:inline">Bulk Import/Replace</span>
-                        </button>
+                        <ActionsDropdown onExport={handleExport} onImport={() => setImportModalOpen(true)} />
                         <button onClick={() => openFormModal()} className="ican-btn ican-btn-primary p-2 md:px-4 md:py-2">
                             <PlusCircle size={20} className="md:mr-2" />
                             <span className="hidden md:inline">Add Item</span>
