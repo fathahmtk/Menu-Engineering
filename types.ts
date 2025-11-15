@@ -65,6 +65,7 @@ export interface Recipe {
   customLabourSalary?: number;
   customWorkingDays?: number;
   customWorkingHours?: number;
+  batchQuantity?: number;
 }
 
 export interface RecipeCategory {

@@ -35,6 +35,7 @@ export const mockRecipes: Recipe[] = [
         labourMinutes: 60,
         packagingCostPerServing: 0,
         labourCostMethod: 'blended',
+        batchQuantity: 1,
     },
     { 
         id: 'r1', 
@@ -54,6 +55,7 @@ export const mockRecipes: Recipe[] = [
         customLabourSalary: 2800,
         customWorkingDays: 24,
         customWorkingHours: 9,
+        batchQuantity: 1,
     },
     { 
         id: 'r2', 
@@ -71,6 +73,7 @@ export const mockRecipes: Recipe[] = [
         labourMinutes: 5,
         packagingCostPerServing: 0.40,
         labourCostMethod: 'blended',
+        batchQuantity: 20,
     },
      { 
         id: 'r3', 
@@ -88,6 +91,7 @@ export const mockRecipes: Recipe[] = [
         packagingCostPerServing: 0.25,
         labourCostMethod: 'staff',
         assignedStaffId: 'staff1',
+        batchQuantity: 1,
     },
 ];
 

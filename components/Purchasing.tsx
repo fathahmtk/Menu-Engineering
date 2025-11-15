@@ -1,5 +1,4 @@
 
-
 import React, { useState, useCallback, useEffect } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -51,12 +50,16 @@ const PricedItemFormModal: React.FC<{
         if (!formState.name.trim()) newErrors.name = 'Item name is required.';
         if (!formState.unit.trim()) newErrors.unit = 'Unit is required.';
 
-        const costValue = parseFloat(formState.unitCost);
-
-        if (formState.unitCost.trim() === '' || isNaN(costValue)) {
-            newErrors.unitCost = 'Unit cost is required and must be a number.';
-        } else if (costValue < 0) {
-            newErrors.unitCost = 'Unit cost cannot be negative.';
+        const costTrimmed = formState.unitCost.trim();
+        if (costTrimmed === '') {
+            newErrors.unitCost = 'Unit cost is required.';
+        } else {
+            const costValue = parseFloat(costTrimmed);
+            if (isNaN(costValue)) {
+                newErrors.unitCost = 'Unit cost must be a valid number.';
+            } else if (costValue < 0) {
+                newErrors.unitCost = 'Unit cost cannot be negative.';
+            }
         }
 
         setErrors(newErrors);
@@ -175,12 +178,14 @@ const PriceList: React.FC = () => {
 
     const handleExport = () => {
         const headers = ['name', 'category', 'unit', 'unitCost'];
-        const dataToExport = pricedItems.map(item => ({
-            name: item.name,
-            category: item.category,
-            unit: item.unit,
-            unitCost: item.unitCost
-        }));
+        const dataToExport = [...pricedItems]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map(item => ({
+                name: item.name,
+                category: item.category,
+                unit: item.unit,
+                unitCost: item.unitCost
+            }));
         const csvString = convertToCSV(dataToExport, headers);
         downloadCSV(csvString, 'price_list.csv');
         addNotification('Price list exported successfully!', 'success');
