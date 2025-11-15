@@ -300,7 +300,7 @@ const TabButton: React.FC<{
 );
 
 const Recipes: React.FC = () => {
-    const { recipes, getPricedItemById, getRecipeById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCostBreakdown, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, pricedItems, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes, businesses, staffMembers } = useData();
+    const { recipes, getPricedItemById, getRecipeById, updateRecipe, deleteRecipe, addRecipe, recordRecipeCostHistory, duplicateRecipe, calculateRecipeCostBreakdown, activeBusinessId, categories, recipeTemplates, addRecipeTemplate, pricedItems, getConversionFactor, ingredientUnits, uploadRecipeImage, removeRecipeImage, bulkAddRecipes, businesses, staffMembers, overheads } = useData();
     const { formatCurrency } = useCurrency();
     const { addNotification } = useNotification();
     const { setIsDirty, promptNavigation } = useUnsavedChanges();
@@ -649,7 +649,7 @@ const Recipes: React.FC = () => {
                             itemId: itemId,
                             quantity: parseFloat(row.ingredientQuantity) || 0,
                             unit: row.ingredientUnit,
-                            yieldPercentage: parseFloat(row.yieldPercentage) || 100,
+                            yieldPercentage: parseFloat(row.ingredientQuantity) || 100,
                         });
                     }
                 } else {
@@ -753,6 +753,48 @@ const Recipes: React.FC = () => {
     const foodCostPercentage = (costBreakdown && editedRecipe?.targetSalePricePerServing && editedRecipe.targetSalePricePerServing > 0) ? (costBreakdown.costPerServing / editedRecipe.targetSalePricePerServing) * 100 : 0;
     const potentialProfit = (editedRecipe?.targetSalePricePerServing || 0) - (costBreakdown?.costPerServing || 0);
     
+    const getLabourCalculationDetails = useCallback(() => {
+        if (!editedRecipe) return '';
+        const globalWorkingMinutes = settings.workingDaysPerMonth * settings.hoursPerDay * 60;
+        switch (editedRecipe.labourCostMethod) {
+            case 'staff':
+                const assignedStaff = staffMembers.find(s => s.id === editedRecipe.assignedStaffId);
+                if (assignedStaff && globalWorkingMinutes > 0) {
+                    return `(${formatCurrency(assignedStaff.monthlySalary)} / ${globalWorkingMinutes} mins) * ${editedRecipe.labourMinutes} mins/serv * ${editedRecipe.servings} servs`;
+                }
+                return 'Staff or schedule not set';
+            case 'custom':
+                const days = editedRecipe.customWorkingDays || settings.workingDaysPerMonth;
+                const hours = editedRecipe.customWorkingHours || settings.hoursPerDay;
+                const salary = editedRecipe.customLabourSalary || 0;
+                const customMinutes = days * hours * 60;
+                if (customMinutes > 0) {
+                    return `(${formatCurrency(salary)} / ${customMinutes} mins) * ${editedRecipe.labourMinutes} mins/serv * ${editedRecipe.servings} servs`;
+                }
+                return 'Custom labour values not set';
+            case 'blended':
+            default:
+                const totalSalary = staffMembers.reduce((sum, staff) => sum + staff.monthlySalary, 0);
+                if (globalWorkingMinutes > 0) {
+                    return `(${formatCurrency(totalSalary)} / ${globalWorkingMinutes} mins) * ${editedRecipe.labourMinutes} mins/serv * ${editedRecipe.servings} servs`;
+                }
+                return 'Global schedule not set';
+        }
+    }, [editedRecipe, settings, staffMembers, formatCurrency]);
+
+    const getOverheadCalculationDetails = useCallback(() => {
+        if (!editedRecipe) return { vohString: '', fohString: '' };
+        const filteredOverheads = overheads.filter(o => o.businessId === activeBusinessId);
+        const totalVOH = filteredOverheads.filter(o => o.type === 'Variable').reduce((sum, o) => sum + o.monthlyCost, 0);
+        const totalFOH = filteredOverheads.filter(o => o.type === 'Fixed').reduce((sum, o) => sum + o.monthlyCost, 0);
+        
+        const vohString = `(${formatCurrency(totalVOH)} / ${settings.totalDishesProduced} dishes) * ${editedRecipe.servings} servs`;
+        const fohString = `(${formatCurrency(totalFOH)} / ${settings.totalDishesSold} dishes) * ${editedRecipe.servings} servs`;
+
+        return { vohString, fohString };
+    }, [editedRecipe, settings, overheads, activeBusinessId, formatCurrency]);
+
+
     return (
         <>
         <RecipeFormModal 
@@ -957,30 +999,45 @@ const Recipes: React.FC = () => {
                         <div className="space-y-6" style={{ animation: 'fadeIn 0.3s ease-out' }}>
                             <Card>
                                 <h3 className="text-lg font-bold mb-4">Total True Cost Breakdown</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
-                                    <div className="bg-[var(--color-input)] p-3 rounded-lg">
-                                        <p className="text-xs text-[var(--color-text-muted)]">Raw Materials</p>
-                                        <p className="font-bold text-lg">{formatCurrency(costBreakdown.rawMaterialCost)}</p>
+                                <div className="space-y-3 text-sm">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[var(--color-text-secondary)]">Raw Materials Cost</span>
+                                        <span className="font-semibold">{formatCurrency(costBreakdown.rawMaterialCost)}</span>
                                     </div>
-                                    <div className="bg-[var(--color-input)] p-3 rounded-lg">
-                                        <p className="text-xs text-[var(--color-text-muted)]">Direct Labour</p>
-                                        <p className="font-bold text-lg">{formatCurrency(costBreakdown.labourCost)}</p>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <span className="text-[var(--color-text-secondary)]">Direct Labour Cost</span>
+                                            <p className="text-xs text-[var(--color-text-muted)] font-mono max-w-xs truncate" title={getLabourCalculationDetails()}>{getLabourCalculationDetails()}</p>
+                                        </div>
+                                        <span className="font-semibold flex-shrink-0">{formatCurrency(costBreakdown.labourCost)}</span>
                                     </div>
-                                    <div className="bg-[var(--color-input)] p-3 rounded-lg">
-                                        <p className="text-xs text-[var(--color-text-muted)]">Overheads (V+F)</p>
-                                        <p className="font-bold text-lg">{formatCurrency(costBreakdown.variableOverheadCost + costBreakdown.fixedOverheadCost)}</p>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <span className="text-[var(--color-text-secondary)]">Variable Overheads</span>
+                                            <p className="text-xs text-[var(--color-text-muted)] font-mono max-w-xs truncate" title={getOverheadCalculationDetails().vohString}>{getOverheadCalculationDetails().vohString}</p>
+                                        </div>
+                                        <span className="font-semibold flex-shrink-0">{formatCurrency(costBreakdown.variableOverheadCost)}</span>
                                     </div>
-                                    <div className="bg-[var(--color-input)] p-3 rounded-lg">
-                                        <p className="text-xs text-[var(--color-text-muted)]">Packaging</p>
-                                        <p className="font-bold text-lg">{formatCurrency(costBreakdown.packagingCost)}</p>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <span className="text-[var(--color-text-secondary)]">Fixed Overheads</span>
+                                            <p className="text-xs text-[var(--color-text-muted)] font-mono max-w-xs truncate" title={getOverheadCalculationDetails().fohString}>{getOverheadCalculationDetails().fohString}</p>
+                                        </div>
+                                        <span className="font-semibold flex-shrink-0">{formatCurrency(costBreakdown.fixedOverheadCost)}</span>
                                     </div>
-                                    <div className="bg-[var(--color-primary-light)] p-3 rounded-lg col-span-2 md:col-span-1">
-                                        <p className="text-xs text-[var(--color-primary)]/80">Total Cost</p>
-                                        <p className="font-bold text-lg text-[var(--color-primary)]">{formatCurrency(costBreakdown.totalCost)}</p>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[var(--color-text-secondary)]">Packaging Cost</span>
+                                        <span className="font-semibold">{formatCurrency(costBreakdown.packagingCost)}</span>
                                     </div>
-                                    <div className="bg-[var(--color-primary-light)] p-3 rounded-lg">
-                                        <p className="text-xs text-[var(--color-primary)]/80">Cost / Serving</p>
-                                        <p className="font-bold text-lg text-[var(--color-primary)]">{formatCurrency(costBreakdown.costPerServing)}</p>
+                                    <div className="border-t border-[var(--color-border)] my-2 pt-3">
+                                      <div className="flex justify-between items-center font-bold text-base">
+                                          <span className="text-[var(--color-text-primary)]">Total Recipe Cost</span>
+                                          <span className="text-[var(--color-primary)]">{formatCurrency(costBreakdown.totalCost)}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center font-bold text-base mt-1">
+                                          <span className="text-[var(--color-text-primary)]">Cost per Serving</span>
+                                          <span className="text-[var(--color-primary)]">{formatCurrency(costBreakdown.costPerServing)}</span>
+                                      </div>
                                     </div>
                                 </div>
                             </Card>
@@ -1043,7 +1100,9 @@ const Recipes: React.FC = () => {
                                     {editedRecipe.ingredients.map((ing, index) => {
                                         const tempRecipe: Recipe = { ...editedRecipe, ingredients: [ing] };
                                         const { rawMaterialCost: lineCost } = calculateRecipeCostBreakdown(tempRecipe);
-                                        
+                                        const yieldFactor = (ing.yieldPercentage || 100) / 100;
+                                        const asPurchasedQty = yieldFactor > 0 ? (ing.quantity / yieldFactor) : ing.quantity;
+
                                         return (
                                             <div 
                                                 key={ing.id} 
@@ -1068,12 +1127,10 @@ const Recipes: React.FC = () => {
                                                     </div>
                                                     <button onClick={() => handleRemoveIngredientFromRecipe(index)} className="text-[var(--color-danger)]/80 hover:text-[var(--color-danger)] flex-shrink-0 p-1"><X size={18} /></button>
                                                 </div>
-                                                <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm pl-8">
+                                                <div className="mt-2 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm pl-8">
                                                     <div>
-                                                        <label className="block text-xs font-medium text-[var(--color-text-muted)]">Quantity</label>
-                                                        <div className="flex items-center">
-                                                            <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', parseFloat(e.target.value) || 0)} className="ican-input mt-1 p-1.5 w-full" placeholder="Qty"/>
-                                                        </div>
+                                                        <label className="block text-xs font-medium text-[var(--color-text-muted)]">Quantity (Finished)</label>
+                                                        <input type="number" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', parseFloat(e.target.value) || 0)} className="ican-input mt-1 p-1.5 w-full" placeholder="Qty"/>
                                                     </div>
                                                     <div>
                                                         <label className="block text-xs font-medium text-[var(--color-text-muted)]">Unit</label>
@@ -1082,8 +1139,20 @@ const Recipes: React.FC = () => {
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-medium text-[var(--color-text-muted)]">Prep Yield %</label>
+                                                         <label className="flex items-center text-xs font-medium text-[var(--color-text-muted)]">
+                                                            Prep Yield %
+                                                            <span className="group relative ml-1.5">
+                                                                <Info size={14} className="cursor-help" />
+                                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 text-xs text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                                    The usable percentage of an ingredient after trimming, peeling, or cooking. E.g., a peeled potato might have a 90% yield.
+                                                                </span>
+                                                            </span>
+                                                        </label>
                                                         <input type="number" value={ing.yieldPercentage || 100} onChange={e => handleIngredientChange(index, 'yieldPercentage', parseFloat(e.target.value) || 0)} className="ican-input mt-1 p-1.5" placeholder="Yield %"/>
+                                                    </div>
+                                                     <div>
+                                                        <label className="block text-xs font-medium text-[var(--color-text-muted)]">As Purchased Qty</label>
+                                                        <p className="font-medium text-[var(--color-text-secondary)] p-1.5 mt-1 bg-[var(--color-background)] rounded h-[33px] flex items-center" title="This is the quantity you need to purchase to account for yield loss.">{asPurchasedQty.toFixed(3)} {ing.unit}</p>
                                                     </div>
                                                     <div>
                                                         <label className="block text-xs font-medium text-[var(--color-text-muted)]">Line Cost</label>
