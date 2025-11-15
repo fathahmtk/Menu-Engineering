@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Card from './common/Card';
 import Modal from './common/Modal';
@@ -985,20 +986,24 @@ const Recipes: React.FC = () => {
                             </Card>
                              <Card>
                                  <h3 className="text-lg font-bold mb-4">Profitability Analysis</h3>
-                                 <div className="space-y-4 text-sm">
-                                     <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-medium text-[var(--color-text-muted)]">Target Sale Price</label>
-                                            <input type="number" min="0" step="0.01" value={editedRecipe.targetSalePricePerServing} onChange={(e) => handleDetailChange('targetSalePricePerServing', Number(e.target.value))} className="ican-input mt-1 p-2 h-auto" />
-                                        </div>
-                                         <div className="text-center bg-[var(--color-input)] p-2 rounded-lg">
-                                            <p className="text-xs text-[var(--color-text-muted)]">Food Cost %</p>
-                                            <p className="font-bold text-lg">{foodCostPercentage.toFixed(1)}%</p>
-                                        </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-2">Target Sale Price</label>
+                                        <input type="number" min="0" step="0.01" value={editedRecipe.targetSalePricePerServing} onChange={(e) => handleDetailChange('targetSalePricePerServing', Number(e.target.value))} className="ican-input w-full" />
                                     </div>
-                                    <div className="bg-[var(--color-input)] p-3 rounded-lg text-center">
-                                        <p className="text-xs text-[var(--color-text-muted)]">Potential Profit / Serving</p>
-                                        <p className={`font-bold text-xl ${potentialProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{formatCurrency(potentialProfit)}</p>
+                                    <div className="bg-[var(--color-input)] p-4 rounded-lg space-y-3">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-[var(--color-text-muted)]">Cost / Serving:</span>
+                                            <span className="font-semibold">{formatCurrency(costBreakdown.costPerServing)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-[var(--color-text-muted)]">Food Cost %:</span>
+                                            <span className={`font-bold ${foodCostPercentage > (settings.foodCostTarget + 5) ? 'text-[var(--color-danger)]' : foodCostPercentage > settings.foodCostTarget ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>{foodCostPercentage.toFixed(1)}%</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm pt-2 border-t border-[var(--color-border)]">
+                                            <span className="font-semibold text-md text-[var(--color-text-primary)]">Potential Profit:</span>
+                                            <span className={`font-bold text-lg ${potentialProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{formatCurrency(potentialProfit)}</span>
+                                        </div>
                                     </div>
                                  </div>
                             </Card>

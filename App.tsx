@@ -1,13 +1,10 @@
 
-
-
-
 import React, { useState, lazy, Suspense, useTransition } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import { DataProvider } from './hooks/useDataContext';
 import { CurrencyProvider } from './hooks/useCurrencyContext';
-import { Menu as MenuIcon, LoaderCircle } from 'lucide-react';
+import { Menu as MenuIcon, LoaderCircle, Sparkles } from 'lucide-react';
 import { useData } from './hooks/useDataContext';
 import { AuthProvider, useAuth } from './hooks/useAuthContext';
 import { NotificationProvider } from './hooks/useNotificationContext';
@@ -25,11 +22,16 @@ const Menu = lazy(() => import('./components/Menu'));
 const Suppliers = lazy(() => import('./components/Suppliers'));
 const Reports = lazy(() => import('./components/Reports'));
 const Settings = lazy(() => import('./components/Settings'));
+const AIAssistant = lazy(() => import('./components/AIAssistant'));
 
 
 export type View = 'dashboard' | 'pricelist' | 'recipes' | 'menu' | 'suppliers' | 'reports' | 'settings';
 
-const viewComponents: Record<View, React.LazyExoticComponent<React.FC<{}>>> = {
+interface ViewComponentProps {
+  setCurrentView?: (view: View) => void;
+}
+
+const viewComponents: Record<View, React.LazyExoticComponent<React.FC<ViewComponentProps>>> = {
     dashboard: Dashboard,
     pricelist: PriceList,
     recipes: Recipes,
@@ -119,6 +121,7 @@ const AppContent: React.FC = () => {
     const [isPending, startTransition] = useTransition();
     const [currentView, setCurrentView] = useState<View>('dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isAssistantOpen, setIsAssistantOpen] = useState(false);
     const CurrentViewComponent = viewComponents[currentView];
 
     const handleSetCurrentView = (view: View) => {
@@ -152,10 +155,21 @@ const AppContent: React.FC = () => {
                     />
                     <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto" style={{ animation: 'fadeIn 0.5s ease-out' }}>
                         <Suspense fallback={<GlobalLoading message="Loading Content..." />}>
-                            <CurrentViewComponent />
+                            <CurrentViewComponent setCurrentView={handleSetCurrentView} />
                         </Suspense>
                     </main>
                 </div>
+                <button
+                    onClick={() => setIsAssistantOpen(true)}
+                    className="fixed bottom-6 right-6 ican-btn ican-btn-primary rounded-full h-14 w-14 shadow-lg hover:scale-110 transform transition-transform duration-200"
+                    aria-label="Open AI Assistant"
+                    title="AI Assistant"
+                >
+                    <Sparkles size={24} />
+                </button>
+                <Suspense fallback={null}>
+                    <AIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} />
+                </Suspense>
             </div>
         </UnsavedChangesProvider>
     );

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Card from './common/Card';
 import { useData } from '../hooks/useDataContext';
@@ -6,10 +7,17 @@ import { BookCheck, PieChart, Utensils, PlusCircle, Upload, ArrowRight } from 'l
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useAuth } from '../hooks/useAuthContext';
+import { View } from '../App';
 
 
-const WelcomeCard: React.FC = () => {
+const WelcomeCard: React.FC<{ setCurrentView?: (view: View) => void }> = ({ setCurrentView }) => {
     const { user } = useAuth();
+
+    const handleNavigation = (view: View) => {
+        if (setCurrentView) {
+            setCurrentView(view);
+        }
+    };
 
     return (
         <Card className="col-span-1 lg:col-span-3 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] text-white shadow-lg">
@@ -19,11 +27,11 @@ const WelcomeCard: React.FC = () => {
                     <p className="text-white/80 mt-1">Here's your business performance overview.</p>
                 </div>
                 <div className="flex items-center space-x-2 mt-4 md:mt-0">
-                    <button className="bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg text-sm inline-flex items-center transition-colors">
+                    <button onClick={() => handleNavigation('recipes')} className="bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg text-sm inline-flex items-center transition-colors">
                         <PlusCircle size={16} className="mr-2"/>
                         Add Recipe
                     </button>
-                     <button className="bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg text-sm inline-flex items-center transition-colors">
+                     <button onClick={() => handleNavigation('pricelist')} className="bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg text-sm inline-flex items-center transition-colors">
                         <Upload size={16} className="mr-2"/>
                         Upload Pricelist
                     </button>
@@ -34,7 +42,7 @@ const WelcomeCard: React.FC = () => {
 };
 
 
-const Dashboard: React.FC = () => {
+const Dashboard: React.FC<{setCurrentView?: (view: View) => void}> = ({ setCurrentView }) => {
     const { menuItems, recipes, getRecipeById, calculateRecipeCostBreakdown } = useData();
     const { formatCurrency } = useCurrency();
     const { settings } = useAppSettings();
@@ -61,7 +69,7 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <WelcomeCard />
+            <WelcomeCard setCurrentView={setCurrentView} />
             
             {settings.dashboard.totalRecipes &&
                 <Card className="col-span-1">

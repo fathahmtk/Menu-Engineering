@@ -1,3 +1,4 @@
+
 import type { Dispatch, SetStateAction } from 'react';
 
 export interface Business {
@@ -181,7 +182,11 @@ export interface DataContextType {
   menuItems: MenuItem[];
 
   // CRUD Operations
-  uploadPriceList: (items: Omit<PricedItem, 'id' | 'businessId'>[]) => Promise<{ successCount: number }>;
+  // FIX: Updated return type to include duplicateCount for consistency with ImportModal.
+  uploadPriceList: (items: Omit<PricedItem, 'id' | 'businessId'>[]) => Promise<{ successCount: number; duplicateCount: number; }>;
+  addPricedItem: (item: Omit<PricedItem, 'id' | 'businessId'>) => Promise<void>;
+  updatePricedItem: (item: PricedItem) => Promise<void>;
+  deletePricedItem: (id: string) => Promise<{ success: boolean; message?: string }>;
 
   addRecipe: (recipe: Omit<Recipe, 'id' | 'businessId'>) => Promise<void>;
   updateRecipe: (recipe: Recipe) => Promise<void>;

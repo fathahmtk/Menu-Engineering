@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { PricedItem, Recipe, Business, RecipeCategory, RecipeTemplate, IngredientUnit, DataContextType, UnitConversion, StaffMember, Overhead, RecipeCostBreakdown, Supplier, MenuItem } from '../types';
 import { mockBusinesses, mockPricedItems, mockRecipes, mockCategories, mockIngredientUnits, mockRecipeTemplates, mockUnitConversions, mockStaffMembers, mockOverheads, mockSuppliers, mockMenuItems } from './mockData';
@@ -242,7 +243,9 @@ const calculateRecipeCostBreakdown = useCallback((recipe: Recipe | null): Recipe
   const filteredMenuItems = useMemo(() => menuItems.filter(m => m.businessId === activeBusinessId), [menuItems, activeBusinessId]);
 
   const uploadPriceList = async (newItems: Omit<PricedItem, 'id' | 'businessId'>[]) => {
-    if (!activeBusinessId) return { successCount: 0 };
+    // FIX: Added duplicateCount to the return value to match the type required by ImportModal.
+    // Since this is a replacement operation, duplicateCount is always 0.
+    if (!activeBusinessId) return { successCount: 0, duplicateCount: 0 };
     
     const dataToAdd = newItems.map(item => ({
         ...item,
@@ -255,7 +258,26 @@ const calculateRecipeCostBreakdown = useCallback((recipe: Recipe | null): Recipe
         ...dataToAdd
     ]);
     
-    return { successCount: dataToAdd.length };
+    return { successCount: dataToAdd.length, duplicateCount: 0 };
+  };
+
+  const addPricedItem = async (item: Omit<PricedItem, 'id' | 'businessId'>) => {
+      if(!activeBusinessId) return;
+      const newItem = { ...item, id: crypto.randomUUID(), businessId: activeBusinessId };
+      setPricedItems(prev => [...prev, newItem]);
+  };
+
+  const updatePricedItem = async (item: PricedItem) => {
+      setPricedItems(prev => prev.map(p => p.id === item.id ? item : p));
+  };
+  
+  const deletePricedItem = async (id: string) => {
+    const isUsedInRecipe = recipes.some(r => r.ingredients.some(i => i.type === 'item' && i.itemId === id));
+    if (isUsedInRecipe) {
+        return { success: false, message: 'Cannot delete item. It is used in one or more recipes.' };
+    }
+    setPricedItems(prev => prev.filter(p => p.id !== id));
+    return { success: true };
   };
 
   const addRecipe = async (recipe: Omit<Recipe, 'id' | 'businessId'>) => {
@@ -496,6 +518,9 @@ const calculateRecipeCostBreakdown = useCallback((recipe: Recipe | null): Recipe
     menuItems: filteredMenuItems,
     
     uploadPriceList,
+    addPricedItem,
+    updatePricedItem,
+    deletePricedItem,
 
     addRecipe,
     updateRecipe,
